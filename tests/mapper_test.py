@@ -1,4 +1,3 @@
-
 # !/usr/bin/env python3
 # coding: utf-8
 
@@ -9,7 +8,7 @@ import filecmp
 import os
 import unittest
 
-from biotradis2 import mapper
+from quatradis import mapper
 
 
 class MapperTest(unittest.TestCase):
@@ -22,20 +21,24 @@ class MapperTest(unittest.TestCase):
         self.assertEqual(44, read_len)
 
     def test_smalt_index_cmd(self):
-        index_cmd = mapper.index_reference("data/mapper/smallref.fa", "test.ref", 44, mapper="smalt", dry_run=True)
+        index_cmd, exitcode = mapper.index_reference("data/mapper/smallref.fa", "test.ref", 44, mapper="smalt", dry_run=True)
         self.assertEqual("smalt index -k 13 -s 4 test.ref data/mapper/smallref.fa > /dev/null 2>&1", index_cmd)
+        self.assertEqual(0, exitcode)
 
     def test_smalt_align_cmd(self):
-        align_cmd = mapper.map_reads("data/mapper/test.fastq", "data/mapper/smallref.fa", "test.ref", "mapped.out", 44, mapper="smalt", dry_run=True)
+        align_cmd, exitcode = mapper.map_reads("data/mapper/test.fastq", "data/mapper/smallref.fa", "test.ref", "mapped.out", 44, mapper="smalt", dry_run=True)
         self.assertEqual("smalt map -x -n 1 test.ref data/mapper/test.fastq 1> mapped.out 2> align.stderr", align_cmd)
+        self.assertEqual(0, exitcode)
 
     def test_bwa_index_cmd(self):
-        index_cmd = mapper.index_reference("data/mapper/smallref.fa", "test.ref", 44, mapper="bwa", dry_run=True)
+        index_cmd, exitcode = mapper.index_reference("data/mapper/smallref.fa", "test.ref", 44, mapper="bwa", dry_run=True)
         self.assertEqual("bwa index data/mapper/smallref.fa > /dev/null 2>&1", index_cmd)
+        self.assertEqual(0, exitcode)
 
     def test_bwa_align_cmd(self):
-        align_cmd = mapper.map_reads("data/mapper/test.fastq", "data/mapper/smallref.fa", "test.ref", "mapped.out", 44, mapper="bwa", dry_run=True)
+        align_cmd, exitcode = mapper.map_reads("data/mapper/test.fastq", "data/mapper/smallref.fa", "test.ref", "mapped.out", 44, mapper="bwa", dry_run=True)
         self.assertEqual("bwa mem -k 13 -t 1 data/mapper/smallref.fa data/mapper/test.fastq 1> mapped.out 2> align.stderr", align_cmd)
+        self.assertEqual(0, exitcode)
 
     # This test needs smalt installed
     def test_smalt(self):
@@ -62,7 +65,8 @@ class MapperTest(unittest.TestCase):
         sam2bam_cmd, exitcode = mapper.sam2bam("data/mapper/expected.bwa.sam", "nice.bam", dry_run=True)
         self.assertEqual("samtools view -b -o unsorted.nice.bam -S data/mapper/expected.bwa.sam && "
                          "samtools sort -@ 1 -O bam -T unsorted.nice.bam.tmp -o nice.bam unsorted.nice.bam && "
-                         "samtools index nice.bam"
+                         "samtools index nice.bam && "
+                         "samtools stats nice.bam > nice.bam.bamcheck"
                          , sam2bam_cmd)
         self.assertEqual(0, exitcode)
 

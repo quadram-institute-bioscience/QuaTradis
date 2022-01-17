@@ -1,0 +1,25 @@
+#!/usr/bin/env python3
+
+import argparse
+
+from quatradis.tags import remove_tags
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Removes transposon sequence and quality tags from the read strings')
+    parser.add_argument('fastq_in', type=str,
+                        help='The fastq formatted file for processing (can be gzipped).')
+    parser.add_argument('fastq_out', type=str,
+                        help='The fastq formatted output file (can be gzipped based on extension).')
+    parser.add_argument('-t', '--tag', type=str, required=True,
+                        help='the tag to remove from fastq input')
+    parser.add_argument('-mm', '--mismatch', type=str, default=0,
+                        help='number of mismatches allowed when matching tag (default = 0)')
+
+    args = parser.parse_args()
+
+    remove_tags(args.fastq_in, args.fastq_out, tag=args.tag, max_mismatches=args.mismatch, filter=False, trim=True)
+
+
+if __name__ == '__main__':
+    main()
