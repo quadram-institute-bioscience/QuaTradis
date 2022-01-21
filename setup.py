@@ -5,8 +5,11 @@ requirements = [line.rstrip() for line in open("requirements.txt", "rt")]
 with open('README.md') as f:
     readme = f.read()
 
+with open('VERSION') as f:
+    version = f.read()
+
 setup(name='quatradis',
-      version='0.1',
+      version=version,
       description='Analyses transposon insertion sites',
       long_description=readme,
       url='http://quadram.ac.uk',
