@@ -1,0 +1,14 @@
+language: python
+
+services:
+  - docker
+
+before_install:
+  - make docker-build
+  - docker run quadraminstitute/quatradis /bin/sh -c "cd /quatradis/tests; pytest;"
+
+deploy:
+  provider: script
+  script: make docker-push
+  on:
+    branch: master

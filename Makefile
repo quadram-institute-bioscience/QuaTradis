@@ -1,4 +1,8 @@
 
+VERSION := $(shell cat VERSION)
+DOCKER_USERNAME := quadraminstitute
+DOCKER_IMAGENAME := quatradis
+DOCKER_PATH := ${DOCKER_USERNAME}/${DOCKER_IMAGENAME}
 
 dev:
 	python3 setup.py develop
@@ -13,7 +17,26 @@ clean:
 	rm -r build dist quatradis.egg-info
 
 docker-build:
-	docker build -t quadraminstitute/quatradis:dev .
+	docker build -t ${DOCKER_PATH}:${VERSION} .
+	docker tag ${DOCKER_PATH}:${VERSION} ${DOCKER_PATH}:dev
 
-#docker-push:
-#    docker push
+docker-push: docker-build
+	echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
+	docker tag ${DOCKER_PATH}:${VERSION} ${DOCKER_PATH}:latest
+	docker push ${DOCKER_PATH}:latest
+	docker push ${DOCKER_PATH}:${VERSION}
+
+    
+release:
+	git fetch origin
+	git checkout develop
+	git pull origin develop
+	python3 bump_version.py
+	git commit VERSION -m "chore(package): Bump version up to $(shell cat VERSION)"
+	git push origin develop
+	git checkout master
+	git pull origin master
+	git merge --no-ff --no-edit develop
+	git tag "$(shell cat VERSION)"
+	git push origin master
+	git push origin master --tags
