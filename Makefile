@@ -32,11 +32,11 @@ release:
 	git checkout develop
 	git pull origin develop
 	python3 bump_version.py
-	git commit package.json -m "chore(package): Bump version up to $(shell cat VERSION)"
+	git commit VERSION -m "chore(package): Bump version up to $(shell cat VERSION)"
 	git push origin develop
 	git checkout master
 	git pull origin master
 	git merge --no-ff --no-edit develop
 	git tag "$(shell cat VERSION)"
-	git push
-	git push --tags
+	git push origin master
+	git push origin master --tags
