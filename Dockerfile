@@ -7,7 +7,7 @@ RUN apt-get update -qq && \
     apt-get install -y sudo bzip2 gcc locales unzip wget && \
     apt-get install -y bwa minimap2 samtools smalt tabix
 
-RUN pip install Bio pysam numpy pytest
+RUN pip install Bio pysam numpy pytest semantic_version
 
 # Set locales (required for running in Singularity)
 RUN   sed -i -e 's/# \(en_GB\.UTF-8 .*\)/\1/' /etc/locale.gen && \

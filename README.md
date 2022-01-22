@@ -23,8 +23,6 @@ A set of tools to analyse the output from TraDIS analyses
   * [Usage](#usage)
     * [Scripts](#scripts)
     * [Analysis Scripts](#analysis-scripts)
-    * [Internal Objects and Methods](#internal-objects-and-methods)
-    * [Perl Programming Examples](#perl-programming-examples)
   * [License](#license)
   * [Feedback/Issues](#feedbackissues)
   * [Citation](#citation)
@@ -66,11 +64,6 @@ To use QuaTradis use a command like this (substituting in your directories), whe
 
     docker run --rm -it -v /home/ubuntu/data:/data quadraminstitute/quatradis bacteria_tradis -h
 
-### Running the tests
-The test can be run with `pytest` from the tests directory.  Alternatively you can use the make target from the top-level
-directory:  
-  
-`make test`  
 
 ## Usage
 
@@ -93,169 +86,44 @@ Executable scripts to carry out most of the listed functions are available in th
 * `remove_tradis_tags` - Creates a fastq file containing reads with the supplied tag removed from the sequences
 * `tradis_plot` - Creates an gzipped insertion site plot
 * `bacteria_tradis` - Runs complete analysis, starting with a fastq file and produces mapped BAM files and plot files for each file in the given file list and a statistical summary of all files. Note that the -f option expects a text file containing a list of fastq files, one per line. This script can be run with or without supplying tags. 
+* `tradis_gene_insert_sites` - Takes genome annotation in embl format along with plot files produced by bacteria_tradis and generates tab-delimited files containing gene-wise annotations of insert sites and read counts.
+* `tradis_essentiality.R` - Takes a single tab-delimited file from tradis_gene_insert_sites to produce calls of gene essentiality. Also produces a number of diagnostic plots.
+* `tradis_comparison.R` - Takes tab files to compare two growth conditions using edgeR. This analysis requires experimental replicates.
 
 Note that default parameters are for comparative experiments, and will need to be modified for gene essentiality studies.
 
 A help menu for each script can be accessed by running the script by adding with "--help".
 
-### Analysis Scripts
-Three scripts are provided to perform basic analysis of TraDIS results in `bin`:
+## Contributing
 
-* `tradis_gene_insert_sites` - Takes genome annotation in embl format along with plot files produced by bacteria_tradis and generates tab-delimited files containing gene-wise annotations of insert sites and read counts.
-* `tradis_essentiality.R` - Takes a single tab-delimited file from tradis_gene_insert_sites to produce calls of gene essentiality. Also produces a number of diagnostic plots.
-* `tradis_comparison.R` - Takes tab files to compare two growth conditions using edgeR. This analysis requires experimental replicates.
+All changes to Quatradis should be made in a separate git branch from master, and then integrated into the master branch using
+a [github pull request](https://github.com/quadram-institute-bioscience/QuaTradis/pulls).  Before submitting the PR
+please check that your code changes pass all unit tests (see below).  Also ideally write some unit tests to cover your
+new functionality.  PRs currently require 1 approval and a successful travis build.
 
-<!--
-### Internal Objects and Methods
-__Bio::Tradis::DetectTags__  
-* Required parameters:
-	* `bamfile` - path to/name of file to check
-* Methods:
-	* `tags_present` - returns true if TraDIS tags are detected in `bamfile`
-	
-__Bio::Tradis::AddTagsToSeq__  
-* Required parameters:
-	* `bamfile` - path to/name of file containing reads and tags
-* Optional parameters:
-	* `outfile` - defaults to `file.tr.bam` for an input file named `file.bam`
-* Methods:
-	* `add_tags_to_seq` - add TraDIS tags to reads. For unmapped reads, the tag
-					  is added to the start of the read sequence and quality
-					  strings. For reads where the flag indicates that it is
-					  mapped and reverse complemented, the reverse complemented
-					  tags are added to the end of the read strings.
-					  This is because many conversion tools (e.g. picard) takes
-					  the read orientation into account and will re-reverse the
-					  mapped/rev comp reads during conversion, leaving all tags
-					  in the correct orientation at the start of the sequences
-					  in the resulting FastQ file.
+### Running unit tests
 
-__Bio::Tradis::FilterTags__  
-* Required parameters:
-	* `fastqfile` - path to/name of file to filter. This may be a gzipped fastq file, in which case a temporary unzipped version is used and removed on completion.
-	* `tag`       - TraDIS tag to match
-* Optional parameters:
-	* `mismatch` - number of mismatches to allow when matching the tag. Default = 0
-	* `outfile`  - defaults to `file.tag.fastq` for an input file named `file.fastq`
-* Methods:
-	* `filter_tags` - output all reads containing the tag to `outfile`
-	
-__Bio::Tradis::RemoveTags__  
-* Required parameters:
-	* `fastqfile` - path to/name of file to filter.
-	* `tag`       - TraDIS tag to remove
-* Optional parameters:
-	* `mismatch` - number of mismatches to allow when removing the tag. Default = 0
-	* `outfile`  - defaults to `file.rmtag.fastq` for and input file named `file.fastq`
-* Methods:
-	* `remove_tags` - output all reads with the tags removed from both sequence and
-				  quality strings to `outfile`
-				
-__Bio::Tradis::Map__  
-* Required parameters:
-	* `fastqfile` - path to/name of file to map to the reference
-	* `reference` - path to/name of reference genome in fasta format (.fa)
-* Optional parameters:
-	* `refname` - name to assign to the reference index files. Default = ref.index
-	* `outfile` - name to assign the mapped SAM file. Default = mapped.sam
-* Methods:
-	* `index_ref` - create index files of the reference genome. These are required
-				for the mapping step. Only skip this step if index files already
-				exist. If SMALT is used as the aligner -sk and -ss options for referencing are calculated based
-				on the length of the reads being mapped:
-		* <70 : `-sk 13 -ss 4`
-		* >70 & <100 : `-sk 13 -ss 6`
-		* >100 : `-sk 20 -ss 13`
-	* `do_mapping` - map `fastqfile` to `reference`. Options used for mapping are:
-				 `-k the min seed length for BWA`
-				 `-s (for using SMALT as alternative aligner) -r -1, -x and -y 0.96 for SMALT (see SMALT manual)`
-				
-	For more information on the mapping and indexing options discussed here, see the BWA manual (http://rothlab.ucdavis.edu/howto/attachments/bwa_manpage.pdf) and/or SMALT manual (ftp://ftp.sanger.ac.uk/pub4/resources/software/smalt/smalt-manual-0.7.4.pdf)
-				
-__Bio::Tradis::TradisPlot__  
-* Required parameters:
-	* `mappedfile` - mapped and sorted BAM file
-* Optional parameters:
-	* `outfile` - base name to assign to the resulting insertion site plot. Default = tradis.plot
-	* `mapping_score` - cutoff value for mapping score. Default = 30
-* Methods:
-	* `plot` - create insertion site plots for reads in `mappedfile`. This file will be readable by the Artemis genome browser (http://www.sanger.ac.uk/resources/software/artemis/)
-	 
-__Bio::Tradis::RunTradis__  
-* Required parameters:
-	* `fastqfile` - file containing a list of fastqs (gzipped or raw) to run the 
-				complete analysis on. This includes all (including 
-				intermediary format conversion and sorting) steps starting from
-				filtering and, finally, producing an insertion site plot and a 
-				statistical summary of the analysis.
-	* `tag` - TraDIS tag to filter for and then remove
-	* `reference` - path to/name of reference genome in fasta format (.fa)
-* Optional parameters:
-	* `mismatch` - number of mismatches to allow when filtering/removing the tag. Default = 0
-	* `tagdirection` - direction of the tag, 5' or 3'. Default = 3
-	* `mapping_score` - cutoff value for mapping score. Default = 30
-* Methods:
-	* `run_tradis` - run complete analysis
+The test can be run with `pytest` from the `tests` directory.  
+Alternatively you can use the make target from the top-level
+directory:  `make test`  
 
-### Perl Programming Examples
-You can reuse the Perl modules as part of other Perl scripts. This section provides example Perl code.
-Check whether `file.bam` contains TraDIS tag fields and, if so, adds the tags
-to the reads' sequence and quality strings.
+### Travis CI
 
-```Perl
-my $detector = Bio::Tradis::DetectTags(bamfile => 'file.bam');
-if($detector->tags_present){
-	Bio::Tradis::AddTagsToSeq(bamfile => 'file.bam', outfile => 'tradis.bam')->add_tags_to_seq;
-}
-```
-Filter a FastQ file with TraDIS tags attached for those matching the given tag.
-Then, remove the same tag from the start of all sequences in preparation for mapping.
+Continuous integration is delivered via [travis](https://app.travis-ci.com/github/quadram-institute-bioscience/QuaTradis).
+The [travis pipeline](.travis.yml) is designed to build and test all commit on all branches pushed to github.  For master
+builds, which only take place after a successful PR, travis will also publish the latest docker image to 
+[dockerhub](https://hub.docker.com/r/quadraminstitute/quatradis). 
 
-```Perl
-Bio::Tradis::FilterTags(
-	fastqfile => 'tradis.fastq',
-	tag => 'TAAGAGTGAC', 
-	outfile => 'filtered.fastq'
-)->filter_tags;
-Bio::Tradis::RemoveTags(
-	fastqfile => 'filtered.fastq',
-	tag => 'TAAGAGTGAC', 
-	outfile => 'notags.fastq'
-)->remove_tags;
-```
-Create mapping object, index the given reference file and then map the
-fastq file to the reference. This will produce index files for the reference and a mapped SAM file named `tradis_mapped.sam`.
+### Versioning
 
-```Perl
-my $mapping = Bio::Tradis::Map(
-	fastqfile => 'notags.fastq', 
-	reference => 'path/to/reference.fa', 
-	outfile => 'tradis_mapped.sam'
-);
-$mapping->index_ref;
-$mapping->do_mapping;
-```
-Generate insertion site plot for only reads with a mapping score >= 50
+When administrators of the 
 
-```Perl
-Bio::Tradis::TradisPlot(mappedfile => 'mapped.bam', mapping_score => 50)->plot;
-```
-Run complete analysis on fastq files listed in `file.list`. This includes filtering and removing the tags allowing one mismatch to the given tag, mapping, BAM sorting and creation of an insertion site plot and stats file for each file listed in `file.list`.
 
-```Perl
-Bio::Tradis::RunTradis(
-	fastqfile => 'file.list', 
-	tag => 'GTTGAGGCCA', 
-	reference => 'path/to/reference.fa', 
-	mismatch => 1
-)->run_tradis;
-```
--->
 ## License
-QuaTradis is free software, licensed under [GPLv3](https://github.com/sanger-pathogens/Bio-Tradis/blob/master/software_license).
+QuaTradis is free software, licensed under [GPLv3](LICENSE).
 
 ## Feedback/Issues
-Please report any issues to the [issues page](https://github.com/sanger-pathogens/bio-tradis/issues) or email path-help@sanger.ac.uk
+Please report any issues to the [issues page](https://github.com/quadram-institute-bioscience/QuaTradis/issues).
 
 ## Citation
 If you use this software please cite:
