@@ -1,3 +1,4 @@
 pysam
 Bio
 numpy
+semantic-version
