@@ -1,6 +1,6 @@
 
 VERSION := $(shell cat VERSION)
-DOCKER_USERNAME := maplesond
+DOCKER_USERNAME := quadraminstitute
 DOCKER_IMAGENAME := quatradis
 DOCKER_PATH := ${DOCKER_USERNAME}/${DOCKER_IMAGENAME}
 
