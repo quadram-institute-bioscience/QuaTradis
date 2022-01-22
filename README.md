@@ -96,27 +96,48 @@ A help menu for each script can be accessed by running the script by adding with
 
 ## Contributing
 
-All changes to Quatradis should be made in a separate git branch from master, and then integrated into the master branch using
-a [github pull request](https://github.com/quadram-institute-bioscience/QuaTradis/pulls).  Before submitting the PR
-please check that your code changes pass all unit tests (see below).  Also ideally write some unit tests to cover your
-new functionality.  PRs currently require 1 approval and a successful travis build.
+Quatradis uses git for version control, with it's public repo sited on github.  Quatradis uses the [gitflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow)
+branching workflow.  The reason for this is it allows contributions to go through a standard feature branch workflow, while
+allows Quatradis admins to be selective about at which point in the development trunk branch a versioned release is made.
+For most users this means that changes should be created in a feature branch off of the develop branch.  Changes should 
+be submitted via [github pull request](https://github.com/quadram-institute-bioscience/QuaTradis/pulls) to the `develop` branch.  
+
+Before submitting the PR please check that your code changes pass all unit tests (see below) to save time.  Also ideally 
+write some unit tests to cover your new functionality.  PRs currently require 1 approval and a successful travis build.
+
+### Building quatradis
+
+Quatradis is mostly python code, so all the usual methods for building python apply.  However to make things simple a 
+[Makefile](Makefile) is provided which various targets for different actions a developer might want to take.  For example 
+if you want to build a development release type `make dev`.  If would like to install into your local python environment
+type `make install`.  You can all build a local docker image with `make docker-build`.
 
 ### Running unit tests
 
-The test can be run with `pytest` from the `tests` directory.  
-Alternatively you can use the make target from the top-level
-directory:  `make test`  
+The suite of unit tests can be run with `make test` from the top-level directory.  Alternatively you can run `pytest` 
+directly from the `tests` directory.
+
+### Versioning
+
+When administrators of the quadtradis feel it is time to create a new release and bump the version there are 3 different
+make targets to choose from depending on which kind of release is required:
+
+- Major release: `make major_release`
+- Minor release: `make minor_release`
+- Patch release: `make patch_release`
+
+For details of what each of these do see the [Makefile](Makefile) but this increases the dot release number
+in the VERSION file and commits this to the `develop` branch.  It then merges this commit into `master` and pushes both 
+branches to github.  The new master commit is also tagged with the new version.
+
+If administrators need help figuring out which release to make check the [semver2](https://semver.org/) guidelines. 
 
 ### Travis CI
 
 Continuous integration is delivered via [travis](https://app.travis-ci.com/github/quadram-institute-bioscience/QuaTradis).
-The [travis pipeline](.travis.yml) is designed to build and test all commit on all branches pushed to github.  For master
-builds, which only take place after a successful PR, travis will also publish the latest docker image to 
+The [travis pipeline](.travis.yml) is designed to build and test all commits on all branches pushed to github.  For master
+builds (i.e. new releases), travis will also publish the latest docker image to 
 [dockerhub](https://hub.docker.com/r/quadraminstitute/quatradis). 
-
-### Versioning
-
-When administrators of the 
 
 
 ## License
