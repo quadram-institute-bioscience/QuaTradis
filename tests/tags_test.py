@@ -8,6 +8,9 @@ import filecmp
 import os
 import unittest
 
+import pysam
+from pysam.libcalignedsegment import CIGAR_OPS
+
 from quatradis import tags
 
 
@@ -127,6 +130,71 @@ class TagsTest(unittest.TestCase):
     def testNoTradis(self):
         bamfile = "data/tags/sample_sm_no_tr.bam"
         self.assertFalse(tags.tags_in_alignment(bamfile))
+
+
+    # Add tags
+
+    def testAddTag(self):
+        a = pysam.AlignedSegment()
+        a.query_name = "read_28833_29006_6945"
+        a.query_sequence = "AGCTTAGCTAGCTACCTATATCTTGGTCTTGGCCG"
+        a.flag = 99
+        a.reference_id = 0
+        a.reference_start = 32
+        a.mapping_quality = 20
+        a.cigar = ((0, 10), (2, 1), (0, 25))
+        a.next_reference_id = 0
+        a.next_reference_start = 199
+        a.template_length = 167
+        a.query_qualities = pysam.qualitystring_to_array("<<<<<<<<<<<<<<<<<<<<<:<9/,&,22;;<<<")
+        a.tags = (("NM", 1),
+                  ("RG", "L1"),
+                  ("tr", "GGGG"),
+                  ("tq", "8888"))
+
+        tagged = tags.add_tags_to_alignment(a)
+        self.assertEqual((CIGAR_OPS.CMATCH.value, 39), tagged.cigartuples[0])
+        self.assertEqual(1, len(tagged.cigartuples))
+        self.assertEqual('8888<<<<<<<<<<<<<<<<<<<<<:<9/,&,22;;<<<', tagged.qual)
+        self.assertEqual('GGGGAGCTTAGCTAGCTACCTATATCTTGGTCTTGGCCG', tagged.query_sequence)
+
+    def testAddTagToReversed(self):
+        a = pysam.AlignedSegment()
+        a.query_name = "read_28833_29006_6945"
+        a.query_sequence = "AGCTTAGCTAGCTACCTATATCTTGGTCTTGGCCG"
+        a.query_qualities = pysam.qualitystring_to_array("<<<<<<<<<<<<<<<<<<<<<:<9/,&,22;;<<<")
+        a.flag = 99
+        a.reference_id = 0
+        a.reference_start = 32
+        a.is_reverse = True
+        a.mapping_quality = 20
+        a.cigar = ((0, 10), (2, 1), (0, 25))
+        a.next_reference_id = 0
+        a.next_reference_start = 199
+        a.template_length = 167
+        a.tags = (("NM", 1),
+                  ("RG", "L1"),
+                  ("tr", "GGAA"),
+                  ("tq", "8877"))
+
+        tagged = tags.add_tags_to_alignment(a)
+        self.assertEqual((CIGAR_OPS.CMATCH.value, 39), tagged.cigartuples[0])
+        self.assertEqual(1, len(tagged.cigartuples))
+        self.assertEqual('AGCTTAGCTAGCTACCTATATCTTGGTCTTGGCCGTTCC', tagged.query_sequence)
+        self.assertEqual('<<<<<<<<<<<<<<<<<<<<<:<9/,&,22;;<<<7788', tagged.qual)
+
+    def testAddTagsToBam(self):
+        bamfile="data/isp_create/small_multi_sequence.bam"
+        outfile="test.tr.bam"
+        tags.add_tags(bamfile, outfile)
+        self.assertTrue(True)
+        os.remove(outfile)
+
+    def testAddTagsToBamNoOutfile(self):
+        bamfile="data/isp_create/small_multi_sequence.bam"
+        tags.add_tags(bamfile)
+        self.assertTrue(True)
+        os.remove("data/isp_create/small_multi_sequence.tr.bam")
 
 if __name__ == '__main__':
     unittest.main()

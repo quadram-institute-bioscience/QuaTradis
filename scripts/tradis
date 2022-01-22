@@ -14,11 +14,11 @@ def run_tradis(fastq, reference, output_prefix, tag="", mapper="bwa", threads=1,
     """
     The main program logic for running tradis.  Tradis takes in a fastq file and a reference as input and generates
     transposon insertion site plot files for each reference sequence, along with stats related to this.
-    :param fastq: The fastq formatted file containing reads.  Can be gzipped.
+    :param fastq: A fastq formatted file containing reads. Can be read gzipped or uncompressed.
     :param reference: The fasta formatted reference sequences
     :param output_prefix: Output prefix for output files
     :param tag: Tag to identify and trim in reads.  If left empty then we run tradis in tagless mode and map reads as is.
-    :param mapper: The mapping tools to map reads to reference
+    :param mapper: The mapping tools to map reads to reference (bwa, smalt, minimap2, minimap2_long)
     :param threads: Number of threads used for mapping and sorting alignments
     :param max_mismatches: number of mismatches allowed when matching tag
     :param cutoff: Quality score cutoff value.  Alignments with score less than this are not considered for analysis.
@@ -56,12 +56,12 @@ def run_tradis(fastq, reference, output_prefix, tag="", mapper="bwa", threads=1,
     index = output_prefix + "ref.index"
     mapped_reads = output_prefix + ".mapped.sam"
     if verbose:
-        print("..........Map reads to reference using " + mapper + "\n", file=sys.stderr)
+        print("..........Map reads to reference using " + mapper + " (using " + str(threads) + " threads)\n", file=sys.stderr)
     index_and_align(detagged, reference, index, mapped_reads, mapper, threads=threads)
 
     bam = output_prefix + ".mapped.bam"
     if verbose:
-        print("..........Convert SAM to BAM, then sort, index and check\n", file=sys.stderr)
+        print("..........Convert BAM, sort, index and check (using " + str(threads) + " threads)\n", file=sys.stderr)
     sam2bam(mapped_reads, bam, threads=threads)
     os.remove(mapped_reads)
 
@@ -88,22 +88,35 @@ def main():
     parser.add_argument('-n', '--threads', default=1,
                         help='number of threads to use when mapping and sorting (default: 1)')
     parser.add_argument('-a', '--aligner', default="bwa",
-                        help='mapping tool to use (bwa, smalt, minimap2) (default: bwa)')
+                        help='mapping tool to use (bwa, smalt, minimap2, minimap2_long) (default: bwa)')
     parser.add_argument('-m', '--mapping_score', type=str, default=30,
                         help='mapping quality must be greater than X (Default: 30)')
     parser.add_argument('-t', '--tag', type=str, default="",
                         help='the tag to remove from fastq input (default: "")')
     parser.add_argument('-mm', '--mismatch', type=str, default=0,
                         help='number of mismatches allowed when matching tag (default: 0)')
+    parser.add_argument('-p", "--profile', dest='profile', action='store_true',
+                        help='Turn on profiling.  Prints out cumulative time in each function to stdout and to an output file (<output_prefix>.profile).  The profile file can be read by tools such as snakeviz.')
     parser.add_argument('-v', '--verbose', dest='verbose', action='store_true',
                         help='Add verbose output to console logs')
 
     args = parser.parse_args()
 
+    if args.profile:
+        import cProfile, pstats, io
+        pr = cProfile.Profile()
+        pr.enable()
+
     run_tradis(args.fastq, args.reference, args.output_prefix,
                mapper=args.aligner, threads=args.threads, max_mismatches=args.mismatch,
                cutoff=args.mapping_score, verbose=args.verbose)
 
+    if args.profile:
+        pr.disable()
+        ps = pstats.Stats(pr).sort_stats('cumulative')
+        print("\n\n..........Profiling stats\n")
+        ps.print_stats()
+        ps.dump_stats(args.output_prefix + ".profile")
 
 if __name__ == '__main__':
     main()
