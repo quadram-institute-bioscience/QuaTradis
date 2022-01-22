@@ -122,9 +122,9 @@ directly from the `tests` directory.
 When administrators of the quadtradis feel it is time to create a new release and bump the version there are 3 different
 make targets to choose from depending on which kind of release is required:
 
-- Major release: `make major_release`
-- Minor release: `make minor_release`
-- Patch release: `make patch_release`
+- Major release: `make release_major`
+- Minor release: `make release_minor`
+- Patch release: `make release_patch`
 
 For details of what each of these do see the [Makefile](Makefile) but this increases the dot release number
 in the VERSION file and commits this to the `develop` branch.  It then merges this commit into `master` and pushes both 

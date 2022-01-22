@@ -37,14 +37,13 @@ bump_major_version: update_develop_branch
 
 bump_minor_version: update_develop_branch
 	python3 bump_version.py --mode=minor
-	git commit VERSION -m "chore(package): Bump version up to $(shell cat VERSION)"
 
 bump_version: update_develop_branch
 	python3 bump_version.py --mode=patch
-	git commit VERSION -m "chore(package): Bump version up to $(shell cat VERSION)"
 
 release:
 	git commit VERSION -m "chore(package): Bump version up to $(shell cat VERSION)"
+	git push origin develop
 	git checkout master
 	git pull origin master
 	git merge --no-ff --no-edit develop
@@ -61,7 +60,7 @@ release_minor: bump_minor_version release
 	echo "Released new minor version"
 
 
-release_patch: bump_version_release
+release_patch: bump_version release
 	echo "Released new patch"
 
 
