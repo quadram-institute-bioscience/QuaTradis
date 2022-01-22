@@ -25,4 +25,18 @@ docker-push: docker-build
 	docker tag ${DOCKER_PATH}:${VERSION} ${DOCKER_PATH}:latest
 	docker push ${DOCKER_PATH}:latest
 	docker push ${DOCKER_PATH}:${VERSION}
+
     
+release:
+	git fetch origin
+	git checkout develop
+	git pull origin develop
+	python3 bump_version.py
+	git commit VERSION -m "chore(package): Bump version up to $(shell cat VERSION)"
+	git push origin develop
+	git checkout master
+	git pull origin master
+	git merge --no-ff --no-edit develop
+	git tag "$(shell cat VERSION)"
+	git push origin master
+	git push origin master --tags
