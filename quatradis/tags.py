@@ -6,8 +6,48 @@ import re
 
 import pysam
 from Bio import SeqIO
+from Bio.Seq import Seq
+from pysam.libcalignedsegment import CIGAR_OPS
 
 from quatradis.file_handle_helpers import *
+
+
+def add_tags(input_alignments, output_alignments="", verbose=False):
+    """
+    Takes a SAM/BAM/CRAM file and creates a new BAM with tr and tq tags added to the sequence and quality strings.
+    """
+    if not output_alignments:
+        output_alignments = os.path.splitext(input_alignments)[0] + ".tr.bam"
+
+    with pysam.AlignmentFile(input_alignments, mode=input_alignment_mode(input_alignments)) as alignments_in:
+        with pysam.AlignmentFile(output_alignments, mode=output_alignment_mode(output_alignments), header=alignments_in.header) as alignments_out:
+            for a_in in alignments_in.fetch():
+                a_tagged = add_tags_to_alignment(a_in)
+                alignments_out.write(a_tagged)
+
+
+def add_tags_to_alignment(alignment):
+    new_alignment = alignment.__copy__()
+
+    tr_tag = ""
+    tq_tag = ""
+    for t in alignment.tags:
+        if t[0] == "tr":
+            tr_tag = t[1]
+        elif t[0] == "tq":
+            tq_tag = t[1]
+
+    if (not alignment.is_unmapped) and alignment.is_reverse:
+        new_alignment.query_sequence = str(Seq(tr_tag + alignment.get_forward_sequence()).reverse_complement())
+        new_alignment.query_qualities = pysam.qualitystring_to_array(tq_tag + pysam.array_to_qualitystring(alignment.get_forward_qualities()))[::-1] # [::-1] reverses the string
+    else:
+        new_alignment.query_sequence = tr_tag + alignment.query_sequence
+        new_alignment.query_qualities = pysam.qualitystring_to_array(tq_tag + pysam.array_to_qualitystring(alignment.query_qualities))
+
+    if not alignment.is_unmapped:
+        new_alignment.cigartuples = [(CIGAR_OPS.CMATCH, new_alignment.query_length)]
+
+    return new_alignment
 
 
 def remove_tags(seq_file_in, seq_file_out="", tag="", max_mismatches=0, filter=True, trim=True):
@@ -104,7 +144,7 @@ def tags_in_alignment(mapped_reads):
     :param mapped_reads: The SAM/BAM/CRAM file to check for a tradis tag
     :return: True is tradis tag is present in alignments, false otherwise
     """
-    mode = alignment_mode(mapped_reads)
+    mode = input_alignment_mode(mapped_reads)
 
     alignments = pysam.AlignmentFile(mapped_reads, mode)
     #TODO check this doesn't take ages for big files

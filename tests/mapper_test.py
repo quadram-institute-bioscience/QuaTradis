@@ -43,7 +43,7 @@ class MapperTest(unittest.TestCase):
     # This test needs smalt installed
     def test_smalt(self):
         mapper.index_and_align("data/mapper/test.fastq", "data/mapper/smallref.fa", "test.ref", "mapped.out", mapper="smalt")
-        os.system("grep -v ^\@ mapped.out > mapped.nohead.out && grep -v ^\@ data/mapper/expected.smalt.sam > expected.smalt.nohead.sam")
+        os.system("grep -v ^@ mapped.out > mapped.nohead.out && grep -v ^@ data/mapper/expected.smalt.sam > expected.smalt.nohead.sam")
         self.assertTrue(filecmp.cmp("mapped.nohead.out", "expected.smalt.nohead.sam"))
         os.remove("test.ref.sma")
         os.remove("test.ref.smi")
@@ -54,26 +54,23 @@ class MapperTest(unittest.TestCase):
     # This test need bwa installed
     def test_bwa(self):
         mapper.index_and_align("data/mapper/test.fastq", "data/mapper/smallref.fa", "test.ref", "mapped.out", mapper="bwa")
-        os.system("grep -v ^\@ mapped.out > mapped.nohead.out && grep -v ^\@ data/mapper/expected.bwa.sam > expected.bwa.nohead.sam")
+        os.system("grep -v ^@ mapped.out > mapped.nohead.out && grep -v ^@ data/mapper/expected.bwa.sam > expected.bwa.nohead.sam")
         self.assertTrue(filecmp.cmp("mapped.nohead.out", "expected.bwa.nohead.sam"))
         os.system("rm mapped.*")
         os.remove("align.stderr")
         os.remove("expected.bwa.nohead.sam")
         os.system("rm data/mapper/smallref.fa.*")
 
-    def test_sam2bam_cmd(self):
-        sam2bam_cmd, exitcode = mapper.sam2bam("data/mapper/expected.bwa.sam", "nice.bam", dry_run=True)
-        self.assertEqual("samtools view -b -o unsorted.nice.bam -S data/mapper/expected.bwa.sam && "
-                         "samtools sort -@ 1 -O bam -T unsorted.nice.bam.tmp -o nice.bam unsorted.nice.bam && "
-                         "samtools index nice.bam && "
-                         "samtools stats nice.bam > nice.bam.bamcheck"
-                         , sam2bam_cmd)
-        self.assertEqual(0, exitcode)
-
-    # This test needs samtools installed
     def test_sam2bam(self):
-        sam2bam_cmd, exitcode = mapper.sam2bam("data/mapper/expected.bwa.sam", "nice.bam")
-        self.assertEqual(0, exitcode)
+        mapper.sam2bam("data/mapper/expected.bwa.sam", "nice.bam")
+        self.assertTrue(os.path.exists("nice.bam"))
         self.assertTrue(os.path.exists("nice.bam.bai"))
+        self.assertTrue(os.path.exists("nice.bam.bamcheck"))
         os.system("rm *nice.bam*")
 
+    def test_sam2bam_multithread(self):
+        mapper.sam2bam("data/mapper/expected.bwa.sam", "nice.bam", threads=2)
+        self.assertTrue(os.path.exists("nice.bam"))
+        self.assertTrue(os.path.exists("nice.bam.bai"))
+        self.assertTrue(os.path.exists("nice.bam.bamcheck"))
+        os.system("rm *nice.bam*")

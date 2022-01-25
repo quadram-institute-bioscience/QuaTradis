@@ -61,6 +61,10 @@ class InsertSitePlotTest(unittest.TestCase):
         if os.path.exists("insert_site.stats"):
             os.remove("insert_site.stats")
 
-    def test_read_counter(self):
+    def test_read_counter_gzipped(self):
         nb_reads = isp_create.get_number_reads("data/tags/sample.caa.fastq.gz")
+        self.assertEqual(10, nb_reads)
+
+    def test_read_counter(self):
+        nb_reads = isp_create.get_number_reads("data/tags/sample.caa.fastq")
         self.assertEqual(10, nb_reads)

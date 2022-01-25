@@ -4,6 +4,7 @@ Mapping prepared reads to index
 import gzip
 import os
 
+import pysam
 from Bio import SeqIO
 
 
@@ -33,6 +34,7 @@ def calc_read_length(reads_file):
 
     return read_length
 
+
 def index_reference(reference, refname, read_length, mapper="bwa", dry_run=False):
     if mapper == "smalt":
         k = smalt_k_default(read_length)
@@ -40,6 +42,8 @@ def index_reference(reference, refname, read_length, mapper="bwa", dry_run=False
         index_cmd = "smalt index -k " + str(k) + " -s " + str(s) + " " + refname + " " + reference + " > /dev/null 2>&1"
     elif mapper == "bwa":
         index_cmd = "bwa index " + reference + " > /dev/null 2>&1"
+    elif mapper == "minimap2" or mapper == "minimap2_long":
+        index_cmd = "minimap2 -d " + refname + " " + reference + " > /dev/null 2>&1"
     else:
         raise ValueError("Unrecognised mapper requested")
 
@@ -57,6 +61,10 @@ def map_reads(reads, reference, index, out_file, read_length, mapper="bwa", thre
     elif mapper == "bwa":
         k = min_seed_len_default(read_length)
         align_cmd = "bwa mem -k " + str(k) + " -t " + str(threads) + " " + reference + " " + reads + " 1> " + out_file + " 2> align.stderr"
+    elif mapper == "minimap2":
+        align_cmd = "minimap2 -c -o " + out_file + " -N 1 -ax sr " + reference + " " + reads
+    elif mapper == "minimap2_long":
+        align_cmd = "minimap2 -c -o " + out_file + " -N 1 -ax map-ont " + reference + " " + reads
     else:
         raise ValueError("Unrecognised mapper requested")
 
@@ -79,18 +87,9 @@ def smalt_s_default(read_length):
     return 4 if read_length < 70 else 13 if read_length > 100 else 6
 
 
-def sam2bam(sam_file_in, bam_file_out, threads=1, dry_run=False):
-    unsorted_bam_file = "unsorted."+bam_file_out
-    sam2bam_cmd = "samtools view -b -o " + unsorted_bam_file + " -S " + sam_file_in
-    sort_cmd = "samtools sort -@ " + str(threads) + " -O bam -T " + unsorted_bam_file + ".tmp -o " + bam_file_out + " " + unsorted_bam_file
-    index_cmd = "samtools index " + bam_file_out
-    check_cmd = "samtools stats " + bam_file_out + " > " + bam_file_out + ".bamcheck"
-
-    combined_cmd = " && ".join([sam2bam_cmd, sort_cmd, index_cmd, check_cmd])
-
-    exitcode = 0
-    if not dry_run:
-        exitcode = os.system(combined_cmd)
-        os.remove(unsorted_bam_file)
-
-    return combined_cmd, exitcode
+def sam2bam(sam_file_in, bam_file_out, threads=1):
+    pysam.sort("-@", str(threads), "-O", "bam", "-T", sam_file_in + ".tmp", "-o", bam_file_out, sam_file_in)
+    pysam.index("-@", str(threads), bam_file_out)
+    stats = pysam.stats("-@", str(threads), bam_file_out)
+    with open(bam_file_out + ".bamcheck", "w") as statsfile:
+        statsfile.write(stats)
