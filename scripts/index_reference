@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+import argparse
+
+from quatradis.mapper import index_reference
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Generate transposon insert sites')
+    parser.add_argument('reference', type=str,
+                        help='The fasta formatted reference for processing.')
+    parser.add_argument('refname', type=str,
+                        help='The name for this reference.')
+    parser.add_argument('-a', '--aligner', type=str, default="bwa",
+                        help='mapping tool to use (bwa, smalt, minimap2) (default: bwa)')
+    parser.add_argument('-r', '--read_len', type=int,
+                        help='the average read length used')
+    parser.add_argument('-sk', '--smalt_k', type=int,
+                            help='the average read length used')
+    parser.add_argument('-ss', '--smalt_s', type=int,
+                        help='the average read length used')
+
+    args = parser.parse_args()
+
+    index_reference(args.reference, args.refname, args.read_len, mapper=args.aligner)
+
+
+if __name__ == '__main__':
+    main()

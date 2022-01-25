@@ -1,0 +1,23 @@
+#!/usr/bin/env python3
+import argparse
+
+from quatradis.tags import add_tags
+
+
+def main():
+    parser = argparse.ArgumentParser(description=
+                                     'Add given tags to the start of the sequence')
+    parser.add_argument('mapped_reads', type=str,
+                        help='A SAM/BAM/CRAM file to check for tradis tags')
+    parser.add_argument('-o', '--output', type=str,
+                        help="Output BAM name (default: <file>.tr.bam)")
+    parser.add_argument('-v', '--verbose', dest='verbose', action='store_true',
+                        help='Add verbose output to console logs')
+    args = parser.parse_args()
+
+    present = add_tags(args.mapped_reads, args.output)
+    print(present)
+
+
+if __name__ == '__main__':
+    main()

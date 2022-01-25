@@ -37,12 +37,12 @@ def writer_opener(fastq_file):
     return output_opener, output_mode
 
 
-def alignment_mode(alignment_file):
+def input_alignment_mode(alignment_file):
     """
     Opening SAM, BAM, or CRAM files requires a different opening mode.  This function returns the correct mode based on
     the file extension of the given alignment file.
     :param alignment_file: SAM / BAM /CRAM file as determined by its extension
-    :return: opener mode suitable for file type
+    :return: opener mode suitable for reading from file type
     """
     ext = os.path.splitext(alignment_file)[1]
     if ext == '.bam':
@@ -50,7 +50,26 @@ def alignment_mode(alignment_file):
     elif ext == '.sam':
         mode = "r"
     elif ext == '.cram':
-        mode = "rb"
+        mode = "rc"
+    else:
+        raise Exception("Invalid alignment format: {}".format(ext))
+
+    return mode
+
+def output_alignment_mode(alignment_file):
+    """
+    Opening SAM, BAM, or CRAM files requires a different opening mode.  This function returns the correct mode based on
+    the file extension of the given alignment file.
+    :param alignment_file: SAM / BAM /CRAM file as determined by its extension
+    :return: opener mode suitable for writing to this file type
+    """
+    ext = os.path.splitext(alignment_file)[1]
+    if ext == '.bam':
+        mode = "wb"
+    elif ext == '.sam':
+        mode = "w"
+    elif ext == '.cram':
+        mode = "wc"
     else:
         raise Exception("Invalid alignment format: {}".format(ext))
 

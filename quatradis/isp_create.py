@@ -2,11 +2,11 @@
 Creating insert site plot files (originally designed for artemis)
 """
 import collections
-import gzip
 import os
+import subprocess
 
 import pysam
-from Bio import bgzf, SeqIO
+from Bio import bgzf
 from pysam.libcalignedsegment import CIGAR_OPS
 
 
@@ -128,21 +128,14 @@ def create_plot_files(mapped_reads, plot_out_prefix="tradis.plot", cutoff_score=
 
 
 def get_number_reads(seq_file_in):
-    # Make sure we can handle gzipped or non-gzipped fastq for both input
+
+    # Make sure we can handle gzipped or non-gzipped fastq input
     if seq_file_in.endswith('.gz'):
-        input_opener = gzip.open
-        input_mode = "rt"
+        cat_cmd = "zcat"
     else:
-        input_opener = open
-        input_mode = "r"
-
-    nb_reads = 0
-    with input_opener(seq_file_in, input_mode) as inputHandle:
-        recs = SeqIO.parse(inputHandle, "fastq")
-
-        for rec in recs:
-            nb_reads += 1
-    return nb_reads
+        cat_cmd = "cat"
+    lines = int(subprocess.check_output(["bash", "-c", cat_cmd + " " + seq_file_in + " | wc -l"]).strip())
+    return lines / 4
 
 
 def generate_stats(mapped_reads, out_file, fastq, nb_reads, nb_tagged_reads, nb_mapped, uis_map):

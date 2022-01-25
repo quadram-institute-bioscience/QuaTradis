@@ -1,0 +1,69 @@
+#!/usr/bin/env python3
+
+"""
+Example usage
+tradis_gene_insert_sites my_annotation.embl my_insert_site_plot.gz
+
+tradis_gene_insert_sites my_annotation.embl my_insert_site_plot
+
+# multiple plot files
+tradis_gene_insert_sites my_annotation.embl plot1.gz plot2.gz plot3.gz plot4.gz
+
+# specifiy an output suffix
+# this will result in a file named my_insert_site_plot1.my_output.csv
+tradis_gene_insert_sites -o my_output.csv my_annotation.embl my_insert_site_plot1
+
+# Trim insertion sites from start or end of gene
+tradis_gene_insert_sites my_annotation.embl -trim5 0.1 -trim3 0.1 my_annotation.embl my_insert_site_plot.gz
+
+The trim parameter is the fraction of the gene length trimmed.
+
+# place all info into a single file
+tradis_gene_insert_sites -o output_suffix.csv -j my_annotation.embl plot1.gz plot2.gz plot3.gz
+
+Resulting file: joined_output.output_suffix.csv
+"""
+import argparse
+
+from quatradis import isp_analyse
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Take in a plot file(s) and an embl file and produce a tab delimited ' +
+                                                 'file with insert site details to use as input to another script to test ' +
+                                                 'for essentiality.')
+    parser.add_argument('embl_in', type=str,
+                        help='The embl formatted annotation file')
+    parser.add_argument('plot_in', type=str, nargs='+',
+                        help='The insertion site plot files (can be gzipped)')
+    parser.add_argument('-o', '--output_suffix', type=str, default="tradis_gene_insert_sites.csv",
+                        help='The suffix to add to output files (optional, default = tradis_gene_insert_sites.csv)')
+    parser.add_argument('--trim5', action='store_true',
+                        help="Trim insertion sites from 5' end of gene")
+    parser.add_argument('--trim3', action='store_true',
+                        help="Trim insertion sites from 3' end of gene")
+    parser.add_argument('-j', '--joined_output', action='store_true',
+                        help="output a single file with all info.")
+    parser.add_argument('-p", "--profile', dest='profile', action='store_true',
+                        help='Turn on profiling.  Prints out cumulative time in each function to stdout and to an output file (<output_prefix>.profile).  The profile file can be read by tools such as snakeviz.')
+
+    args = parser.parse_args()
+
+    if args.profile:
+        import cProfile, pstats, io
+        pr = cProfile.Profile()
+        pr.enable()
+
+    isp_analyse.analyse_insert_sites(args.embl_in, args.plot_in, args.joined_output, args.output_suffix,
+                                     trim5=args.trim5, trim3=args.trim3)
+
+    if args.profile:
+        pr.disable()
+        ps = pstats.Stats(pr).sort_stats('cumulative')
+        print("\n\n..........Profiling stats\n")
+        ps.print_stats()
+        ps.dump_stats("isp_analysis.profile")
+
+
+if __name__ == '__main__':
+    main()
