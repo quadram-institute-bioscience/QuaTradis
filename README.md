@@ -175,14 +175,13 @@ argument make sense for that script.
 ## Contributing
 
 Quatradis uses git for version control, with its public repo sited on [github](https://github.com/quadram-institute-bioscience/QuaTradis/tree/master).  
-Quatradis uses the [gitflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow)
-branching workflow.  The reason for this is it allows contributions to go through a standard feature branch workflow, while
-allows Quatradis admins to be selective about at which point in the development trunk branch a versioned release is made.
-For most users this means that changes should be created in a feature branch off of the develop branch.  Changes should 
-be submitted via [github pull request](https://github.com/quadram-institute-bioscience/QuaTradis/pulls) to the `develop` branch.  
+Contributions go through a standard feature branch workflow, so for most users this means that changes should be created 
+in a feature branch off of the default master branch.  Changes are merged into `master` by submitting a 
+[github pull request](https://github.com/quadram-institute-bioscience/QuaTradis/pulls).  
 
 Before submitting the PR please check that your code changes pass all unit tests (see below) to save time.  Also ideally 
-write some unit tests to cover your new functionality.  PRs currently require 1 approval and a successful travis build.
+write some unit tests to cover your new functionality.  PRs require 1 approval from an admin as well as a successful travis 
+build before the PR can be merged.
 
 ### Building quatradis from source
 
@@ -197,6 +196,13 @@ type `make install`.  A local docker image can be built by typing `make docker-b
 The suite of unit tests can be run with `make test` from the top-level directory.  Alternatively you can run `pytest` 
 directly from the `tests` directory.
 
+### CI
+
+Continuous integration is delivered via [travis](https://app.travis-ci.com/github/quadram-institute-bioscience/QuaTradis).
+The [travis pipeline](.travis.yml) is designed to build and test commits from PRs and the master branch.  For `master`
+branch builds, travis will also publish the latest docker image to [dockerhub](https://hub.docker.com/r/quadraminstitute/quatradis) 
+if that commit is tagged (see below). 
+
 ### Versioning
 
 When administrators (as defined by github) feel it is time to create a new release and bump the version there are 3 different
@@ -207,17 +213,10 @@ make targets to choose from depending on which kind of release is required:
 - Patch release: `make release_patch`
 
 For details of what each of these do see the [Makefile](Makefile) but this increases the dot release number
-in the [VERSION](VERSION) file and commits this to the `develop` branch.  It then merges this commit into `master` and pushes both 
-branches to github.  The new master commit is also tagged with the new version.
+in the [VERSION](VERSION) file and commits this to the `master` branch and pushes it to github.  The new master commit 
+is tagged appropriately with the new version.  This then triggers travis to build and publish a docker image to dockerhub.
 
-If administrators need help figuring out which release to make check the [semver2](https://semver.org/) guidelines. 
-
-### CI
-
-Continuous integration is delivered via [travis](https://app.travis-ci.com/github/quadram-institute-bioscience/QuaTradis).
-The [travis pipeline](.travis.yml) is designed to build and test all commits on all branches pushed to github.  For master
-builds (i.e. new releases), travis will also publish the latest docker image to 
-[dockerhub](https://hub.docker.com/r/quadraminstitute/quatradis). 
+If administrators need help figuring out which release number to bump then check the [semver2](https://semver.org/) guidelines. 
 
 
 ## License
