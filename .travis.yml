@@ -3,12 +3,17 @@ language: python
 services:
   - docker
 
-before_install:
+install:
   - make docker-build
   - docker run quadraminstitute/quatradis /bin/sh -c "cd /quatradis/tests; pytest;"
+# Uncomment when we have confirmed travis is working correctly
+#branches:
+#  only:
+#    - master
 
 deploy:
   provider: script
   script: make docker-push
   on:
+    tags: true
     branch: master
