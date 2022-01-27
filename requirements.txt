@@ -1,4 +1,7 @@
 pysam
 Bio
+matplotlib
 numpy
+pandas
+pyqt5
 semantic-version

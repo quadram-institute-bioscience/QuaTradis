@@ -4,7 +4,7 @@ FROM python:3.10-slim-bullseye
 
 # Install the dependencies
 RUN apt-get update -qq && \
-    apt-get install -y sudo bzip2 gcc default-jre locales unzip wget make && \
+    apt-get install -y sudo bzip2 default-jre gcc locales make r-base unzip wget && \
     apt-get install -y bwa minimap2 smalt
 
 # Install nextflow
@@ -12,7 +12,8 @@ RUN wget -qO- https://get.nextflow.io | bash && \
 	chmod +x nextflow && \
 	mv nextflow /usr/local/bin
 
-RUN pip install Bio pysam numpy pytest semantic-version snakeviz
+# Install R dependencies
+RUN Rscript -e "install.packages('BiocManager')" -e "BiocManager::install()" -e "BiocManager::install(c('edgeR','getopt', 'MASS'))"
 
 # Set locales (required for running in Singularity)
 RUN   sed -i -e 's/# \(en_GB\.UTF-8 .*\)/\1/' /etc/locale.gen && \
@@ -25,6 +26,8 @@ ENV   LC_ALL   en_GB.UTF-8
 # Add source code
 ADD . quatradis
 WORKDIR /quatradis
+
+RUN pip install -r requirements.txt
 RUN python3 setup.py install
 
 # Set environment
