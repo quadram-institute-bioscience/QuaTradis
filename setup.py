@@ -28,4 +28,6 @@ setup(name='quatradis',
                   'scripts/check_tradis_tags',
                   'scripts/remove_tradis_tags',
                   'scripts/tradis_gene_insert_sites',
-                  'scripts/index_reference'])
+                  'scripts/index_reference',
+                  'scripts/tradis_comparison.R',
+                  'scripts/tradis_essentiality.R'])

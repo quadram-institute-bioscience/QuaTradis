@@ -74,25 +74,26 @@ instructions for each package instead of running the commands below.
   * make
   * gcc
   * python3
+  * r-base
 
 ```bash
 apt-get update -qq && \
-apt-get install -y sudo bzip2 gcc locales make python3 unzip wget && \
+apt-get install -y bzip2 default-jre gcc locales make r-base unzip wget && \
 apt-get install -y bwa minimap2 smalt
 ```
   
 With the core packages installed we also need some python packages.  These can be installed using pip as described here:
 
-* Python packages:
-  * Bio
-  * pysam
-  * numpy
-  * semantic-version
-  * snakeviz
-
 ```bash
 pip install Bio pysam numpy pytest semantic-version snakeviz
 ```
+
+Finally, we also need a few R packages:
+
+```bash
+Rscript -e "install.packages('BiocManager')" -e "BiocManager::install()" -e "BiocManager::install(c('edgeR','getopt', 'MASS'))"
+```
+
 
 Next move to a location to which you want to put the source code then clone the github repo and create a development build:
 
@@ -158,7 +159,7 @@ should work however.  And once you find something that works for you, then a sim
 sigificantly.
 
 ```bash
-    docker run --rm -it -u $(id -u ${USER}):$(id -g ${USER}) -v /home/ubuntu/data:/data quadraminstitute/quatradis bacteria_tradis <program args>
+    docker run --rm -it -u $(id -u ${USER}):$(id -g ${USER}) -v /home/ubuntu/data:/data quadraminstitute/quatradis <program and args>
 ```
 
 To explain what is happening here you should familiarise yourself with [docker](https://docs.docker.com/engine/reference/commandline/run/) 
@@ -168,8 +169,7 @@ if you haven't already.  But a quick summary is:
 - `-u $(id -u ${USER}):$(id -g ${USER})` Run container as the current host user.  This stops all generated files being owned by root.
 - `-v /home/ubuntu/data:/data` Mount the local directory `/home/ubuntu/data` to `/data` in the container.  Change the first half of the parameter as necessary to mount in your data files.
 
-Feel free to replace the `bacteria_tradis` script with whatever script you wish to use in this package, and provide whatever
-argument make sense for that script.
+Replace `<program and args>` with whatever script you wish to use in this package, and provide whatever arguments make sense for that script.
 
 
 ## Contributing
