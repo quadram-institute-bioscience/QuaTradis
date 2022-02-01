@@ -74,24 +74,25 @@ instructions for each package instead of running the commands below.
   * make
   * gcc
   * python3
-  * r-base
+  * python3-pip
+  * r >= 3.6
 
 ```bash
-apt-get update -qq && \
-apt-get install -y bzip2 default-jre gcc locales make r-base unzip wget && \
-apt-get install -y bwa minimap2 smalt
+sudo apt-get update -qq && \
+sudo apt-get install -y bzip2 default-jre gcc locales make python3-pip r-base unzip wget && \
+sudo apt-get install -y bwa minimap2 smalt
 ```
   
 With the core packages installed we also need some python packages.  These can be installed using pip as described here:
 
 ```bash
-pip install Bio pysam numpy pytest semantic-version snakeviz
+pip3 install Bio cython pysam numpy pytest semantic-version snakeviz
 ```
 
 Finally, we also need a few R packages:
 
 ```bash
-Rscript -e "install.packages('BiocManager')" -e "BiocManager::install()" -e "BiocManager::install(c('edgeR','getopt', 'MASS'))"
+sudo Rscript -e "install.packages('BiocManager')" -e "BiocManager::install()" -e "BiocManager::install(c('edgeR','getopt', 'MASS'))"
 ```
 
 
@@ -103,6 +104,21 @@ cd QuaTradis
 make dev
 ```
 QuaTradis scripts should now be available.
+
+
+#### Troubleshooting installations on old distributions
+
+Older distributions of linux such as ubuntu 18 come packaged with R 3.4.  In this case R packages such as MASS and EdgeR will not install correctly with the commands mentioned above.  In this case we would recommend updating to R 3.6+.  In this snippet we show how to update R to 4.  However be cautious as this snippet will uninstall the current version of R, so be sure this is what you want to do, or figure out another way of running the versions side by side.
+
+```bash
+sudo apt install libssl-dev libcurl4-openssl-dev libxml2-dev
+sudo apt remove r-base* --purge
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
+sudo add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu bionic-cran40/'
+sudo apt update
+sudo apt install r-base
+```
+
 
 <!--
 ### Bioconda
