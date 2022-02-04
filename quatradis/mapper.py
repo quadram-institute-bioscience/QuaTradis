@@ -36,14 +36,15 @@ def calc_read_length(reads_file):
 
 
 def index_reference(reference, refname, read_length, mapper="bwa", dry_run=False):
+    ignore_output = " > /dev/null 2>&1"
     if mapper == "smalt":
         k = smalt_k_default(read_length)
         s = smalt_s_default(read_length)
-        index_cmd = "smalt index -k " + str(k) + " -s " + str(s) + " " + refname + " " + reference + " > /dev/null 2>&1"
+        index_cmd = "smalt index -k " + str(k) + " -s " + str(s) + " " + refname + " " + reference + ignore_output
     elif mapper == "bwa":
-        index_cmd = "bwa index " + reference + " > /dev/null 2>&1"
+        index_cmd = "bwa index " + reference + ignore_output
     elif mapper == "minimap2" or mapper == "minimap2_long":
-        index_cmd = "minimap2 -d " + refname + " " + reference + " > /dev/null 2>&1"
+        index_cmd = "minimap2 -d " + refname + " " + reference + ignore_output
     else:
         raise ValueError("Unrecognised mapper requested")
 
@@ -84,7 +85,12 @@ def smalt_k_default(read_length):
 
 
 def smalt_s_default(read_length):
-    return 4 if read_length < 70 else 13 if read_length > 100 else 6
+    if read_length < 70:
+        return 4
+    elif read_length > 100:
+        return 13
+    else:
+        return 6
 
 
 def sam2bam(sam_file_in, bam_file_out, threads=1):

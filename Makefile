@@ -11,7 +11,10 @@ install:
 	python3 setup.py install
 
 test:
-	cd tests && pytest
+	cd tests && pytest --cov --cov-report=xml --doctest-modules
+
+sonar: test
+	sonar-scanner
 
 clean:
 	rm -r build dist quatradis.egg-info

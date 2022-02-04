@@ -126,7 +126,51 @@ def trim_read(feature, trim5=0, trim3=0):
     return read_start, read_end
 
 
-def analyse_insert_sites(embl_file, plot_files, joined_output=False, output_suffix="tradis_gene_insert_sites.csv", trim5=False, trim3=False):
+def relevant_feature(feature, cds_coordinates):
+    """
+    If this feature is a gene within a known CDS then this is not relevant for us as we we'll handle that case when we get to
+    the CDS feature instead.  Also if this feature is not a CDS, polypeptide or gene type then we don't need to consider it
+    """
+
+    if feature.type == "gene" and is_gene_within_cds(cds_coordinates, feature):
+        return False
+
+    if not (feature.type == "CDS" or feature.type == "polypeptide" or feature.type == "gene"):
+        return False
+
+    return True
+
+
+def count_inserts(insert_sites, read_start, read_end):
+    count = 0
+    inserts = 0
+    for j in range(read_start, read_end + 1):
+        count += insert_sites[j]
+        if insert_sites[j] > 0:
+            inserts += 1
+    return count, inserts
+
+
+def create_row(feature, insert_sites, trim5=False, trim3=False):
+    feature_id = get_feature_id(feature)
+    gene_name = get_gene_name(feature)
+    product_value = get_product_value(feature)
+    rna_value = 1 if 'ncRNA' in feature.qualifiers else 0
+
+    # Optionally trim read based on user settings
+    read_start, read_end = trim_read(feature, trim5, trim3)
+
+    count, inserts = count_inserts(insert_sites, read_start, read_end)
+
+    ins_index = inserts / (read_end - read_start)
+    gene_length = feature.location.end - feature.location.start
+
+    return [feature_id, gene_name, rna_value, feature.location.start + 1, feature.location.end, feature.strand, count,
+            ins_index, gene_length, inserts, product_value]
+
+
+def analyse_insert_sites(embl_file, plot_files, joined_output=False, output_suffix="tradis_gene_insert_sites.csv",
+                         trim5=False, trim3=False):
     """
     Take in a plot file(s) and an embl file and produce a tab delimited file with insert site details to use as input to
     an another script to test for essentiality.
@@ -145,33 +189,6 @@ def analyse_insert_sites(embl_file, plot_files, joined_output=False, output_suff
                 recs = SeqIO.parse(inputHandle, "embl")
                 for rec in recs:
                     for feature in rec.features:
-                        # Skip if this feature is a gene within a known CDS, as we we'll handle that case when we get to
-                        # the CDS feature instead
-                        if feature.type == "gene" and is_gene_within_cds(cds_coordinates, feature):
-                            continue
-
-                        # Skip if this feature is not a CDS, polypeptide or gene type
-                        if not (feature.type == "CDS" or feature.type == "polypeptide" or feature.type == "gene"):
-                            continue
-
-                        feature_id = get_feature_id(feature)
-                        gene_name = get_gene_name(feature)
-                        product_value = get_product_value(feature)
-                        rna_value = 1 if 'ncRNA' in feature.qualifiers else 0
-
-                        # Optionally trim read based on user settings
-                        read_start, read_end = trim_read(feature, trim5, trim3)
-
-                        count = 0
-                        inserts = 0
-                        for j in range(read_start, read_end + 1):
-                            count += insert_sites[j]
-                            if insert_sites[j] > 0:
-                                inserts += 1
-
-                        ins_index = inserts / (read_end - read_start)
-                        gene_length = feature.location.end - feature.location.start
-
-                        row = [feature_id, gene_name, rna_value, feature.location.start+1, feature.location.end, feature.strand, count,
-                               ins_index, gene_length, inserts, product_value]
-                        writer.writerow(row)
+                        if relevant_feature(feature, cds_coordinates):
+                            row = create_row(feature, insert_sites, trim5, trim3)
+                            writer.writerow(row)

@@ -4,4 +4,5 @@ matplotlib
 numpy
 pandas
 pyqt5
+pytest-cov
 semantic-version

@@ -52,9 +52,10 @@ def input_alignment_mode(alignment_file):
     elif ext == '.cram':
         mode = "rc"
     else:
-        raise Exception("Invalid alignment format: {}".format(ext))
+        raise ValueError("Invalid alignment format: {}".format(ext))
 
     return mode
+
 
 def output_alignment_mode(alignment_file):
     """
@@ -71,6 +72,6 @@ def output_alignment_mode(alignment_file):
     elif ext == '.cram':
         mode = "wc"
     else:
-        raise Exception("Invalid alignment format: {}".format(ext))
+        raise ValueError("Invalid alignment format: {}".format(ext))
 
     return mode
