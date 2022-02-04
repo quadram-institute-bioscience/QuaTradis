@@ -86,7 +86,7 @@ sudo apt-get install -y bwa minimap2 smalt
 With the core packages installed we also need some python packages.  These can be installed using pip as described here:
 
 ```bash
-pip3 install Bio cython pysam numpy pytest semantic-version snakeviz
+pip3 install Bio cython pysam numpy pytest-cov semantic-version snakeviz
 ```
 
 Finally, we also need a few R packages:
