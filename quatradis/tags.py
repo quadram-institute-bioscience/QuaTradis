@@ -1,7 +1,7 @@
 """
 Preparing reads
 """
-
+import os
 import re
 
 import pysam
@@ -9,18 +9,18 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from pysam.libcalignedsegment import CIGAR_OPS
 
-from quatradis.file_handle_helpers import *
+from quatradis import file_handle_helpers
 
 
-def add_tags(input_alignments, output_alignments="", verbose=False):
+def add_tags(input_alignments, output_alignments=""):
     """
     Takes a SAM/BAM/CRAM file and creates a new BAM with tr and tq tags added to the sequence and quality strings.
     """
     if not output_alignments:
         output_alignments = os.path.splitext(input_alignments)[0] + ".tr.bam"
 
-    with pysam.AlignmentFile(input_alignments, mode=input_alignment_mode(input_alignments)) as alignments_in:
-        with pysam.AlignmentFile(output_alignments, mode=output_alignment_mode(output_alignments), header=alignments_in.header) as alignments_out:
+    with pysam.AlignmentFile(input_alignments, mode=file_handle_helpers.input_alignment_mode(input_alignments)) as alignments_in:
+        with pysam.AlignmentFile(output_alignments, mode=file_handle_helpers.output_alignment_mode(output_alignments), header=alignments_in.header) as alignments_out:
             for a_in in alignments_in.fetch():
                 a_tagged = add_tags_to_alignment(a_in)
                 alignments_out.write(a_tagged)
@@ -72,8 +72,8 @@ def remove_tags(seq_file_in, seq_file_out="", tag="", max_mismatches=0, filter=T
         seq_file_out = os.path.splitext(seq_file_out)[0]
         seq_file_out += ".rmtag.fastq.gz"
 
-    input_opener, input_mode = reader_opener(seq_file_in)
-    output_opener, output_mode = writer_opener(seq_file_out)
+    input_opener, input_mode = file_handle_helpers.reader_opener(seq_file_in)
+    output_opener, output_mode = file_handle_helpers.writer_opener(seq_file_out)
 
     nb_input_reads = 0
     nb_output_reads = 0
@@ -144,7 +144,7 @@ def tags_in_alignment(mapped_reads):
     :param mapped_reads: The SAM/BAM/CRAM file to check for a tradis tag
     :return: True is tradis tag is present in alignments, false otherwise
     """
-    mode = input_alignment_mode(mapped_reads)
+    mode = file_handle_helpers.input_alignment_mode(mapped_reads)
 
     alignments = pysam.AlignmentFile(mapped_reads, mode)
     #TODO check this doesn't take ages for big files

@@ -1,8 +1,11 @@
 .idea/
+.scannerwork/
 quatradis.egg-info/
 build/
 dist/
 quatradis/__pycache__/
 tests/__pycache__/
 tests/temp/
+tests/.coverage
+tests/coverage.xml
 venv/

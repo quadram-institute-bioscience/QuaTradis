@@ -28,7 +28,7 @@ class InsertSitePlotter:
     # Work out if padding is needed and return it as a formatted string.  Also update the current position.
     def create_padding_string(self, new_position):
         padding_string = ""
-        for i in range(self.current_position + 1, new_position):
+        for _ in range(self.current_position + 1, new_position):
             padding_string += "0 0\n"
         self.current_position = new_position
         return padding_string
@@ -61,29 +61,42 @@ class InsertSitePlotter:
         return nb_unique_insertion_sites
 
 
+def op_is_aligned(op):
+    return op == CIGAR_OPS.CMATCH or op == CIGAR_OPS.CDIFF or op == CIGAR_OPS.CEQUAL
+
+
+def op_is_not_on_ref(op):
+    return op == CIGAR_OPS.CSOFT_CLIP or op == CIGAR_OPS.CDEL or op == CIGAR_OPS.CREF_SKIP
+
+
+def process_op(op, number, start, end, current_coordinate):
+    if op_is_aligned(op):
+        if start == 0:
+            start = current_coordinate
+        current_coordinate += number
+        if end < current_coordinate:
+            end = current_coordinate - 1
+    elif op_is_not_on_ref(op):
+        if start == 0:
+            current_coordinate -= number
+            start = current_coordinate
+        current_coordinate += number
+        if end < current_coordinate:
+            end = current_coordinate - 1
+    # Ignore inserts
+    #elif op == CIGAR_OPS.CINS:
+    #    continue
+
+    return start, end, current_coordinate
+
+
 def cigar_parser(cigar, coord):
     start = 0
     end = 0
     current_coordinate = coord
     for action, number in cigar:
-
         op = CIGAR_OPS(action)
-
-        if op == CIGAR_OPS.CMATCH or op == CIGAR_OPS.CDIFF or op == CIGAR_OPS.CEQUAL:
-            if start == 0:
-                start = current_coordinate
-            current_coordinate += number
-            if end < current_coordinate:
-                end = current_coordinate - 1
-        elif op == CIGAR_OPS.CSOFT_CLIP or op == CIGAR_OPS.CDEL or op == CIGAR_OPS.CREF_SKIP:
-            if start == 0:
-                current_coordinate -= number
-                start = current_coordinate
-            current_coordinate += number
-            if end < current_coordinate:
-                end = current_coordinate - 1
-        elif op == CIGAR_OPS.CINS:
-            continue
+        start, end, current_coordinate = process_op(op, number, start, end, current_coordinate)
 
     return start, end
 

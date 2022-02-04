@@ -41,7 +41,7 @@ class AnalyseInsertSitesTest(unittest.TestCase):
                                                             "data/isp_analyse/025mgLTricRep1.insert_site_plot_short.gz"],
                                          joined_output=True)
         self.assertTrue(os.path.exists("joined_output.tradis_gene_insert_sites.csv"))
-        #os.system("rm *.tradis_gene_insert_sites.csv")
+        os.system("rm *.tradis_gene_insert_sites.csv")
 
     def test_gene_name_good(self):
         f = SeqFeature()
