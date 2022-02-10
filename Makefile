@@ -10,8 +10,25 @@ dev:
 install:
 	python3 setup.py install
 
-test:
+unit_test:
 	cd tests && pytest --cov --cov-report=xml --doctest-modules
+
+script_test:
+	./scripts/add_tradis_tags --help
+	./scripts/check_tradis_tags --help
+	./scripts/filter_tradis_tags --help
+	./scripts/remove_tradis_tags --help
+	./scripts/index_reference --help
+	./scripts/tradis --help
+	#./scripts/tradis_comparison.R --help
+	#./scripts/tradis_essentiality.R --help
+	./scripts/tradis_gene_insert_sites --help
+	./scripts/tradis_nf --help
+	./scripts/tradis_plot --help
+
+
+test: unit_test script_test
+
 
 sonar: test
 	sonar-scanner
