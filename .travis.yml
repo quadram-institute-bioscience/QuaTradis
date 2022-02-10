@@ -6,6 +6,8 @@ services:
 install:
   - make docker-build
   - docker run quadraminstitute/quatradis:dev /bin/sh -c "cd /quatradis/tests; pytest;"
+  - echo "Tests passed in container"
+    
 # Uncomment when we have confirmed travis is working correctly
 #branches:
 #  only:
