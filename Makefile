@@ -14,17 +14,24 @@ unit_test:
 	cd tests && pytest --cov --cov-report=xml --doctest-modules
 
 script_test:
-	./scripts/add_tradis_tags --help
-	./scripts/check_tradis_tags --help
-	./scripts/filter_tradis_tags --help
-	./scripts/remove_tradis_tags --help
-	./scripts/index_reference --help
-	./scripts/tradis --help
+	./scripts/tradis --help 2>&1 | grep tradis > /dev/null
+	./scripts/tradis tags --help | grep tags > /dev/null
+	./scripts/tradis tags add --help | grep tags > /dev/null
+	./scripts/tradis tags check --help | grep tags > /dev/null
+	./scripts/tradis tags filter --help | grep tags > /dev/null
+	./scripts/tradis tags remove --help | grep tags > /dev/null
+	./scripts/tradis plot --help | grep plot > /dev/null
+	./scripts/tradis plot create --help | grep plot > /dev/null
+	./scripts/tradis plot combine --help | grep plot > /dev/null
+	./scripts/tradis plot analyse --help | grep plot > /dev/null
+	./scripts/tradis utils --help | grep utils > /dev/null
+	./scripts/tradis utils index --help | grep utils > /dev/null
+	./scripts/tradis pipeline --help | grep pipeline > /dev/null
+	./scripts/tradis pipeline single --help | grep pipeline > /dev/null
+	./scripts/tradis pipeline nextflow --help | grep pipeline > /dev/null
 	#./scripts/tradis_comparison.R --help
 	#./scripts/tradis_essentiality.R --help
-	./scripts/tradis_gene_insert_sites --help
-	./scripts/tradis_nf --help
-	./scripts/tradis_plot --help
+
 
 
 test: unit_test script_test

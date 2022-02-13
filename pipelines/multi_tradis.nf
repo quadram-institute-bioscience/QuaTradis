@@ -116,7 +116,7 @@ process indexReference {
     val 'ok' into ch_index_reference
 
     """
-    index_reference ${reference_fa} ${params.refname}
+    tradis utils index ${reference_fa} ${params.refname}
     """
 }
 
@@ -135,7 +135,7 @@ process tradis {
     file "*"
 
     """
-    tradis ${fq} ${reference_fa} --output_prefix=tradis_out ${opt_aligner} ${opt_threads} ${opt_tag} ${opt_mismatch} ${opt_mapping_score}
+    tradis pipeline single ${fq} ${reference_fa} --output_prefix=tradis_out ${opt_aligner} ${opt_threads} ${opt_tag} ${opt_mismatch} ${opt_mapping_score}
     """
 }
 
