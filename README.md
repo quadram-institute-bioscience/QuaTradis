@@ -237,7 +237,7 @@ directly from the `tests` directory.
 [![Build Status](https://img.shields.io/travis/com/quadram-institute-bioscience/QuaTradis/master)](https://app.travis-ci.com/github/quadram-institute-bioscience/QuaTradis)
 
 Continuous integration is delivered via [travis](https://app.travis-ci.com/github/quadram-institute-bioscience/QuaTradis).
-The [travis pipeline](.travis.yml) is designed to build and test commits from PRs and the master branch.  For `master`
+The [travis pipeline](.travis.yml) is designed to build and test all commits pushed to github.  For `master`
 branch builds, travis will also publish the latest docker image to [dockerhub](https://hub.docker.com/r/quadraminstitute/quatradis) 
 if that commit is tagged (see below). 
 

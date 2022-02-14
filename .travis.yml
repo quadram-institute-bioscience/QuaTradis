@@ -3,18 +3,12 @@ language: python
 services:
   - docker
 
-
 install:
   - make docker-build
 
 # Run tests
 script:
   - docker run quadraminstitute/quatradis:dev /bin/sh -c "cd /quatradis && make test"
-
-# This still allows PRs to be built because of settings in travis CI
-branches:
-  only:
-    - master
 
 # Only push docker image to dockerhub on master branch with tagged commit
 deploy:

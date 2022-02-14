@@ -71,7 +71,8 @@ bump_version: update_master_branch
 release:
 	git commit VERSION -m "chore(package): Bump version up to $(shell cat VERSION)"
 	git tag "$(shell cat VERSION)"
-	git push origin "$(shell cat VERSION)" --follow-tags
+	git push origin master
+	git push origin master --tags
 
 
 release_major: bump_major_version release
