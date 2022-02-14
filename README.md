@@ -3,15 +3,13 @@
 A set of tools to analyse the output from TraDIS analyses  
 
  
-[![Build Status](https://img.shields.io/travis/com/quadram-institute-bioscience/QuaTradis/master)](https://app.travis-ci.com/github/quadram-institute-bioscience/QuaTradis) [![Docker Build Status](https://img.shields.io/docker/build/quadraminstitute/quatradis.svg)](https://hub.docker.com/r/quadraminstitute/quatradis) [![Docker Pulls](https://img.shields.io/docker/pulls/quadraminstitite/quatradis.svg)](https://hub.docker.com/r/quadraminstitute/quatradis)  
-<!--
+[![Build Status](https://img.shields.io/travis/com/quadram-institute-bioscience/QuaTradis/master)](https://app.travis-ci.com/github/quadram-institute-bioscience/QuaTradis) 
+[![Docker Build Status](https://img.shields.io/docker/build/quadraminstitute/quatradis.svg)](https://hub.docker.com/r/quadraminstitute/quatradis) [![Docker Pulls](https://img.shields.io/docker/pulls/quadraminstitite/quatradis.svg)](https://hub.docker.com/r/quadraminstitute/quatradis)  
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/recipes/quatradis/README.html)
--->
+[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-brightgreen.svg)](https://github.com/quadram-institute-bioscience/QuaTradis/blob/master/LICENSE) [![status](https://img.shields.io/badge/Bioinformatics-10.1093-brightgreen.svg)](https://doi.org/10.1093/bioinformatics/btw022)  
 <!--
 [![codecov](https://codecov.io/gh/sanger-pathogens/bio-tradis/branch/master/graph/badge.svg)](https://codecov.io/gh/sanger-pathogens/bio-tradis)
 -->
-[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-brightgreen.svg)](https://github.com/quadram-institute-bioscience/QuaTradis/blob/master/LICENSE) [![status](https://img.shields.io/badge/Bioinformatics-10.1093-brightgreen.svg)](https://doi.org/10.1093/bioinformatics/btw022)  
-
 ## Contents
   * [Introduction](#introduction)
   * [Installation](#installation)
@@ -55,12 +53,17 @@ not been tested.
 There are multiple paths to installing QuaTradis depending on your use case.
 
 - From source if you want to extend or debug functions
-<!--- From bioconda, for a simple installation and user experience-->
-- From docker, if you want to guarentee you are using the exact official version (although comes with a little extra complexity to run)
+- From bioconda, for a simple installation and user experience
+- From docker, if you want to guarantee you are using the exact official version (although it comes with a little extra complexity to run)
 
 Each installation method is described below.
 
 ### From source
+
+[![Github last commit](https://img.shields.io/github/last-commit/quadram-institute-bioscience/quatradis)](https://github.com/quadram-institute-bioscience/QuaTradis)
+[![Github last release](https://img.shields.io/github/release-date/quadram-institute-bioscience/quatradis)](https://github.com/quadram-institute-bioscience/QuaTradis)
+[![Github downloads](https://img.shields.io/github/downloads/quadram-institute-bioscience/quatradis/total)](https://github.com/quadram-institute-bioscience/QuaTradis)
+[![Github latest version](https://img.shields.io/github/tag/quadram-institute-bioscience/quatradis?sort=semver)](https://github.com/quadram-institute-bioscience/QuaTradis)  
 
 QuaTradis has the following dependencies so install these first.  We provide some guidelines on how to install on a debian
 based system here, but if you are using another OS the actual commands may vary.  Also you may wish to install some of
@@ -120,20 +123,29 @@ sudo apt install r-base
 ```
 
 
-<!--
 ### Bioconda
-Install conda and enable the bioconda channel.
 
-[![Anaconda-Server Badge](https://anaconda.org/bioconda/biotradis/badges/version.svg)](https://anaconda.org/bioconda/biotradis)
-[![Anaconda-Server Badge](https://anaconda.org/bioconda/biotradis/badges/latest_release_date.svg)](https://anaconda.org/bioconda/biotradis)
-[![Anaconda-Server Badge](https://anaconda.org/bioconda/biotradis/badges/platforms.svg)](https://anaconda.org/bioconda/biotradis)
-[![Anaconda-Server Badge](https://anaconda.org/bioconda/biotradis/badges/downloads.svg)](https://anaconda.org/bioconda/biotradis)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/quatradis/badges/version.svg)](https://anaconda.org/bioconda/quatradis)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/quatradis/badges/latest_release_date.svg)](https://anaconda.org/bioconda/quatradis)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/quatradis/badges/platforms.svg)](https://anaconda.org/bioconda/quatradis)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/quatradis/badges/downloads.svg)](https://anaconda.org/bioconda/quatradis)
+
+Before installing quatradis via conda, first install conda and enable the bioconda channel as described in steps 1 and 2 
+[here](http://bioconda.github.io/user/install.html#set-up-channels).
 
 ```
-conda install -c bioconda quatradis=xxx
+conda install -c bioconda quatradis
 ```
--->
+
+Note: If this is the first time you have installed a conda package on your system this may take some time.
+
 ### From Docker
+
+[![Docker Build Status](https://img.shields.io/docker/build/quadraminstitute/quatradis.svg)](https://hub.docker.com/r/quadraminstitute/quatradis) 
+[![Docker Pulls](https://img.shields.io/docker/pulls/quadraminstitite/quatradis.svg)](https://hub.docker.com/r/quadraminstitute/quatradis)
+[![Docker Version](https://img.shields.io/docker/v/quadraminstitite/quatradis?sort=semver)](https://hub.docker.com/r/quadraminstitute/quatradis)  
+[![Docker Image Size](https://img.shields.io/docker/image-size/quadraminstitite/quatradis?sort=semver)](https://hub.docker.com/r/quadraminstitute/quatradis)  
+
 QuaTradis can be run in a Docker container. First install Docker, then pull the QuaTradis image from dockerhub:
 
     docker pull quadraminstitute/quatradis
@@ -152,15 +164,23 @@ these functions is beyond this document, and left to individual developers to fi
 QuaTradis developers 
 
 ### Scripts
-Executable scripts to carry out most of the listed functions are available in the `bin`:
 
-* `check_tradis_tags` - Prints 1 if tags are present in alignment file, prints 0 if not.
-* `add_tradis_tags` - Generates a BAM file with tags added to read strings.
-* `filter_tradis_tags` - Create a fastq file containing reads that match the supplied tag
-* `remove_tradis_tags` - Creates a fastq file containing reads with the supplied tag removed from the sequences
-* `tradis_plot` - Creates an gzipped insertion site plot
-* `bacteria_tradis` - Runs complete analysis, starting with a fastq file and produces mapped BAM files and plot files for each file in the given file list and a statistical summary of all files. Note that the -f option expects a text file containing a list of fastq files, one per line. This script can be run with or without supplying tags. 
-* `tradis_gene_insert_sites` - Takes genome annotation in embl format along with plot files produced by bacteria_tradis and generates tab-delimited files containing gene-wise annotations of insert sites and read counts.
+Executable scripts to carry out most of the listed functions are available in the `scripts`, although these should get
+installed onto your path after installation.  All tradis functions (except those delivered by R scripts) have been condensed 
+into a single executable named `tradis`.  Under this there are multiple sub-functions:
+
+* `tags`
+  * `add` - Generates a BAM file with tags added to read strings.
+  * `check`- Prints 1 if tags are present in alignment file, prints 0 if not.
+  * `filter` - Create a fastq file containing reads that match the supplied tag.
+  * `remove` - Creates a fastq file containing reads with the supplied tag removed from the sequences.
+* `plot`
+  * `create` - Creates an gzipped insertion site plot from a set of alignments.
+  * `combine` - Combines several plots into 1.
+  * `analyse` - Takes genome annotation in embl format along with plot files produced by bacteria_tradis and generates tab-delimited files containing gene-wise annotations of insert sites and read counts.
+* `pipeline`
+  * `single` - Runs complete analysis, starting with a fastq file and produces mapped BAM files and plot files for each file in the given file list and a statistical summary of all files. Note that the -f option expects a text file containing a list of fastq files, one per line. This script can be run with or without supplying tags. 
+  * `nextflow` - Same as single, put can process multiple fastq files in parallel using nextflow.  This is capable of distributing work over a cluster.
 * `tradis_essentiality.R` - Takes a single tab-delimited file from tradis_gene_insert_sites to produce calls of gene essentiality. Also produces a number of diagnostic plots.
 * `tradis_comparison.R` - Takes tab files to compare two growth conditions using edgeR. This analysis requires experimental replicates.
 
@@ -214,12 +234,16 @@ directly from the `tests` directory.
 
 ### CI
 
+[![Build Status](https://img.shields.io/travis/com/quadram-institute-bioscience/QuaTradis/master)](https://app.travis-ci.com/github/quadram-institute-bioscience/QuaTradis)
+
 Continuous integration is delivered via [travis](https://app.travis-ci.com/github/quadram-institute-bioscience/QuaTradis).
 The [travis pipeline](.travis.yml) is designed to build and test commits from PRs and the master branch.  For `master`
 branch builds, travis will also publish the latest docker image to [dockerhub](https://hub.docker.com/r/quadraminstitute/quatradis) 
 if that commit is tagged (see below). 
 
 ### Versioning
+
+[![Github latest version](https://img.shields.io/github/tag/quadram-institute-bioscience/quatradis?sort=semver)](https://github.com/quadram-institute-bioscience/QuaTradis)  
 
 When administrators (as defined by github) feel it is time to create a new release and bump the version there are 3 different
 make targets to choose from depending on which kind of release is required:
