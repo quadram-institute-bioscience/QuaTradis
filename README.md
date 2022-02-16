@@ -4,7 +4,7 @@ A set of tools to analyse the output from TraDIS analyses
 
  
 [![Build Status](https://img.shields.io/travis/com/quadram-institute-bioscience/QuaTradis/master)](https://app.travis-ci.com/github/quadram-institute-bioscience/QuaTradis) 
-[![Docker Build Status](https://img.shields.io/docker/build/sbastkowski/quatradis.svg)](https://hub.docker.com/r/sbastkowski/quatradis) [![Docker Pulls](https://img.shields.io/docker/pulls/sbastkowski/quatradis.svg)](https://hub.docker.com/r/sbastkowski/quatradis)  
+[![Docker Pulls](https://img.shields.io/docker/pulls/sbastkowski/quatradis.svg)](https://hub.docker.com/r/sbastkowski/quatradis)
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/recipes/quatradis/README.html)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-brightgreen.svg)](https://github.com/quadram-institute-bioscience/QuaTradis/blob/master/LICENSE) [![status](https://img.shields.io/badge/Bioinformatics-10.1093-brightgreen.svg)](https://doi.org/10.1093/bioinformatics/btw022)  
 <!--
@@ -14,7 +14,7 @@ A set of tools to analyse the output from TraDIS analyses
   * [Introduction](#introduction)
   * [Installation](#installation)
     * [From source](#from-source)
-    <!--* [From Bioconda](#from-bioconda)-->
+    * [From bioconda](#from-bioconda)
     * [From docker](#from-docker)
   * [Usage](#usage)
     * [Scripts](#scripts)
@@ -123,7 +123,7 @@ sudo apt install r-base
 ```
 
 
-### Bioconda
+### From Bioconda
 
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/quatradis/badges/version.svg)](https://anaconda.org/bioconda/quatradis)
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/quatradis/badges/latest_release_date.svg)](https://anaconda.org/bioconda/quatradis)
@@ -141,9 +141,8 @@ Note: If this is the first time you have installed a conda package on your syste
 
 ### From Docker
 
-[![Docker Build Status](https://img.shields.io/docker/build/sbastkowski/quatradis.svg)](https://hub.docker.com/r/sbastkowski/quatradis) 
 [![Docker Pulls](https://img.shields.io/docker/pulls/sbastkowski/quatradis.svg)](https://hub.docker.com/r/sbastkowski/quatradis)
-[![Docker Version](https://img.shields.io/docker/v/sbastkowski/quatradis?sort=semver)](https://hub.docker.com/r/sbastkowski/quatradis)  
+[![Docker Version](https://img.shields.io/docker/v/sbastkowski/quatradis?sort=semver)](https://hub.docker.com/r/sbastkowski/quatradis)
 [![Docker Image Size](https://img.shields.io/docker/image-size/sbastkowski/quatradis?sort=semver)](https://hub.docker.com/r/sbastkowski/quatradis)  
 
 QuaTradis can be run in a Docker container. First install Docker, then pull the QuaTradis image from dockerhub:
