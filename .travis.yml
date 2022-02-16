@@ -8,7 +8,7 @@ install:
 
 # Run tests
 script:
-  - docker run quadraminstitute/quatradis:dev /bin/sh -c "cd /quatradis && make test"
+  - docker run sbastkowski/quatradis:dev /bin/sh -c "cd /quatradis && make test"
 
 # Only push docker image to dockerhub on master branch with tagged commit
 deploy:
