@@ -4,7 +4,7 @@ A set of tools to analyse the output from TraDIS analyses
 
  
 [![Build Status](https://img.shields.io/travis/com/quadram-institute-bioscience/QuaTradis/master)](https://app.travis-ci.com/github/quadram-institute-bioscience/QuaTradis) 
-[![Docker Build Status](https://img.shields.io/docker/build/quadraminstitute/quatradis.svg)](https://hub.docker.com/r/quadraminstitute/quatradis) [![Docker Pulls](https://img.shields.io/docker/pulls/quadraminstitite/quatradis.svg)](https://hub.docker.com/r/quadraminstitute/quatradis)  
+[![Docker Build Status](https://img.shields.io/docker/build/sbastkowski/quatradis.svg)](https://hub.docker.com/r/sbastkowski/quatradis) [![Docker Pulls](https://img.shields.io/docker/pulls/sbastkowski/quatradis.svg)](https://hub.docker.com/r/sbastkowski/quatradis)  
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/recipes/quatradis/README.html)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-brightgreen.svg)](https://github.com/quadram-institute-bioscience/QuaTradis/blob/master/LICENSE) [![status](https://img.shields.io/badge/Bioinformatics-10.1093-brightgreen.svg)](https://doi.org/10.1093/bioinformatics/btw022)  
 <!--
@@ -141,16 +141,16 @@ Note: If this is the first time you have installed a conda package on your syste
 
 ### From Docker
 
-[![Docker Build Status](https://img.shields.io/docker/build/quadraminstitute/quatradis.svg)](https://hub.docker.com/r/quadraminstitute/quatradis) 
-[![Docker Pulls](https://img.shields.io/docker/pulls/quadraminstitite/quatradis.svg)](https://hub.docker.com/r/quadraminstitute/quatradis)
-[![Docker Version](https://img.shields.io/docker/v/quadraminstitite/quatradis?sort=semver)](https://hub.docker.com/r/quadraminstitute/quatradis)  
-[![Docker Image Size](https://img.shields.io/docker/image-size/quadraminstitite/quatradis?sort=semver)](https://hub.docker.com/r/quadraminstitute/quatradis)  
+[![Docker Build Status](https://img.shields.io/docker/build/sbastkowski/quatradis.svg)](https://hub.docker.com/r/sbastkowski/quatradis) 
+[![Docker Pulls](https://img.shields.io/docker/pulls/sbastkowski/quatradis.svg)](https://hub.docker.com/r/sbastkowski/quatradis)
+[![Docker Version](https://img.shields.io/docker/v/sbastkowski/quatradis?sort=semver)](https://hub.docker.com/r/sbastkowski/quatradis)  
+[![Docker Image Size](https://img.shields.io/docker/image-size/sbastkowski/quatradis?sort=semver)](https://hub.docker.com/r/sbastkowski/quatradis)  
 
 QuaTradis can be run in a Docker container. First install Docker, then pull the QuaTradis image from dockerhub:
 
     docker pull quadraminstitute/quatradis
 
-if you wish to use a specific version, check what tags are available in [dockerhub](https://hub.docker.com/r/quadraminstitute/quatradis) 
+if you wish to use a specific version, check what tags are available in [dockerhub](https://hub.docker.com/r/sbastkowski/quatradis) 
 and add `:<tagversion>` to the previous command (replacing with whatever version you wish to use).
 
 
@@ -265,8 +265,3 @@ QuaTradis is free software, licensed under [GPLv3](LICENSE).
 ## Feedback/Issues
 Please report any issues to the [issues page](https://github.com/quadram-institute-bioscience/QuaTradis/issues), or contact
 the [developers](AUTHORS).
-
-## Citation
-If you use this software please cite:
-
-"The TraDIS toolkit: sequencing and analysis for dense transposon mutant libraries", Barquist L, Mayho M, Cummins C, Cain AK, Boinett CJ, Page AJ, Langridge G, Quail MA, Keane JA, Parkhill J. Bioinformatics. 2016 Apr 1;32(7):1109-11. doi: [10.1093/bioinformatics/btw022](https://doi.org/10.1093/bioinformatics/btw022). Epub 2016 Jan 21.
