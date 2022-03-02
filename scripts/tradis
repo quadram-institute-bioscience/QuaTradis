@@ -144,7 +144,7 @@ def single_pipeline_options(parser):
                         help='the tag to remove from fastq input (default: "")')
     parser.add_argument('-mm', '--mismatch', type=str, default=0,
                         help='number of mismatches allowed when matching tag (default: 0)')
-    parser.add_argument('-p", "--profile', dest='profile', action='store_true',
+    parser.add_argument('-p', '--profile', dest='profile', action='store_true',
                         help='Turn on profiling.  Prints out cumulative time in each function to stdout and to an output file (<output_prefix>.profile).  The profile file can be read by tools such as snakeviz.')
     parser.add_argument('-v', '--verbose', dest='verbose', action='store_true',
                         help='Add verbose output to console logs')

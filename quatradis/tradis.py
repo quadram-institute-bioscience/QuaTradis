@@ -31,6 +31,11 @@ def run_tradis(fastq, reference, output_prefix, tag="", mapper="bwa", threads=1,
 
     start = time.time()
 
+    outdir, prefix = os.path.split(output_prefix)
+
+    if outdir and not os.path.exists(outdir):
+        os.makedirs(outdir, exist_ok=True)
+
     detagged = output_prefix + ".rmtag.fastq.gz"
 
     if verbose:
