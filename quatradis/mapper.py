@@ -58,10 +58,10 @@ def index_reference(reference, refname, read_length, mapper="bwa", dry_run=False
 def map_reads(reads, reference, index, out_file, read_length, mapper="bwa", threads=1, dry_run=False):
 
     if mapper == "smalt":
-        align_cmd = "smalt map -x -n " + str(threads) + " " + index + " " + reads + " 1> " + out_file + " 2> align.stderr"
+        align_cmd = "smalt map -x -n " + str(threads) + " " + index + " " + reads + " 1> " + out_file + " 2> " + out_file + ".stderr"
     elif mapper == "bwa":
         k = min_seed_len_default(read_length)
-        align_cmd = "bwa mem -k " + str(k) + " -t " + str(threads) + " " + reference + " " + reads + " 1> " + out_file + " 2> align.stderr"
+        align_cmd = "bwa mem -k " + str(k) + " -t " + str(threads) + " " + reference + " " + reads + " 1> " + out_file + " 2> " + out_file + ".stderr"
     elif mapper == "minimap2":
         align_cmd = "minimap2 -c -o " + out_file + " -N 1 -ax sr " + reference + " " + reads
     elif mapper == "minimap2_long":
