@@ -50,10 +50,7 @@ def run_tradis(fastq, reference, output_prefix, tag="", mapper="bwa", threads=1,
     else:
         if verbose:
             print("..........Tagless mode selected, skipping read preparation step\n", file=sys.stderr)
-        if not fastq[-3:] == ".gz":
-            detagged = detagged[-3:]
-        if not os.path.exists(detagged):
-            os.symlink(fastq, detagged)
+        detagged = fastq
 
     index = output_prefix + "ref.index"
     mapped_reads = output_prefix + ".mapped.sam"
