@@ -27,7 +27,7 @@ class MapperTest(unittest.TestCase):
 
     def test_smalt_align_cmd(self):
         align_cmd, exitcode = mapper.map_reads("data/mapper/test.fastq", "data/mapper/smallref.fa", "test.ref", "mapped.out", 44, mapper="smalt", dry_run=True)
-        self.assertEqual("smalt map -x -n 1 test.ref data/mapper/test.fastq 1> mapped.out 2> align.stderr", align_cmd)
+        self.assertEqual("smalt map -x -n 1 test.ref data/mapper/test.fastq 1> mapped.out 2> mapped.out.stderr", align_cmd)
         self.assertEqual(0, exitcode)
 
     def test_bwa_index_cmd(self):
@@ -37,7 +37,7 @@ class MapperTest(unittest.TestCase):
 
     def test_bwa_align_cmd(self):
         align_cmd, exitcode = mapper.map_reads("data/mapper/test.fastq", "data/mapper/smallref.fa", "test.ref", "mapped.out", 44, mapper="bwa", dry_run=True)
-        self.assertEqual("bwa mem -k 13 -t 1 data/mapper/smallref.fa data/mapper/test.fastq 1> mapped.out 2> align.stderr", align_cmd)
+        self.assertEqual("bwa mem -k 13 -t 1 data/mapper/smallref.fa data/mapper/test.fastq 1> mapped.out 2> mapped.out.stderr", align_cmd)
         self.assertEqual(0, exitcode)
 
     # This test needs smalt installed
@@ -49,7 +49,6 @@ class MapperTest(unittest.TestCase):
         os.remove("test.ref.smi")
         os.system("rm mapped.*")
         os.remove("expected.smalt.nohead.sam")
-        os.remove("align.stderr")
 
     # This test need bwa installed
     def test_bwa(self):
@@ -57,7 +56,6 @@ class MapperTest(unittest.TestCase):
         os.system("grep -v ^@ mapped.out > mapped.nohead.out && grep -v ^@ data/mapper/expected.bwa.sam > expected.bwa.nohead.sam")
         self.assertTrue(filecmp.cmp("mapped.nohead.out", "expected.bwa.nohead.sam"))
         os.system("rm mapped.*")
-        os.remove("align.stderr")
         os.remove("expected.bwa.nohead.sam")
         os.system("rm data/mapper/smallref.fa.*")
 

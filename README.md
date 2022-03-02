@@ -147,7 +147,7 @@ Note: If this is the first time you have installed a conda package on your syste
 
 QuaTradis can be run in a Docker container. First install Docker, then pull the QuaTradis image from dockerhub:
 
-    docker pull quadraminstitute/quatradis
+    docker pull sbastkowski/quatradis
 
 if you wish to use a specific version, check what tags are available in [dockerhub](https://hub.docker.com/r/sbastkowski/quatradis) 
 and add `:<tagversion>` to the previous command (replacing with whatever version you wish to use).
@@ -194,7 +194,7 @@ should work however.  And once you find something that works for you, then a sim
 sigificantly.
 
 ```bash
-    docker run --rm -it -u $(id -u ${USER}):$(id -g ${USER}) -v /home/ubuntu/data:/data quadraminstitute/quatradis <program and args>
+    docker run --rm -it -u $(id -u ${USER}):$(id -g ${USER}) -v /home/ubuntu/data:/data sbastkowski/quatradis <program and args>
 ```
 
 To explain what is happening here you should familiarise yourself with [docker](https://docs.docker.com/engine/reference/commandline/run/) 
