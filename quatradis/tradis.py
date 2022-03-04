@@ -75,3 +75,49 @@ def run_tradis(fastq, reference, output_prefix, tag="", mapper="bwa", threads=1,
         print("Tradis has completed in", '{:.3f}'.format(end - start) + "s")
         print("Mapped reads are here:", bam)
         print("Plot files are here:", plot_file + ".*")
+
+
+def find_nextflow_file():
+    '''
+    Depending on how quatradis gets installed we may need to look in different locations for the nextflow pipeline file
+    '''
+
+
+    local_path = os.path.join(os.path.dirname(__file__), "..", "pipelines", "multi_tradis.nf")
+
+    if os.path.exists(local_path):
+        return local_path
+
+    docker_path = os.path.join("/quatradis", "pipelines", "multi_tradis.nf")
+
+    if os.path.exists(docker_path):
+        return docker_path
+
+    raise RuntimeError("Could not find nextflow pipeline file.")
+
+
+def run_multi_tradis(fastqs, reference, output_dir="results", nextflow_config="", tag="", aligner="bwa", threads=1, max_mismatches=0, cutoff=30, verbose=False):
+    if output_dir and not os.path.exists(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
+
+    with open(fastqs, 'r') as fql:
+        fastqs = [x.strip() for x in fql.readlines() if x]
+        cleaned_fastq_list = os.path.join(output_dir, "quadtradis_nf.fastq.txt")
+        with open(cleaned_fastq_list, 'w') as ofql:
+            ofql.write("\n".join(fastqs))
+
+    nfcfg_cmd = ""
+    if nextflow_config:
+        nfcfg_cmd = "-c " + nextflow_config
+
+    nf_pipeline = find_nextflow_file()
+
+    command = "nextflow " + nfcfg_cmd + " " + nf_pipeline + " --reference " + reference + \
+              " --fastqs " + cleaned_fastq_list + " --refname myref --outdir " + output_dir + \
+              " --tag " + tag + " --aligner " + aligner + " --threads " + str(threads) + \
+              " --mismatch " + str(max_mismatches) + " --mapping_score " + str(cutoff)
+
+    if verbose:
+        print("Attempting to execute nextflow pipeline with command:", command)
+
+    os.system(command)

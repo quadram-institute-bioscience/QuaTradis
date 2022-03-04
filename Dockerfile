@@ -4,7 +4,7 @@ FROM python:3.10-slim-bullseye
 
 # Install the dependencies
 RUN apt-get update -qq && \
-    apt-get install -y sudo bzip2 default-jre gcc gzip locales make r-base unzip wget && \
+    apt-get install -y sudo bzip2 default-jre gcc gzip locales make procps r-base unzip wget && \
     apt-get install -y bwa minimap2 smalt
 
 # Install nextflow
