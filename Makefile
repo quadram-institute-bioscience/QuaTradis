@@ -28,7 +28,7 @@ script_test:
 	./scripts/tradis utils index --help | grep utils > /dev/null
 	./scripts/tradis pipeline --help | grep pipeline > /dev/null
 	./scripts/tradis pipeline single --help | grep pipeline > /dev/null
-	./scripts/tradis pipeline nextflow --help | grep pipeline > /dev/null
+	./scripts/tradis pipeline multiple --help | grep pipeline > /dev/null
 	#./scripts/tradis_comparison.R --help
 	#./scripts/tradis_essentiality.R --help
 
