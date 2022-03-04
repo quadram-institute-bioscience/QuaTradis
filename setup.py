@@ -20,6 +20,8 @@ setup(name='quatradis',
       packages=['quatradis'],
       zip_safe=False,
       install_requires=requirements,
-      scripts=[   'scripts/tradis',
-                  'scripts/tradis_comparison.R',
-                  'scripts/tradis_essentiality.R'])
+      scripts=['scripts/tradis',
+               'scripts/tradis_comparison.R',
+               'scripts/tradis_essentiality.R',
+               'pipelines/multi_tradis.nf',
+               'pipelines/nextflow.config'])

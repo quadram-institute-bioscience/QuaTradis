@@ -1,13 +1,14 @@
 import os.path
 import sys
 import time
+import shutil
 
 from quatradis.tags import remove_tags
-from quatradis.mapper import index_and_align, sam2bam
+from quatradis.mapper import calc_read_length, index_reference, map_reads, sam2bam
 from quatradis.isp_create import plot
 
 
-def run_tradis(fastq, reference, output_prefix, tag="", mapper="bwa", threads=1, max_mismatches=0, cutoff=30, verbose=False):
+def run_tradis(fastq, reference, output_prefix, tag="", mapper="bwa", index=True, threads=1, max_mismatches=0, cutoff=30, verbose=False):
     """
     The main program logic for running tradis.  Tradis takes in a fastq file and a reference as input and generates
     transposon insertion site plot files for each reference sequence, along with stats related to this.
@@ -16,6 +17,7 @@ def run_tradis(fastq, reference, output_prefix, tag="", mapper="bwa", threads=1,
     :param output_prefix: Output prefix for output files
     :param tag: Tag to identify and trim in reads.  If left empty then we run tradis in tagless mode and map reads as is.
     :param mapper: The mapping tools to map reads to reference (bwa, smalt, minimap2, minimap2_long)
+    :param index: Whether or not to index the reference.  Set to false if reference is already indexed using the specified mapper.
     :param threads: Number of threads used for mapping and sorting alignments
     :param max_mismatches: number of mismatches allowed when matching tag
     :param cutoff: Quality score cutoff value.  Alignments with score less than this are not considered for analysis.
@@ -57,7 +59,10 @@ def run_tradis(fastq, reference, output_prefix, tag="", mapper="bwa", threads=1,
     mapped_reads = output_prefix + ".mapped.sam"
     if verbose:
         print("..........Map reads to reference using " + mapper + " (using " + str(threads) + " threads)\n", file=sys.stderr)
-    index_and_align(detagged, reference, index, mapped_reads, mapper, threads=threads)
+    read_length = calc_read_length(detagged)
+    if index:
+        index_reference(reference, index, read_length, mapper)
+    map_reads(detagged, reference, index, mapped_reads, read_length, mapper, threads)
 
     bam = output_prefix + ".mapped.bam"
     if verbose:
@@ -78,10 +83,9 @@ def run_tradis(fastq, reference, output_prefix, tag="", mapper="bwa", threads=1,
 
 
 def find_nextflow_file():
-    '''
+    """
     Depending on how quatradis gets installed we may need to look in different locations for the nextflow pipeline file
-    '''
-
+    """
 
     local_path = os.path.join(os.path.dirname(__file__), "..", "pipelines", "multi_tradis.nf")
 
@@ -93,10 +97,19 @@ def find_nextflow_file():
     if os.path.exists(docker_path):
         return docker_path
 
+    exe_path = shutil.which("multi_tradis.nf")
+
+    if os.path.exists(exe_path):
+        return exe_path
+
     raise RuntimeError("Could not find nextflow pipeline file.")
 
 
 def run_multi_tradis(fastqs, reference, output_dir="results", nextflow_config="", tag="", aligner="bwa", threads=1, max_mismatches=0, cutoff=30, verbose=False):
+    """
+    Use nextflow to process multiple fastqs in parallel
+    """
+
     if output_dir and not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
@@ -112,10 +125,14 @@ def run_multi_tradis(fastqs, reference, output_dir="results", nextflow_config=""
 
     nf_pipeline = find_nextflow_file()
 
-    command = "nextflow " + nfcfg_cmd + " " + nf_pipeline + " --reference " + reference + \
-              " --fastqs " + cleaned_fastq_list + " --refname myref --outdir " + output_dir + \
-              " --tag " + tag + " --aligner " + aligner + " --threads " + str(threads) + \
-              " --mismatch " + str(max_mismatches) + " --mapping_score " + str(cutoff)
+    command_args = ["nextflow", nfcfg_cmd, nf_pipeline, "--reference=" + reference,
+               "--fastqs=" + cleaned_fastq_list, "--refname=myref", "--outdir=" + output_dir,
+               ("--tag=" + tag) if tag else "", ("--aligner=" + aligner) if aligner else "",
+               ("--threads=" + str(threads)) if threads else "",
+               ("--mismatch=" + str(max_mismatches)) if max_mismatches else "",
+               ("--mapping_score=" + str(cutoff)) if cutoff else ""]
+
+    command = " ".join(command_args)
 
     if verbose:
         print("Attempting to execute nextflow pipeline with command:", command)

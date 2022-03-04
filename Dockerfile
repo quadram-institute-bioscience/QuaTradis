@@ -31,10 +31,13 @@ ENV   LANGUAGE en_GB:en
 ENV   LC_ALL   en_GB.UTF-8
 
 # Add source code
-ADD . quatradis
+RUN mkdir /quatradis
+ADD requirements.txt /quatradis
 WORKDIR /quatradis
 
 RUN pip install -r requirements.txt
+
+ADD . /quatradis
 RUN python3 setup.py install
 
 # Set environment

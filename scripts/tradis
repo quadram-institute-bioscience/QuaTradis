@@ -46,7 +46,7 @@ def filter_tags_options(parser):
                         help='The fastq formatted output file (can be gzipped based on extension).')
     parser.add_argument('-t', '--tag', type=str, required=True,
                         help='the tag to remove from fastq input')
-    parser.add_argument('-mm', '--mismatch', type=str, default=0,
+    parser.add_argument('-mm', '--mismatch', type=int, default=0,
                         help='number of mismatches allowed when matching tag (default = 0)')
 
 
@@ -61,7 +61,7 @@ def remove_tags_options(parser):
                         help='The fastq formatted output file (can be gzipped based on extension).')
     parser.add_argument('-t', '--tag', type=str, required=True,
                         help='the tag to remove from fastq input')
-    parser.add_argument('-mm', '--mismatch', type=str, default=0,
+    parser.add_argument('-mm', '--mismatch', type=int, default=0,
                         help='number of mismatches allowed when matching tag (default = 0)')
 
 
@@ -72,7 +72,7 @@ def remove_tags(args):
 def create_plot_options(parser):
     parser.add_argument('mapped_reads', type=str,
                         help='A SAM/BAM/CRAM file to check for tradis tags')
-    parser.add_argument('-m', '--mapping_score', type=str, default=30,
+    parser.add_argument('-m', '--mapping_score', type=int, default=30,
                         help='mapping quality must be greater than X (Default: 30)')
     parser.add_argument('--outfile', default="tradis.plot",
                         help='Output file base name for plot (Default: tradis.plot)')
@@ -136,11 +136,13 @@ def single_pipeline_options(parser):
                         help='The directory in which to put all output files (default: current working directory)')
     parser.add_argument('-p', '--output_prefix', dest='output_prefix', default="quatradis_out",
                         help='The filename prefix to use for all output files (default: quatradis_out)')
-    parser.add_argument('-n', '--threads', default=1,
+    parser.add_argument('-n', '--threads', type=int, default=1,
                         help='number of threads to use when mapping and sorting (default: 1)')
     parser.add_argument('-a', '--aligner', default="bwa",
                         help='mapping tool to use (bwa, smalt, minimap2, minimap2_long) (default: bwa)')
-    parser.add_argument('-m', '--mapping_score', type=str, default=30,
+    parser.add_argument('-ni', '--no_ref_index', dest='no_ref_index', action='store_true',
+                        help='If reference is alredy indexed used this flag to skip the indexing process.')
+    parser.add_argument('-m', '--mapping_score', type=int, default=30,
                         help='mapping quality must be greater than X (Default: 30)')
     parser.add_argument('-t', '--tag', type=str, default="",
                         help='the tag to remove from fastq input (default: "")')
@@ -161,7 +163,7 @@ def run_single_pipeline(args):
     output_prefix = os.path.join(args.output_dir, args.output_prefix) 
 
     run_tradis(args.fastq, args.reference, output_prefix, tag=args.tag,
-               mapper=args.aligner, threads=args.threads, max_mismatches=args.mismatch,
+               mapper=args.aligner, index=not args.no_ref_index, threads=args.threads, max_mismatches=args.mismatch,
                cutoff=args.mapping_score, verbose=args.verbose)
 
     if args.profile:
@@ -193,6 +195,7 @@ def multiple_pipeline_options(parser):
                         help='If provided add the nexflow parameters in this file to combine with our defaults.  Use this to distribute processes over a cluster for example.  See nextflow docs for more details.')
     parser.add_argument('-v', '--verbose', dest='verbose', action='store_true',
                         help='Add verbose output to console logs')
+
 
 def run_multiple_pipeline(args):
     run_multi_tradis(args.fastqs, args.reference,
