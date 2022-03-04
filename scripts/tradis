@@ -172,7 +172,7 @@ def run_single_pipeline(args):
         ps.dump_stats(args.output_prefix + ".profile")
 
 
-def nextflow_pipeline_options(parser):
+def multiple_pipeline_options(parser):
     parser.add_argument('fastqs', type=str,
                         help='The fastq formatted reads for processing (can be gzipped).')
     parser.add_argument('reference', type=str,
@@ -193,7 +193,7 @@ def nextflow_pipeline_options(parser):
                         help='If provided add the nexflow parameters in this file to combine with our defaults.  Use this to distribute processes over a cluster for example.  See nextflow docs for more details.')
 
 
-def run_nextflow_pipeline(args):
+def run_multiple_pipeline(args):
     with open(args.fastqs, 'r') as fql:
         fastqs = [x.strip() for x in fql.readlines() if x]
         with open("quadtradis_nf.fastq.txt", 'w') as ofql:
@@ -272,7 +272,7 @@ an identifier in the stats file, so ensure these are unique.''')
     pipeline_parser = subparsers.add_parser("pipeline", help=pipeline_parser_desc)
     pipeline_subparsers = pipeline_parser.add_subparsers(title=pipeline_parser_desc)
     create_parser("single", pipeline_subparsers, run_single_pipeline, single_pipeline_options, "Runs full tradis pipeline for a single fastq to produce a insertion site plot file.")
-    create_parser("nextflow", pipeline_subparsers, run_nextflow_pipeline, nextflow_pipeline_options, "Runs full tradis pipeline over multiple fastqs in parallel where possible using nextflow.",
+    create_parser("multiple", pipeline_subparsers, run_multiple_pipeline, multiple_pipeline_options, "Runs full tradis pipeline over multiple fastqs in parallel where possible using nextflow.",
                   description='''Runs full tradis pipeline across multiple fastqs in parallel producing plots files for
 each.  This pipeline uses nextflow, therefore it is possible to customise how this operates to distribute the workload
 across a cluster using a nextflow config file.''')
