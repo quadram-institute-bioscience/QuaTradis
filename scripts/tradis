@@ -132,8 +132,10 @@ def single_pipeline_options(parser):
                         help='The fastq formatted reads for processing (can be gzipped).')
     parser.add_argument('reference', type=str,
                         help='The fasta formatted reference for processing.')
-    parser.add_argument('--output_prefix', dest='output_prefix', default="quatradis_out",
-                        help='The filename output_prefix to use for all output files (default: quatradis_out)')
+    parser.add_argument('-o', '--output_dir', dest='output_dir', default="",
+                        help='The directory in which to put all output files (default: current working directory)')
+    parser.add_argument('-p', '--output_prefix', dest='output_prefix', default="quatradis_out",
+                        help='The filename prefix to use for all output files (default: quatradis_out)')
     parser.add_argument('-n', '--threads', default=1,
                         help='number of threads to use when mapping and sorting (default: 1)')
     parser.add_argument('-a', '--aligner', default="bwa",
@@ -144,7 +146,7 @@ def single_pipeline_options(parser):
                         help='the tag to remove from fastq input (default: "")')
     parser.add_argument('-mm', '--mismatch', type=str, default=0,
                         help='number of mismatches allowed when matching tag (default: 0)')
-    parser.add_argument('-p', '--profile', dest='profile', action='store_true',
+    parser.add_argument('--profile', dest='profile', action='store_true',
                         help='Turn on profiling.  Prints out cumulative time in each function to stdout and to an output file (<output_prefix>.profile).  The profile file can be read by tools such as snakeviz.')
     parser.add_argument('-v', '--verbose', dest='verbose', action='store_true',
                         help='Add verbose output to console logs')
@@ -156,7 +158,9 @@ def run_single_pipeline(args):
         pr = cProfile.Profile()
         pr.enable()
 
-    run_tradis(args.fastq, args.reference, args.output_prefix,
+    output_prefix = os.path.join(args.output_dir, args.output_prefix) 
+
+    run_tradis(args.fastq, args.reference, output_prefix, tag=args.tag,
                mapper=args.aligner, threads=args.threads, max_mismatches=args.mismatch,
                cutoff=args.mapping_score, verbose=args.verbose)
 
