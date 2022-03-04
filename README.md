@@ -176,16 +176,28 @@ into a single executable named `tradis`.  Under this there are multiple sub-func
 * `plot`
   * `create` - Creates an gzipped insertion site plot from a set of alignments.
   * `combine` - Combines several plots into 1.
-  * `analyse` - Takes genome annotation in embl format along with plot files produced by bacteria_tradis and generates tab-delimited files containing gene-wise annotations of insert sites and read counts.
+  * `analyse` - Takes genome annotation in embl format along with plot files produced by "tradis pipeline" and generates tab-delimited files containing gene-wise annotations of insert sites and read counts.
 * `pipeline`
   * `single` - Runs complete analysis, starting with a fastq file and produces mapped BAM files and plot files for each file in the given file list and a statistical summary of all files. Note that the -f option expects a text file containing a list of fastq files, one per line. This script can be run with or without supplying tags. 
-  * `nextflow` - Same as single, put can process multiple fastq files in parallel using nextflow.  This is capable of distributing work over a cluster.
-* `tradis_essentiality.R` - Takes a single tab-delimited file from tradis_gene_insert_sites to produce calls of gene essentiality. Also produces a number of diagnostic plots.
+  * `multiple` - Same as single, put can process multiple fastq files in parallel using nextflow.  This is capable of distributing work over a cluster.
+* `tradis_essentiality.R` - Takes a single tab-delimited file from "tradis plot analyse" to produce calls of gene essentiality. Also produces a number of diagnostic plots.
 * `tradis_comparison.R` - Takes tab files to compare two growth conditions using edgeR. This analysis requires experimental replicates.
 
 Note that default parameters are for comparative experiments, and will need to be modified for gene essentiality studies.
 
 A help menu for each script can be accessed by running the script by adding with "--help".
+
+### Typical use case
+
+Typically users in most cases will want to run `tradis pipeline single` or `multiple` tools to generate plot files, which
+are then processed by `tradis plot analyse` to generate a table of insert sites.  Example commands for this are:
+
+```bash
+tradis pipeline single --output_dir ./quatradis_output --output_prefix my_sample -v -n6 --tag ATGC my_sample.fastq.gz my_reference.fasta
+tradis plot analyse my_annotations.embl quatradis_output/my_sample.insert_site_plot.gz
+```
+
+Further processing of the insert site table may be done using the R scripts mentioned above to compare or assess for gene essentiality.
 
 ### Docker
 

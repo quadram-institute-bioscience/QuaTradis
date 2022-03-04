@@ -42,11 +42,12 @@ def run_tradis(fastq, reference, output_prefix, tag="", mapper="bwa", threads=1,
         print("::::::::::::::::::\n" + fastq + "\n::::::::::::::::::\n\n", file=sys.stderr)
 
     nb_reads = 0
+    nb_output_reads = 0
     nb_tagged_reads = 0
     if tag:
         if verbose:
             print("..........Removing tags that match user input: " + tag + "\n", file=sys.stderr)
-        nb_reads, nb_tagged_reads = remove_tags(fastq, detagged, tag=tag, max_mismatches=max_mismatches, filter=True, trim=True)
+        nb_reads, nb_output_reads, nb_tagged_reads = remove_tags(fastq, detagged, tag=tag, max_mismatches=max_mismatches, filter=True, trim=True)
     else:
         if verbose:
             print("..........Tagless mode selected, skipping read preparation step\n", file=sys.stderr)
