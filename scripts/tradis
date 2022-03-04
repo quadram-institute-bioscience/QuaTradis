@@ -9,7 +9,7 @@ from quatradis.tags import add_tags, tags_in_alignment, remove_tags
 from quatradis.isp_create import plot
 from quatradis.isp_combine import combine
 from quatradis.isp_analyse import analyse_insert_sites
-from quatradis.tradis import run_tradis
+from quatradis.tradis import run_tradis, run_multi_tradis
 from quatradis.mapper import index_reference
 
 version = pkg_resources.require("quatradis")[0].version
@@ -46,7 +46,7 @@ def filter_tags_options(parser):
                         help='The fastq formatted output file (can be gzipped based on extension).')
     parser.add_argument('-t', '--tag', type=str, required=True,
                         help='the tag to remove from fastq input')
-    parser.add_argument('-mm', '--mismatch', type=str, default=0,
+    parser.add_argument('-mm', '--mismatch', type=int, default=0,
                         help='number of mismatches allowed when matching tag (default = 0)')
 
 
@@ -61,7 +61,7 @@ def remove_tags_options(parser):
                         help='The fastq formatted output file (can be gzipped based on extension).')
     parser.add_argument('-t', '--tag', type=str, required=True,
                         help='the tag to remove from fastq input')
-    parser.add_argument('-mm', '--mismatch', type=str, default=0,
+    parser.add_argument('-mm', '--mismatch', type=int, default=0,
                         help='number of mismatches allowed when matching tag (default = 0)')
 
 
@@ -72,7 +72,7 @@ def remove_tags(args):
 def create_plot_options(parser):
     parser.add_argument('mapped_reads', type=str,
                         help='A SAM/BAM/CRAM file to check for tradis tags')
-    parser.add_argument('-m', '--mapping_score', type=str, default=30,
+    parser.add_argument('-m', '--mapping_score', type=int, default=30,
                         help='mapping quality must be greater than X (Default: 30)')
     parser.add_argument('--outfile', default="tradis.plot",
                         help='Output file base name for plot (Default: tradis.plot)')
@@ -136,11 +136,13 @@ def single_pipeline_options(parser):
                         help='The directory in which to put all output files (default: current working directory)')
     parser.add_argument('-p', '--output_prefix', dest='output_prefix', default="quatradis_out",
                         help='The filename prefix to use for all output files (default: quatradis_out)')
-    parser.add_argument('-n', '--threads', default=1,
+    parser.add_argument('-n', '--threads', type=int, default=1,
                         help='number of threads to use when mapping and sorting (default: 1)')
     parser.add_argument('-a', '--aligner', default="bwa",
                         help='mapping tool to use (bwa, smalt, minimap2, minimap2_long) (default: bwa)')
-    parser.add_argument('-m', '--mapping_score', type=str, default=30,
+    parser.add_argument('-ni', '--no_ref_index', dest='no_ref_index', action='store_true',
+                        help='If reference is alredy indexed used this flag to skip the indexing process.')
+    parser.add_argument('-m', '--mapping_score', type=int, default=30,
                         help='mapping quality must be greater than X (Default: 30)')
     parser.add_argument('-t', '--tag', type=str, default="",
                         help='the tag to remove from fastq input (default: "")')
@@ -161,7 +163,7 @@ def run_single_pipeline(args):
     output_prefix = os.path.join(args.output_dir, args.output_prefix) 
 
     run_tradis(args.fastq, args.reference, output_prefix, tag=args.tag,
-               mapper=args.aligner, threads=args.threads, max_mismatches=args.mismatch,
+               mapper=args.aligner, index=not args.no_ref_index, threads=args.threads, max_mismatches=args.mismatch,
                cutoff=args.mapping_score, verbose=args.verbose)
 
     if args.profile:
@@ -174,7 +176,7 @@ def run_single_pipeline(args):
 
 def multiple_pipeline_options(parser):
     parser.add_argument('fastqs', type=str,
-                        help='The fastq formatted reads for processing (can be gzipped).')
+                        help='A line separated text file containing a list of fastq formatted reads for processing.')
     parser.add_argument('reference', type=str,
                         help='The fasta formatted reference for processing.')
     parser.add_argument('-o', '--output_dir', default="results",
@@ -191,22 +193,15 @@ def multiple_pipeline_options(parser):
                         help='number of mismatches allowed when matching tag (default: 0)')
     parser.add_argument('-nc', '--nextflow_config', type=str,
                         help='If provided add the nexflow parameters in this file to combine with our defaults.  Use this to distribute processes over a cluster for example.  See nextflow docs for more details.')
+    parser.add_argument('-v', '--verbose', dest='verbose', action='store_true',
+                        help='Add verbose output to console logs')
 
 
 def run_multiple_pipeline(args):
-    with open(args.fastqs, 'r') as fql:
-        fastqs = [x.strip() for x in fql.readlines() if x]
-        with open("quadtradis_nf.fastq.txt", 'w') as ofql:
-            ofql.write("\n".join(fastqs))
-
-    nfcfg = ""
-    if args.nextflow_config:
-        nfcfg = "-c " + args.nextflow_config
-
-    os.system("nextflow " + nfcfg + os.path.dirname(__file__) + "/../pipelines/multi_tradis.nf --reference " + args.reference +
-              " --fastqs quadtradis_nf.fastq.txt --refname myref --outdir " + args.output_dir +
-              " --tag " + args.tag + " --aligner " + args.aligner + " --threads " + str(args.threads) +
-              " --mismatch " + str(args.mismatch) + " --mapping_score " + str(args.mapping_score))
+    run_multi_tradis(args.fastqs, args.reference,
+                     output_dir=args.output_dir, nextflow_config=args.nextflow_config,
+                     tag=args.tag, aligner=args.aligner, threads=args.threads, max_mismatches=args.mismatch,
+                     cutoff=args.mapping_score, verbose=args.verbose)
 
 
 def index_utils_options(parser):
@@ -224,7 +219,7 @@ def index_utils_options(parser):
                         help='the average read length used')
 
 
-def index_reference(args):
+def index_ref(args):
     index_reference(args.reference, args.refname, args.read_len, mapper=args.aligner)
 
 
@@ -280,7 +275,7 @@ across a cluster using a nextflow config file.''')
     utils_parser_desc = "Miscellaneous utilities."
     utils_parser = subparsers.add_parser("utils", help=utils_parser_desc)
     utils_subparsers = utils_parser.add_subparsers(title=utils_parser_desc)
-    create_parser("index", utils_subparsers, index_reference, index_utils_options, "Index a reference using specified alignment tool.")
+    create_parser("index", utils_subparsers, index_ref, index_utils_options, "Index a reference using specified alignment tool.")
 
     args = parser.parse_args(call_args)
     if hasattr(args, "func"):

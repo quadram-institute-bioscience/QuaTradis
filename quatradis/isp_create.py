@@ -101,7 +101,7 @@ def cigar_parser(cigar, coord):
     return start, end
 
 
-def count_read_starts(mapped_reads, mapping_score, plot_out_prefix):
+def count_read_starts(mapped_reads, cutoff_score, plot_out_prefix):
 
     read_starts = {}
     nb_mapped = 0
@@ -117,7 +117,7 @@ def count_read_starts(mapped_reads, mapping_score, plot_out_prefix):
     for read in samfile.fetch():
         if not read.is_unmapped:
             nb_mapped += 1
-            if read.mapping_quality >= mapping_score:
+            if read.mapping_quality >= cutoff_score:
                 nb_mapped_and_good += 1
                 sequence_plotter = read_starts[read.reference_name]
                 start, end = cigar_parser(read.cigartuples, read.pos+1)

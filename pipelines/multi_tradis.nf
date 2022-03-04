@@ -9,7 +9,6 @@ def helpMessage() {
       --fastqs [file]                 A file containing a list of fastqs for processing (each fastq can be gzipped or uncompressed)
       --reference [file]              The reference containing sequences in fasta format
       --refname [str]                 The name for the reference
-      --readlen [int]                 The average read length across the experiment
       --aligner [str]                 The alignment / mapping tool to use (bwa, smalt, minimap2)
       --threads [int]                 The number of threads to use per tradis instance (default: 1)
       -profile [str]                  Configuration profile to use. Can use multiple (comma separated)
@@ -58,11 +57,13 @@ opt_threads = ""
 opt_tag = ""
 opt_mismatch = ""
 opt_mapping_score = ""
-if (params.aligner) { opt_aligner = "--aligner=${params.aligner}" }
-if (params.threads) { opt_threads = "--threads=${params.threads}" }
-if (params.tag) { opt_tag = "--tag=${params.tag}" }
-if (params.mismatch) { opt_mismatch = "--mismatch=${params.mismatch}" }
-if (params.mapping_score) { opt_mapping_score = "--tag=${params.mapping_score}" }
+//opt_readlen = ""
+if (params.aligner && params.aligner != "") { opt_aligner = "--aligner=${params.aligner}" }
+if (params.threads && params.threads != "") { opt_threads = "--threads=${params.threads}" }
+if (params.tag && params.tag != "") { opt_tag = "--tag=${params.tag}" }
+if (params.mismatch && params.mismatch != "") { opt_mismatch = "--mismatch=${params.mismatch}" }
+if (params.mapping_score && params.mapping_score != "") { opt_mapping_score = "--mapping_score=${params.mapping_score}" }
+//if (params.readlen) { opt_readlen = "" }
 
 
 
@@ -82,10 +83,11 @@ summary['Output directory']       = params.outdir
 summary['Fastq list file']        = params.fastqs
 summary['Indexed reference file'] = params.reference
 summary['Reference name']         = params.refname
-summary['Read Length']            = params.readlen
-summary['Tag']                    = params.tag
-summary['Aligner']                = params.aligner
-summary['Threads per tradis']     = params.threads
+//summary['Read Length']            = params.readlen
+summary['Tag']                    = opt_tag
+summary['Aligner']                = opt_aligner
+summary['Threads per tradis']     = opt_threads
+summary['Mapping score']          = opt_mapping_score
 summary['Config files']           = workflow.configFiles.join(', ')
 log.info summary.collect { k,v -> "- ${k.padRight(20)}: $v" }.join('\n')
 log.info "-\033[2m--------------------------------------------------\033[0m-"
@@ -135,7 +137,7 @@ process tradis {
     file "*"
 
     """
-    tradis pipeline single ${fq} ${reference_fa} --output_prefix=tradis_out ${opt_aligner} ${opt_threads} ${opt_tag} ${opt_mismatch} ${opt_mapping_score}
+    tradis pipeline single ${fq} ${reference_fa} --output_prefix=tradis_out --no_ref_index ${opt_aligner} ${opt_threads} ${opt_tag} ${opt_mismatch} ${opt_mapping_score}
     """
 }
 

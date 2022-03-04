@@ -4,7 +4,7 @@ FROM python:3.10-slim-bullseye
 
 # Install the dependencies
 RUN apt-get update -qq && \
-    apt-get install -y sudo bzip2 default-jre gcc gzip locales make r-base unzip wget && \
+    apt-get install -y sudo bzip2 default-jre gcc gzip locales make procps r-base unzip wget && \
     apt-get install -y bwa minimap2 smalt
 
 # Install nextflow
@@ -31,10 +31,13 @@ ENV   LANGUAGE en_GB:en
 ENV   LC_ALL   en_GB.UTF-8
 
 # Add source code
-ADD . quatradis
+RUN mkdir /quatradis
+ADD requirements.txt /quatradis
 WORKDIR /quatradis
 
 RUN pip install -r requirements.txt
+
+ADD . /quatradis
 RUN python3 setup.py install
 
 # Set environment
