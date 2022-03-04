@@ -144,7 +144,7 @@ def single_pipeline_options(parser):
                         help='mapping quality must be greater than X (Default: 30)')
     parser.add_argument('-t', '--tag', type=str, default="",
                         help='the tag to remove from fastq input (default: "")')
-    parser.add_argument('-mm', '--mismatch', type=str, default=0,
+    parser.add_argument('-mm', '--mismatch', type=int, default=0,
                         help='number of mismatches allowed when matching tag (default: 0)')
     parser.add_argument('--profile', dest='profile', action='store_true',
                         help='Turn on profiling.  Prints out cumulative time in each function to stdout and to an output file (<output_prefix>.profile).  The profile file can be read by tools such as snakeviz.')
