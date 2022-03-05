@@ -7,7 +7,7 @@ import os.path
 import numpy as np
 from Bio import SeqIO
 
-from quatradis.file_handle_helpers import reader_opener
+from quatradis import file_handle_helpers
 
 
 def get_cds_locations(embl_file):
@@ -38,7 +38,7 @@ def get_insert_sites_from_plots(plot_files, joined_output):
 
 def read_in_plot_file(plot_file):
     inserts_per_base = []
-    opener, mode = reader_opener(plot_file)
+    opener, mode = file_handle_helpers.reader_opener(plot_file)
     with opener(plot_file, mode) as input_handle:
         for base in input_handle.readlines():
             inserts = base.strip().split(" ")
@@ -47,14 +47,14 @@ def read_in_plot_file(plot_file):
     return inserts_per_base
 
 
-def create_output_filenames(files, joined_output=False, output_suffix="isp_analysis"):
+def create_output_filenames(files, joined_output=False, output_dir="", output_suffix="isp_analysis"):
     if joined_output:
-        return ["joined_output." + output_suffix]
+        return [os.path.join(output_dir, "joined_output." + output_suffix)]
 
     out_files = []
     for f in files:
         file_base = os.path.basename(os.path.basename(f))
-        out_files.append(file_base + "." + output_suffix)
+        out_files.append(os.path.join(output_dir, file_base + "." + output_suffix))
 
     return out_files
 
@@ -169,14 +169,15 @@ def create_row(feature, insert_sites, trim5=False, trim3=False):
             ins_index, gene_length, inserts, product_value]
 
 
-def analyse_insert_sites(embl_file, plot_files, joined_output=False, output_suffix="tradis_gene_insert_sites.csv",
+def analyse_insert_sites(embl_file, plot_files, joined_output=False, output_dir="", output_suffix="tradis_gene_insert_sites.csv",
                          trim5=False, trim3=False):
     """
     Take in a plot file(s) and an embl file and produce a tab delimited file with insert site details to use as input to
     an another script to test for essentiality.
     """
+    file_handle_helpers.ensure_output_dir_exists(output_dir)
 
-    output_file_names = create_output_filenames(plot_files, joined_output, output_suffix)
+    output_file_names = create_output_filenames(plot_files, joined_output, output_dir, output_suffix)
     insert_site_array = get_insert_sites_from_plots(plot_files, joined_output)
     cds_coordinates = get_cds_locations(embl_file)
 

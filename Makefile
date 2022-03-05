@@ -15,20 +15,10 @@ unit_test:
 
 script_test:
 	./scripts/tradis --help 2>&1 | grep tradis > /dev/null
-	./scripts/tradis tags --help | grep tags > /dev/null
-	./scripts/tradis tags add --help | grep tags > /dev/null
-	./scripts/tradis tags check --help | grep tags > /dev/null
-	./scripts/tradis tags filter --help | grep tags > /dev/null
-	./scripts/tradis tags remove --help | grep tags > /dev/null
-	./scripts/tradis plot --help | grep plot > /dev/null
-	./scripts/tradis plot create --help | grep plot > /dev/null
-	./scripts/tradis plot combine --help | grep plot > /dev/null
-	./scripts/tradis plot analyse --help | grep plot > /dev/null
-	./scripts/tradis utils --help | grep utils > /dev/null
-	./scripts/tradis utils index --help | grep utils > /dev/null
-	./scripts/tradis pipeline --help | grep pipeline > /dev/null
-	./scripts/tradis pipeline single --help | grep pipeline > /dev/null
-	./scripts/tradis pipeline multiple --help | grep pipeline > /dev/null
+	./tests/scripts/tags_test.sh
+	./tests/scripts/plot_test.sh
+	./tests/scripts/utils_test.sh
+	./tests/scripts/pipeline_test.sh
 	#./scripts/tradis_comparison.R --help
 	#./scripts/tradis_essentiality.R --help
 

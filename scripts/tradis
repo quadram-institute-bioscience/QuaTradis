@@ -5,12 +5,13 @@ import os
 import sys
 import pkg_resources  # part of setuptools
 
-from quatradis.tags import add_tags, tags_in_alignment, remove_tags
 from quatradis.isp_create import plot
 from quatradis.isp_combine import combine
 from quatradis.isp_analyse import analyse_insert_sites
-from quatradis.tradis import run_tradis, run_multi_tradis
 from quatradis.mapper import index_reference
+
+from quatradis import tags
+from quatradis import tradis
 
 version = pkg_resources.require("quatradis")[0].version
 
@@ -18,15 +19,12 @@ version = pkg_resources.require("quatradis")[0].version
 def add_tags_options(parser):
     parser.add_argument('mapped_reads', type=str,
                         help='A SAM/BAM/CRAM file to check for tradis tags')
-    parser.add_argument('-o', '--output', type=str,
+    parser.add_argument('-o', '--output', type=str, default="",
                         help="Output BAM name (default: <file>.tr.bam)")
-    parser.add_argument('-v', '--verbose', dest='verbose', action='store_true',
-                        help='Add verbose output to console logs')
 
 
 def add_tags(args):
-    present = add_tags(args.mapped_reads, args.output)
-    print(present)
+    tags.add_tags(args.mapped_reads, args.output)
 
 
 def check_tags_options(parser):
@@ -35,7 +33,7 @@ def check_tags_options(parser):
 
 
 def check_tags(args):
-    present = tags_in_alignment(args.mapped_reads)
+    present = tags.tags_in_alignment(args.mapped_reads)
     print(present)
 
 
@@ -51,7 +49,7 @@ def filter_tags_options(parser):
 
 
 def filter_tags(args):
-    remove_tags(args.fastq_in, args.fastq_out, tag=args.tag, max_mismatches=args.mismatch, filter=True, trim=False)
+    tags.remove_tags(args.fastq_in, args.fastq_out, tag=args.tag, max_mismatches=args.mismatch, filter=True, trim=False)
 
 
 def remove_tags_options(parser):
@@ -66,7 +64,7 @@ def remove_tags_options(parser):
 
 
 def remove_tags(args):
-    remove_tags(args.fastq_in, args.fastq_out, tag=args.tag, max_mismatches=args.mismatch, filter=False, trim=True)
+    tags.remove_tags(args.fastq_in, args.fastq_out, tag=args.tag, max_mismatches=args.mismatch, filter=False, trim=True)
 
 
 def create_plot_options(parser):
@@ -98,7 +96,9 @@ def analyse_plot_options(parser):
                         help='The embl formatted annotation file')
     parser.add_argument('plot_in', type=str, nargs='+',
                         help='The insertion site plot files (can be gzipped)')
-    parser.add_argument('-o', '--output_suffix', type=str, default="tradis_gene_insert_sites.csv",
+    parser.add_argument('-o', '--output_dir', type=str, default="",
+                        help='The directory in which to put all output files (default: current working directory)')
+    parser.add_argument('-s', '--output_suffix', type=str, default="tradis_gene_insert_sites.csv",
                         help='The suffix to add to output files (optional, default = tradis_gene_insert_sites.csv)')
     parser.add_argument('--trim5', action='store_true',
                         help="Trim insertion sites from 5' end of gene")
@@ -116,7 +116,8 @@ def analyse_plot(args):
         pr = cProfile.Profile()
         pr.enable()
 
-    analyse_insert_sites(args.embl_in, args.plot_in, args.joined_output, args.output_suffix,
+    analyse_insert_sites(args.embl_in, args.plot_in, args.joined_output,
+                         output_dir=args.output_dir, output_suffix=args.output_suffix,
                          trim5=args.trim5, trim3=args.trim3)
 
     if args.profile:
@@ -162,7 +163,7 @@ def run_single_pipeline(args):
 
     output_prefix = os.path.join(args.output_dir, args.output_prefix) 
 
-    run_tradis(args.fastq, args.reference, output_prefix, tag=args.tag,
+    tradis.run_tradis(args.fastq, args.reference, output_prefix, tag=args.tag,
                mapper=args.aligner, index=not args.no_ref_index, threads=args.threads, max_mismatches=args.mismatch,
                cutoff=args.mapping_score, verbose=args.verbose)
 
@@ -198,7 +199,7 @@ def multiple_pipeline_options(parser):
 
 
 def run_multiple_pipeline(args):
-    run_multi_tradis(args.fastqs, args.reference,
+    tradis.run_multi_tradis(args.fastqs, args.reference,
                      output_dir=args.output_dir, nextflow_config=args.nextflow_config,
                      tag=args.tag, aligner=args.aligner, threads=args.threads, max_mismatches=args.mismatch,
                      cutoff=args.mapping_score, verbose=args.verbose)
@@ -211,8 +212,8 @@ def index_utils_options(parser):
                         help='The name for this reference.')
     parser.add_argument('-a', '--aligner', type=str, default="bwa",
                         help='read aligning tool to use (bwa, smalt, minimap2) (default: bwa)')
-    parser.add_argument('-r', '--read_len', type=int,
-                        help='the average read length used')
+    parser.add_argument('-r', '--read_len', type=int, default=100,
+                        help='the average read length used (required for smalt)')
     parser.add_argument('-sk', '--smalt_k', type=int,
                         help='the average read length used')
     parser.add_argument('-ss', '--smalt_s', type=int,
@@ -220,7 +221,9 @@ def index_utils_options(parser):
 
 
 def index_ref(args):
-    index_reference(args.reference, args.refname, args.read_len, mapper=args.aligner)
+    cmd, exitcode = index_reference(args.reference, args.refname, args.read_len, mapper=args.aligner)
+    if exitcode != 0:
+        print("Error indexing reference.  Command used:", cmd, file=sys.stderr)
 
 
 def create_parser(name, subparsers, function, options, help_message, description=""):

@@ -7,6 +7,7 @@ def helpMessage() {
       nextflow run multi_tradis.nf --fastq_list fastqs.txt
     Mandatory arguments:
       --fastqs [file]                 A file containing a list of fastqs for processing (each fastq can be gzipped or uncompressed)
+      --original_dir [directory]      The original directory for the fastq file list (optional... typically only used by tradis wrapper script)
       --reference [file]              The reference containing sequences in fasta format
       --refname [str]                 The name for the reference
       --aligner [str]                 The alignment / mapping tool to use (bwa, smalt, minimap2)
@@ -48,8 +49,15 @@ STATS_FILE = file("${outdir}/quatradis.stats")
 
 
 // Check inputs and make channels
+def fastq_list = []
 if (params.reference) { ch_reference = file(params.reference, checkIfExists: true) } else { exit 1, 'Reference FastA file not specified, or not found on filesystem.' }
-if (params.fastqs) { fastq_list = file(params.fastqs, checkIfExists: true).readLines(); ch_fastqs = Channel.fromPath( fastq_list ) } else { exit 1, 'Fastq list file not specified, or not found on filesystem.' }
+if (params.fastqs) {
+	list_file = file(params.fastqs, checkIfExists: true)
+	fastq_list_raw = list_file.readLines();
+	fastq_list_raw.each { fastq_list.add("${params.original_dir}/${it}") }
+	print(fastq_list)
+	ch_fastqs = Channel.fromPath( fastq_list )
+} else { exit 1, 'Fastq list file not specified, or not found on filesystem.' }
 
 // Setup command line options if they are required
 opt_aligner = ""
@@ -81,6 +89,7 @@ def summary = [:]
 summary['Run Name']               = custom_runName ?: workflow.runName
 summary['Output directory']       = params.outdir
 summary['Fastq list file']        = params.fastqs
+summary['Fastqs']                 = fastq_list.join(", ")
 summary['Indexed reference file'] = params.reference
 summary['Reference name']         = params.refname
 //summary['Read Length']            = params.readlen

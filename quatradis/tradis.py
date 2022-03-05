@@ -6,6 +6,7 @@ import shutil
 from quatradis.tags import remove_tags
 from quatradis.mapper import calc_read_length, index_reference, map_reads, sam2bam
 from quatradis.isp_create import plot
+from quatradis import file_handle_helpers
 
 
 def run_tradis(fastq, reference, output_prefix, tag="", mapper="bwa", index=True, threads=1, max_mismatches=0, cutoff=30, verbose=False):
@@ -33,10 +34,7 @@ def run_tradis(fastq, reference, output_prefix, tag="", mapper="bwa", index=True
 
     start = time.time()
 
-    outdir, prefix = os.path.split(output_prefix)
-
-    if outdir and not os.path.exists(outdir):
-        os.makedirs(outdir, exist_ok=True)
+    file_handle_helpers.ensure_output_dir_exists(output_prefix, includes_filename=True)
 
     detagged = output_prefix + ".rmtag.fastq.gz"
 
@@ -105,15 +103,14 @@ def find_nextflow_file():
     raise RuntimeError("Could not find nextflow pipeline file.")
 
 
-def run_multi_tradis(fastqs, reference, output_dir="results", nextflow_config="", tag="", aligner="bwa", threads=1, max_mismatches=0, cutoff=30, verbose=False):
+def run_multi_tradis(fastq_list, reference, output_dir="results", nextflow_config="", tag="", aligner="bwa", threads=1, max_mismatches=0, cutoff=30, verbose=False):
     """
     Use nextflow to process multiple fastqs in parallel
     """
 
-    if output_dir and not os.path.exists(output_dir):
-        os.makedirs(output_dir, exist_ok=True)
+    file_handle_helpers.ensure_output_dir_exists(output_dir)
 
-    with open(fastqs, 'r') as fql:
+    with open(fastq_list, 'r') as fql:
         fastqs = [x.strip() for x in fql.readlines() if x]
         cleaned_fastq_list = os.path.join(output_dir, "quadtradis_nf.fastq.txt")
         with open(cleaned_fastq_list, 'w') as ofql:
@@ -123,10 +120,12 @@ def run_multi_tradis(fastqs, reference, output_dir="results", nextflow_config=""
     if nextflow_config:
         nfcfg_cmd = "-c " + nextflow_config
 
+    original_dir, filename = os.path.split(fastq_list)
+
     nf_pipeline = find_nextflow_file()
 
     command_args = ["nextflow", nfcfg_cmd, nf_pipeline, "--reference=" + reference,
-               "--fastqs=" + cleaned_fastq_list, "--refname=myref", "--outdir=" + output_dir,
+               "--fastqs=" + cleaned_fastq_list, "--original_dir=" + original_dir, "--refname=myref", "--outdir=" + output_dir,
                ("--tag=" + tag) if tag else "", ("--aligner=" + aligner) if aligner else "",
                ("--threads=" + str(threads)) if threads else "",
                ("--mismatch=" + str(max_mismatches)) if max_mismatches else "",

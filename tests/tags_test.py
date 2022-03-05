@@ -6,6 +6,7 @@ Unit tests for general tradis tag handling, e.g. identification and removal in r
 """
 import filecmp
 import os
+import shutil
 import unittest
 
 import pysam
@@ -184,17 +185,18 @@ class TagsTest(unittest.TestCase):
         self.assertEqual('<<<<<<<<<<<<<<<<<<<<<:<9/,&,22;;<<<7788', tagged.qual)
 
     def testAddTagsToBam(self):
-        bamfile="data/isp_create/small_multi_sequence.bam"
-        outfile="test.tr.bam"
+        bamfile = "data/isp_create/small_multi_sequence.bam"
+        outfile = "test_temp/test.tr.bam"
         tags.add_tags(bamfile, outfile)
         self.assertTrue(True)
-        os.remove(outfile)
+        shutil.rmtree("test_temp")
 
     def testAddTagsToBamNoOutfile(self):
         bamfile="data/isp_create/small_multi_sequence.bam"
         tags.add_tags(bamfile)
         self.assertTrue(True)
         os.remove("data/isp_create/small_multi_sequence.tr.bam")
+
 
 if __name__ == '__main__':
     unittest.main()
