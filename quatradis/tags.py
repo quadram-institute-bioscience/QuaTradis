@@ -19,6 +19,11 @@ def add_tags(input_alignments, output_alignments=""):
     if not output_alignments:
         output_alignments = os.path.splitext(input_alignments)[0] + ".tr.bam"
 
+    outdir, prefix = os.path.split(output_alignments)
+
+    if outdir and not os.path.exists(outdir):
+        os.makedirs(outdir, exist_ok=True)
+
     with pysam.AlignmentFile(input_alignments, mode=file_handle_helpers.input_alignment_mode(input_alignments)) as alignments_in:
         with pysam.AlignmentFile(output_alignments, mode=file_handle_helpers.output_alignment_mode(output_alignments), header=alignments_in.header) as alignments_out:
             for a_in in alignments_in.fetch():
@@ -71,6 +76,8 @@ def remove_tags(seq_file_in, seq_file_out="", tag="", max_mismatches=0, filter=T
             seq_file_out = os.path.splitext(seq_file_in)[0]
         seq_file_out = os.path.splitext(seq_file_out)[0]
         seq_file_out += ".rmtag.fastq.gz"
+
+    file_handle_helpers.ensure_output_dir_exists(seq_file_out, includes_filename=True)
 
     input_opener, input_mode = file_handle_helpers.reader_opener(seq_file_in)
     output_opener, output_mode = file_handle_helpers.writer_opener(seq_file_out)

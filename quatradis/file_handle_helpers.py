@@ -75,3 +75,11 @@ def output_alignment_mode(alignment_file):
         raise ValueError("Invalid alignment format: {}".format(ext))
 
     return mode
+
+
+def ensure_output_dir_exists(output_path, includes_filename=False):
+    output_dir = output_path
+    if includes_filename:
+        output_dir, prefix = os.path.split(output_path)
+    if output_dir and not os.path.exists(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
