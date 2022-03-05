@@ -36,6 +36,7 @@ ADD requirements.txt /quatradis
 WORKDIR /quatradis
 
 RUN pip install -r requirements.txt
+RUN pip install pytest-cov
 
 ADD . /quatradis
 RUN python3 setup.py install

@@ -5,5 +5,3 @@ numpy
 pandas
 bgzip
 pyqt5
-pytest-cov
-semantic-version

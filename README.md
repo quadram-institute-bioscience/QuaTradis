@@ -263,6 +263,10 @@ make targets to choose from depending on which kind of release is required:
 - Minor release: `make release_minor`
 - Patch release: `make release_patch`
 
+However, before running these commands make sure you have the `dev` python packages installed otherwise these will fail.  
+You can do this by typing: `pip install quatradis[dev].`
+
+
 For details of what each of these do see the [Makefile](Makefile) but this increases the dot release number
 in the [VERSION](VERSION) file and commits this to the `master` branch and pushes it to github.  The new master commit 
 is tagged appropriately with the new version.  This then triggers travis to build and publish a docker image to dockerhub.

@@ -7,9 +7,9 @@ set -e
 
 # Sanity test help messages
 echo -n "Checking 'tradis pipeline' help messages ... "
-./scripts/tradis pipeline --help | grep pipeline > /dev/null
-./scripts/tradis pipeline single --help | grep pipeline > /dev/null
-./scripts/tradis pipeline multiple --help | grep pipeline > /dev/null
+./scripts/tradis pipeline --help > /dev/null
+./scripts/tradis pipeline single --help > /dev/null
+./scripts/tradis pipeline multiple --help > /dev/null
 echo "ok"
 
 echo -n "Checking 'tradis pipeline single' ... "
