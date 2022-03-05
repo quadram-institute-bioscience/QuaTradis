@@ -7,10 +7,10 @@ set -e
 
 # Sanity test help messages
 echo -n "Checking 'tradis plot' help messages ... "
-./scripts/tradis plot --help | grep plot > /dev/null
-./scripts/tradis plot create --help | grep plot > /dev/null
-./scripts/tradis plot combine --help | grep plot > /dev/null
-./scripts/tradis plot analyse --help | grep plot > /dev/null
+./scripts/tradis plot --help > /dev/null
+./scripts/tradis plot create --help  > /dev/null
+./scripts/tradis plot combine --help > /dev/null
+./scripts/tradis plot analyse --help > /dev/null
 echo "ok"
 
 echo -n "Checking 'tradis plot create' ... "

@@ -7,8 +7,8 @@ set -e
 
 # Sanity test help messages
 echo -n "Checking 'tradis utils' help messages ... "
-./scripts/tradis utils --help | grep index > /dev/null
-./scripts/tradis utils index --help | grep index > /dev/null
+./scripts/tradis utils --help > /dev/null
+./scripts/tradis utils index --help > /dev/null
 echo "ok"
 
 echo -n "Checking 'tradis utils index' ... "

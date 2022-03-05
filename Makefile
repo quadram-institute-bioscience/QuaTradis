@@ -14,7 +14,7 @@ unit_test:
 	cd tests && pytest --cov --cov-report=xml --doctest-modules
 
 script_test:
-	./scripts/tradis --help 2>&1 | grep tradis > /dev/null
+	./scripts/tradis --help > /dev/null
 	./tests/scripts/tags_test.sh
 	./tests/scripts/plot_test.sh
 	./tests/scripts/utils_test.sh

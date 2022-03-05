@@ -7,11 +7,11 @@ set -e
 
 # Sanity test help messages
 echo -n "Checking 'tradis tag' help messages ... "
-./scripts/tradis tags --help | grep tags > /dev/null
-./scripts/tradis tags add --help | grep tags > /dev/null
-./scripts/tradis tags check --help | grep tags > /dev/null
-./scripts/tradis tags filter --help | grep tags > /dev/null
-./scripts/tradis tags remove --help | grep tags > /dev/null
+./scripts/tradis tags --help > /dev/null
+./scripts/tradis tags add --help > /dev/null
+./scripts/tradis tags check --help > /dev/null
+./scripts/tradis tags filter --help > /dev/null
+./scripts/tradis tags remove --help > /dev/null
 echo "ok"
 
 echo -n "Checking 'tradis tag add' ... "
