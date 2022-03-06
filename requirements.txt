@@ -1,7 +1,6 @@
 pysam
-Bio
+biopython
 matplotlib
 numpy
 pandas
-bgzip
-pyqt5
+snakeviz
