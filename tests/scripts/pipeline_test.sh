@@ -13,7 +13,7 @@ echo -n "Checking 'tradis pipeline' help messages ... "
 echo "ok"
 
 echo -n "Checking 'tradis pipeline single' ... "
-./scripts/tradis pipeline single --output_dir temp_test tests/data/mapper/test.fastq tests/data/mapper/smallref.fa && rm tests/data/mapper/smallref.fa.* && rm -r temp_test
+./scripts/tradis pipeline single --output_dir temp_test --profile tests/data/mapper/test.fastq tests/data/mapper/smallref.fa 2>&1 > /dev/null && rm tests/data/mapper/smallref.fa.* && rm -r temp_test
 echo "ok"
 
 echo -n "Checking 'tradis pipeline multiple' ... "
