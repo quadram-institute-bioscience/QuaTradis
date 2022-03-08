@@ -19,8 +19,7 @@ script_test:
 	./tests/scripts/plot_test.sh
 	./tests/scripts/utils_test.sh
 	./tests/scripts/pipeline_test.sh
-	#./scripts/tradis_comparison.R --help
-	#./scripts/tradis_essentiality.R --help
+	./tests/scripts/R_test.sh
 
 
 
