@@ -2,7 +2,7 @@ import os.path
 import sys
 import time
 import shutil
-import snakemake
+import subprocess
 
 from quatradis.tags import remove_tags
 from quatradis.mapper import calc_read_length, index_reference, map_reads, sam2bam
@@ -125,9 +125,11 @@ def run_multi_tradis(fastq_list, reference, output_dir="results", tag="", aligne
     with open(fastq_list, 'r') as fql:
         fastqs = [x.strip() for x in fql.readlines() if x]
         snakemake_config = os.path.join(output_dir, "quadtradis_snakemake.yaml")
+        fastq_dir, fq_fn = os.path.split(fastq_list)
         with open(snakemake_config, 'w') as ofql:
             ofql.write(create_yaml_option("output_dir", output_dir))
             ofql.write(create_yaml_option("reference", reference))
+            ofql.write("fastq_dir: \"" + fastq_dir + "\"\n")
             ofql.write("fastqs:\n")
             for x in fastqs:
                 ofql.write("- " + x + "\n")
@@ -160,4 +162,9 @@ def run_multi_tradis(fastq_list, reference, output_dir="results", tag="", aligne
     if verbose:
         print("Snakemake command:", cmd)
 
-    os.system(cmd)
+    exit_code = subprocess.call(cmd, shell=True, stdout=sys.stdout, stderr=sys.stderr)
+
+    if verbose:
+        print("Snakemake returned exitcode:", exit_code)
+
+

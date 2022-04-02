@@ -1,7 +1,7 @@
 import os
 
 rule finish:
-    input: "results/combined.plot.stats"
+    input: os.path.join(config["output_dir"], "combined.plot.stats")
     run:
         print("All done!")
 
@@ -18,7 +18,7 @@ rule index_reference:
 rule tradis:
     input:
         idx=rules.index_reference.output,
-        fq="{fq}",
+        fq=os.path.join(config["fastq_dir"], "{fq}"),
         ref=config["reference"]
     output: os.path.join(config["output_dir"], "{fq}", "tradis_out.plot.stats")
     params:
@@ -36,6 +36,7 @@ rule tradis:
 
 rule combine_stats:
     input: expand(os.path.join(config["output_dir"], "{fq}", "tradis_out.plot.stats"), fq=config["fastqs"])
-    output: "results/combined.plot.stats"
+    output: os.path.join(config["output_dir"], "combined.plot.stats")
+    message: "Combining plot stats"
     shell:
         "head -n 1 {input[0]} > {output} && for i in {input}; do tail -n+2 $i >> {output} && echo "" >> {output}; done"
