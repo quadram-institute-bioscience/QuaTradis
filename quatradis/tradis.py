@@ -2,6 +2,7 @@ import os.path
 import sys
 import time
 import shutil
+import subprocess
 
 from quatradis.tags import remove_tags
 from quatradis.mapper import calc_read_length, index_reference, map_reads, sam2bam
@@ -9,7 +10,7 @@ from quatradis.isp_create import plot
 from quatradis import file_handle_helpers
 
 
-def run_tradis(fastq, reference, output_prefix, tag="", mapper="bwa", index=True, threads=1, max_mismatches=0, cutoff=30, verbose=False):
+def run_tradis(fastq, reference, output_prefix, tag="", mapper="bwa", index=True, threads=1, mismatch=0, mapping_score=30, verbose=False):
     """
     The main program logic for running tradis.  Tradis takes in a fastq file and a reference as input and generates
     transposon insertion site plot files for each reference sequence, along with stats related to this.
@@ -20,8 +21,8 @@ def run_tradis(fastq, reference, output_prefix, tag="", mapper="bwa", index=True
     :param mapper: The mapping tools to map reads to reference (bwa, smalt, minimap2, minimap2_long)
     :param index: Whether or not to index the reference.  Set to false if reference is already indexed using the specified mapper.
     :param threads: Number of threads used for mapping and sorting alignments
-    :param max_mismatches: number of mismatches allowed when matching tag
-    :param cutoff: Quality score cutoff value.  Alignments with score less than this are not considered for analysis.
+    :param mismatch: number of mismatches allowed when matching tag
+    :param mapping_score: Quality score cutoff value.  Alignments with score less than this are not considered for analysis.
     :param verbose: Extra logging information
     :return:
     """
@@ -47,7 +48,7 @@ def run_tradis(fastq, reference, output_prefix, tag="", mapper="bwa", index=True
     if tag:
         if verbose:
             print("..........Removing tags that match user input: " + tag + "\n", file=sys.stderr)
-        nb_reads, nb_output_reads, nb_tagged_reads = remove_tags(fastq, detagged, tag=tag, max_mismatches=max_mismatches, filter=True, trim=True)
+        nb_reads, nb_output_reads, nb_tagged_reads = remove_tags(fastq, detagged, tag=tag, max_mismatches=mismatch, filter=True, trim=True)
     else:
         if verbose:
             print("..........Tagless mode selected, skipping read preparation step\n", file=sys.stderr)
@@ -71,7 +72,7 @@ def run_tradis(fastq, reference, output_prefix, tag="", mapper="bwa", index=True
     plot_file = output_prefix + ".plot"
     if verbose:
         print("..........Generate insertion site plot files and statistics\n", file=sys.stderr)
-    plot(bam, fastq, plot_file, cutoff_score=cutoff, nb_reads=nb_reads, nb_tagged_reads=nb_tagged_reads)
+    plot(bam, fastq, plot_file, cutoff_score=mapping_score, nb_reads=nb_reads, nb_tagged_reads=nb_tagged_reads)
 
     end = time.time()
     if verbose:
@@ -80,22 +81,22 @@ def run_tradis(fastq, reference, output_prefix, tag="", mapper="bwa", index=True
         print("Plot files are here:", plot_file + ".*")
 
 
-def find_nextflow_file():
+def find_pipeline_file():
     """
     Depending on how quatradis gets installed we may need to look in different locations for the nextflow pipeline file
     """
-
-    local_path = os.path.join(os.path.dirname(__file__), "..", "pipelines", "multi_tradis.nf")
+    pipeline_file = "Snakefile"
+    local_path = os.path.join(os.path.dirname(__file__), "..", "pipelines", pipeline_file)
 
     if os.path.exists(local_path):
         return local_path
 
-    docker_path = os.path.join("/quatradis", "pipelines", "multi_tradis.nf")
+    docker_path = os.path.join("/quatradis", "pipelines", pipeline_file)
 
     if os.path.exists(docker_path):
         return docker_path
 
-    exe_path = shutil.which("multi_tradis.nf")
+    exe_path = shutil.which(pipeline_file)
 
     if os.path.exists(exe_path):
         return exe_path
@@ -103,37 +104,67 @@ def find_nextflow_file():
     raise RuntimeError("Could not find nextflow pipeline file.")
 
 
-def run_multi_tradis(fastq_list, reference, output_dir="results", nextflow_config="", tag="", aligner="bwa", threads=1, max_mismatches=0, cutoff=30, verbose=False):
+def create_yaml_option(option, value, num=False):
+    opt = option + ": "
+    if num:
+        opt += str(value)
+    else:
+        opt += "\"" + str(value) + "\""
+    opt += "\n"
+    return opt
+
+
+def run_multi_tradis(fastq_list, reference, output_dir="results", tag="", aligner="bwa", threads=1, mismatch=0, mapping_score=30, verbose=False,
+                     snakemake_profile=None):
     """
-    Use nextflow to process multiple fastqs in parallel
+    Use snakemake to process multiple fastqs in parallel
     """
 
     file_handle_helpers.ensure_output_dir_exists(output_dir)
 
     with open(fastq_list, 'r') as fql:
         fastqs = [x.strip() for x in fql.readlines() if x]
-        cleaned_fastq_list = os.path.join(output_dir, "quadtradis_nf.fastq.txt")
-        with open(cleaned_fastq_list, 'w') as ofql:
-            ofql.write("\n".join(fastqs))
+        snakemake_config = os.path.join(output_dir, "quadtradis_snakemake.yaml")
+        fastq_dir, fq_fn = os.path.split(fastq_list)
+        with open(snakemake_config, 'w') as ofql:
+            ofql.write(create_yaml_option("output_dir", output_dir))
+            ofql.write(create_yaml_option("reference", reference))
+            ofql.write("fastq_dir: \"" + fastq_dir + "\"\n")
+            ofql.write("fastqs:\n")
+            for x in fastqs:
+                ofql.write("- " + x + "\n")
+            ofql.write(create_yaml_option("tag", tag))
+            ofql.write(create_yaml_option("aligner", aligner))
+            ofql.write(create_yaml_option("threads", threads, num=True))
+            ofql.write(create_yaml_option("mismatch", mismatch, num=True))
+            ofql.write(create_yaml_option("mapping_score", mapping_score, num=True))
 
-    nfcfg_cmd = ""
-    if nextflow_config:
-        nfcfg_cmd = "-c " + nextflow_config
+    pipeline = find_pipeline_file()
 
-    original_dir, filename = os.path.split(fastq_list)
+    config_files = [snakemake_config]
 
-    nf_pipeline = find_nextflow_file()
-
-    command_args = ["nextflow", nfcfg_cmd, nf_pipeline, "--reference=" + reference,
-               "--fastqs=" + cleaned_fastq_list, "--original_dir=" + original_dir, "--refname=myref", "--outdir=" + output_dir,
-               ("--tag=" + tag) if tag else "", ("--aligner=" + aligner) if aligner else "",
-               ("--threads=" + str(threads)) if threads else "",
-               ("--mismatch=" + str(max_mismatches)) if max_mismatches else "",
-               ("--mapping_score=" + str(cutoff)) if cutoff else ""]
-
-    command = " ".join(command_args)
 
     if verbose:
-        print("Attempting to execute nextflow pipeline with command:", command)
+        print("Using snakemake config files at: " + ", ".join(config_files))
+        print("Starting snakemake pipeline")
 
-    os.system(command)
+    cmd_list = ["snakemake",
+         "--snakefile=" + pipeline,
+         "--configfile=" + snakemake_config,
+         "--cores=" + str(threads)]
+
+    if snakemake_profile:
+        cmd_list.append("--profile=" + snakemake_profile)
+    if verbose:
+        cmd_list.append("--verbose")
+
+    cmd = " ".join(cmd_list)
+    if verbose:
+        print("Snakemake command:", cmd)
+
+    exit_code = subprocess.call(cmd, shell=True, stdout=sys.stdout, stderr=sys.stderr)
+
+    if verbose:
+        print("Snakemake returned exitcode:", exit_code)
+
+

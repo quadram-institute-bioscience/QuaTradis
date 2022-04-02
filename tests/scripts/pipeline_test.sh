@@ -17,5 +17,5 @@ echo -n "Checking 'tradis pipeline single' ... "
 echo "ok"
 
 echo -n "Checking 'tradis pipeline multiple' ... "
-./scripts/tradis pipeline multiple --output_dir temp_test tests/data/mapper/fastq.txt tests/data/mapper/smallref.fa 2>&1 > /dev/null && rm -r temp_test work .nextflow && rm .nextflow.log*
+./scripts/tradis pipeline multiple --output_dir temp_test tests/data/mapper/fastq.txt tests/data/mapper/smallref.fa 2>&1 > /dev/null && rm tests/data/mapper/smallref.fa.* && rm -r temp_test .snakemake
 echo "ok"
