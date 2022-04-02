@@ -164,8 +164,8 @@ def run_single_pipeline(args):
     output_prefix = os.path.join(args.output_dir, args.output_prefix) 
 
     tradis.run_tradis(args.fastq, args.reference, output_prefix, tag=args.tag,
-               mapper=args.aligner, index=not args.no_ref_index, threads=args.threads, max_mismatches=args.mismatch,
-               cutoff=args.mapping_score, verbose=args.verbose)
+               mapper=args.aligner, index=not args.no_ref_index, threads=args.threads, mismatch=args.mismatch,
+               mapping_score=args.mapping_score, verbose=args.verbose)
 
     if args.profile:
         pr.disable()
@@ -192,17 +192,17 @@ def multiple_pipeline_options(parser):
                         help='the tag to remove from fastq input (default: "")')
     parser.add_argument('-mm', '--mismatch', type=int, default=0,
                         help='number of mismatches allowed when matching tag (default: 0)')
-    parser.add_argument('-nc', '--nextflow_config', type=str,
-                        help='If provided add the nexflow parameters in this file to combine with our defaults.  Use this to distribute processes over a cluster for example.  See nextflow docs for more details.')
+    parser.add_argument('-sp', '--snakemake_profile', type=str,
+                        help='If provided, pass this directory onto snakemake.  Assumes there is a file called "config.yaml" in that directory.')
     parser.add_argument('-v', '--verbose', dest='verbose', action='store_true',
                         help='Add verbose output to console logs')
 
 
 def run_multiple_pipeline(args):
     tradis.run_multi_tradis(args.fastqs, args.reference,
-                     output_dir=args.output_dir, nextflow_config=args.nextflow_config,
-                     tag=args.tag, aligner=args.aligner, threads=args.threads, max_mismatches=args.mismatch,
-                     cutoff=args.mapping_score, verbose=args.verbose)
+                     output_dir=args.output_dir,
+                     tag=args.tag, aligner=args.aligner, threads=args.threads, mismatch=args.mismatch,
+                     mapping_score=args.mapping_score, verbose=args.verbose, snakemake_profile=args.snakemake_profile)
 
 
 def index_utils_options(parser):

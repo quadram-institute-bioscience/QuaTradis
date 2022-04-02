@@ -22,6 +22,7 @@ setup(name='quatradis',
       install_requires=requirements,
       extras_require={
         "dev": ["semantic-version", "pytest-cov"],
+        "test": ["pytest-cov"]
       },
       scripts=['scripts/tradis',
                'scripts/tradis_comparison.R',
