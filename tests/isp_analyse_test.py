@@ -31,8 +31,8 @@ class AnalyseInsertSitesTest(unittest.TestCase):
         isp_analyse.analyse_insert_sites(embl_file="data/isp_analyse/reference_BW25113_short.embl",
                                                 plot_files=["data/isp_analyse/controlLBrep1.insert_site_plot_short.gz",
                                                             "data/isp_analyse/025mgLTricRep1.insert_site_plot_short.gz"])
-        self.assertTrue(os.path.exists("controlLBrep1.insert_site_plot_short.gz.tradis_gene_insert_sites.csv"))
-        self.assertTrue(os.path.exists("025mgLTricRep1.insert_site_plot_short.gz.tradis_gene_insert_sites.csv"))
+        self.assertTrue(os.path.exists("controlLBrep1.tradis_gene_insert_sites.csv"))
+        self.assertTrue(os.path.exists("025mgLTricRep1.tradis_gene_insert_sites.csv"))
         os.system("rm *.tradis_gene_insert_sites.csv")
 
     def test_analyse_insert_sites_joined(self):
