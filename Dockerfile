@@ -2,10 +2,17 @@
 #
 FROM debian:bullseye-slim
 
-# Install the dependencies
+# Install the system dependencies
 RUN apt-get update -qq && \
-    apt-get install -y sudo bzip2 curl default-jre gcc gzip locales make procps r-base unzip wget && \
+    apt-get install -y sudo bzip2 curl default-jre gcc gzip locales make procps unzip wget && \
+    apt-get install -y dirmngr gnupg apt-transport-https ca-certificates software-properties-common && \
     apt-get install -y bwa minimap2 smalt
+
+# Setup R
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-key '95C0FAF38DB3CCAD0C080A7BDC78B2DDEABC47B7' && \
+	add-apt-repository 'deb http://cloud.r-project.org/bin/linux/debian bullseye-cran40/' && \
+	apt-get update -qq && \
+	apt-get install -y r-base
 
 # Install R dependencies
 RUN Rscript -e "install.packages('BiocManager')" -e "BiocManager::install()" -e "BiocManager::install(c('edgeR','getopt', 'MASS'))"
