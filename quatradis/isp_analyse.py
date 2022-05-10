@@ -54,6 +54,7 @@ def create_output_filenames(files, joined_output=False, output_dir="", output_su
     out_files = []
     for f in files:
         file_base = os.path.basename(os.path.basename(f))
+        file_base = file_base.split(sep='.')[0]
         out_files.append(os.path.join(output_dir, file_base + "." + output_suffix))
 
     return out_files
@@ -94,7 +95,7 @@ def get_gene_name(feature):
     else:
         gene_name = get_feature_id(feature)
     # Replace any non-word character
-    gene_name = "".join([c for c in gene_name if c.isalnum()])
+    gene_name = "".join([c for c in gene_name if c.isalnum() or c == '_'])
     return gene_name
 
 
@@ -144,7 +145,7 @@ def relevant_feature(feature, cds_coordinates):
 def count_inserts(insert_sites, read_start, read_end):
     count = 0
     inserts = 0
-    for j in range(read_start, read_end + 1):
+    for j in range(read_start, read_end):
         count += insert_sites[j]
         if insert_sites[j] > 0:
             inserts += 1
