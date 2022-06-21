@@ -27,5 +27,4 @@ setup(name='quatradis',
       scripts=['scripts/tradis',
                'scripts/tradis_comparison.R',
                'scripts/tradis_essentiality.R',
-               'pipelines/multi_tradis.nf',
-               'pipelines/nextflow.config'])
+               'pipelines/quatradis.smk'])

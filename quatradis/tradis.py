@@ -85,7 +85,7 @@ def find_pipeline_file():
     """
     Depending on how quatradis gets installed we may need to look in different locations for the nextflow pipeline file
     """
-    pipeline_file = "Snakefile"
+    pipeline_file = "quatradis.smk"
     local_path = os.path.join(os.path.dirname(__file__), "..", "pipelines", pipeline_file)
 
     if os.path.exists(local_path):
