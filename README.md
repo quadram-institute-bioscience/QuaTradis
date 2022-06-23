@@ -130,14 +130,63 @@ sudo apt install r-base
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/quatradis/badges/platforms.svg)](https://anaconda.org/bioconda/quatradis)
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/quatradis/badges/downloads.svg)](https://anaconda.org/bioconda/quatradis)
 
-Before installing quatradis via conda, first install conda and enable the bioconda channel as described in steps 1 and 2 
-[here](http://bioconda.github.io/user/install.html#set-up-channels).
+Before installing quatradis via conda, first [install conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/linux.html) 
+and enable the bioconda channel as described [here](https://bioconda.github.io/).  After which if you 
+don't have mamba installed then we recommend you do this to make the installation process much faster.   
+Rough steps are described here (adapt as needed for your system):
 
 ```
-conda install -c bioconda quatradis
+# We assume you already have conda installed with bioconda channel setup.  See comments above for details.
+
+# Install mamba if you haven't already
+conda install -c conda-forge mamba
+
+# Install quatradis
+mamba install -c bioconda quatradis
+
+# For now to workaround an issue with the bioconda reciepe it maybe required to install the latest pysam version as 
+# sometimes an old incompatible version gets installed
+mamba install -c conda-forge -c bioconda pysam=0.19.1
 ```
 
-Note: If this is the first time you have installed a conda package on your system this may take some time.
+Quatradis installs several conda dependencies, to avoid version mixups you might want to install quatradis in it's own
+[conda virtual environment](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html).  
+To do this instead of running the commands above which install quatradis to your base environment you can install into
+an environment called 'quatradis_env' (can be renamed to whatever you like) like so:
+
+```
+# We assume you already have conda installed with bioconda channel setup.  See comments above for details.
+
+# Install mamba if you haven't already.  Its necessary to install this in the base environment
+conda install -c conda-forge mamba
+
+# Create the virtual environment
+conda create --name quatradis_env
+
+# Activate the virtual environment
+conda activate quatradis_env
+
+# Install quatradis
+mamba install -c bioconda quatradis
+
+# For now to workaround an issue with the bioconda reciepe it maybe required to install the latest pysam version as 
+# sometimes an old incompatible version gets installed
+mamba install -c conda-forge -c bioconda pysam=0.19.1
+```
+
+Remember that if using virtual environments you will need to activate it everytime prior to using quatradis:
+
+```
+# Activate the virtual environment called quatradis
+conda activate quatradis_env
+
+# Run your tradis command...
+tradis <arguments and options>
+
+# If you need to deactivate the venv, either just close your terminal session or explicitly type
+conda deactivate
+```
+
 
 ### From Docker
 
