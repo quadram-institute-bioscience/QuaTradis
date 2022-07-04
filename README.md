@@ -143,7 +143,7 @@ conda install -c conda-forge mamba
 
 # Install quatradis
 mamba install -c bioconda -c conda-forge quatradis
-
+```
 
 Quatradis installs several conda dependencies, to avoid version mixups you might want to install quatradis in it's own
 [conda virtual environment](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html).  
