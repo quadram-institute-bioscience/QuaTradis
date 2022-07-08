@@ -142,7 +142,7 @@ Rough steps are described here (adapt as needed for your system):
 conda install -c conda-forge mamba
 
 # Install quatradis
-mamba install -c bioconda -c conda-forge quatradis
+mamba install -c conda-forge -c bioconda quatradis
 ```
 
 Quatradis installs several conda dependencies, to avoid version mixups you might want to install quatradis in it's own
@@ -163,9 +163,9 @@ conda create --name quatradis_env
 conda activate quatradis_env
 
 # Install quatradis
-mamba install -c bioconda -c conda-forge quatradis
+mamba install -c conda-forge -c bioconda quatradis
 
-# For now to workaround an issue with the bioconda reciepe it maybe required to install the latest pysam version as 
+# For now to workaround an issue with the bioconda recipe it may be required to install the latest pysam version as 
 # sometimes an old incompatible version gets installed
 mamba install -c conda-forge -c bioconda pysam=0.19.1
 ```
