@@ -48,12 +48,15 @@ RUN echo "source activate quatradis" > ~/.bashrc
 ENV PATH /opt/conda/envs/quatradis/bin:${PATH}
 RUN pip install jinja2 pygments slacker oauth2client google-crc32c google-api-python-client google-cloud-storage
 
-# Add source code
-ADD . /quatradis
-WORKDIR /quatradis
-
 # Install python dependencies
+ADD requirements.txt /quatradis/requirements.txt
+WORKDIR /quatradis
 RUN pip install -r requirements.txt
+
+# Add full source code
+ADD . /quatradis
+
+# Install extra dependencies for testing
 RUN pip install .[test]
 
 # Install quatradis
