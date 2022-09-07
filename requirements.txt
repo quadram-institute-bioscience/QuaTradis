@@ -1,6 +1,11 @@
 pysam
 biopython
+cython
+dendropy
+graphviz
 matplotlib
 numpy
 pandas
+scipy
+seaborn
 snakeviz
