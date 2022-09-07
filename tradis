@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+
+import argparse
+import sys
+
+import pkg_resources  # part of setuptools
+
+import quatradis.util.cli as qutils
+import quatradis.pipelines.pipeline as pipelines
+import quatradis.tisp.cli as tisp
+import quatradis.comparison.cli as ca
+
+# Establish the software version from the package resources
+version = pkg_resources.require("quatradis")[0].version
+
+def call_func(parser, args):
+    """
+    Given a command line parser and set of pre parsed command line arguments either execute the attached function, or print
+    a help message to the user.
+    """
+    if hasattr(args, "func"):
+        if args.verbose:
+            print("Command line args parsed:", args)
+        args.func(args)
+    elif args.version:
+        print(version)
+    else:
+        parser.print_help()
+
+
+def main():
+    call_args = sys.argv[1:]
+
+    parser = argparse.ArgumentParser(
+        """This script contains a number of tools for running or supporting TraDIS experiments.""",
+        formatter_class=argparse.RawTextHelpFormatter)
+
+    # Version option only available at top level
+    parser.add_argument("-V", "--version", action='store_true', default=False, help="Output the software version")
+
+    subparsers = parser.add_subparsers(title="Tradis Tools")
+
+    # Add command line parsers to the master parser from other packages
+    tisp.add_subparser(subparsers)
+    ca.add_subparser(subparsers)
+    pipelines.add_subparser(subparsers)
+    qutils.add_subparser(subparsers)
+
+    # Process CLI args
+    args = parser.parse_args(call_args)
+
+    # Start the profiler if requested by user
+    if args.profile:
+        import cProfile, pstats
+        pr = cProfile.Profile()
+        pr.enable()
+
+    # Do the user requested work
+    call_func(parser, args)
+
+    # End profiling and write out profile to disk if requested by user
+    if args.profile:
+        pr.disable()
+        ps = pstats.Stats(pr).sort_stats('cumulative')
+        print("\n\n..........Profiling stats\n")
+        ps.print_stats()
+        ps.dump_stats("tradis.profile")
+
+
+if __name__ == '__main__':
+    main()

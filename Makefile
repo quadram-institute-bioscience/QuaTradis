@@ -11,12 +11,13 @@ install:
 	python3 setup.py install
 
 unit_test:
-	cd tests && pytest --cov --cov-report=xml --doctest-modules
+	cd tests && pytest --cov --cov-report=xml --doctest-modules --disable-warnings
 
 script_test:
-	./scripts/tradis --help > /dev/null
+	./tradis --help > /dev/null
 	./tests/scripts/tags_test.sh
 	./tests/scripts/plot_test.sh
+	./tests/scripts/comparison_test.sh
 	./tests/scripts/utils_test.sh
 	./tests/scripts/pipeline_test.sh
 	./tests/scripts/R_test.sh

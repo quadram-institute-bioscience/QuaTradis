@@ -5,9 +5,9 @@
 
 # Sanity test help messages
 echo -n "Checking 'tradis_comparison.R script' help message ... "
-./scripts/tradis_comparison.R --help 2>&1 > /dev/null
+./quatradis/essentiality/tradis_comparison.R --help > /dev/null 2>&1
 echo "ok"
 
 echo -n "Checking 'tradis_essentiality.R script' help message ... "
-./scripts/tradis_essentiality.R 2>&1 > /dev/null
+./quatradis/essentiality/tradis_essentiality.R > /dev/null 2>&1
 echo "ok"
