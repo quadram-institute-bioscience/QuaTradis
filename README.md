@@ -143,8 +143,9 @@ Rough steps are described here (adapt as needed for your system):
 conda install -c conda-forge mamba
 
 # Install quatradis
-mamba install -c bioconda -c conda-forge quatradis
+mamba install -c conda-forge -c bioconda quatradis
 ```
+
 
 Quatradis installs several conda dependencies, to avoid version mixups you might want to install QuaTraDIS in it's own
 
@@ -324,12 +325,14 @@ directly from the `tests` directory.
 
 ### CI
 
-[![Build Status](https://img.shields.io/travis/com/quadram-institute-bioscience/QuaTradis/master)](https://app.travis-ci.com/github/quadram-institute-bioscience/QuaTradis)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/quadram-institute-bioscience/QuaTradis/create_release.yml?branch=master)](https://github.com/quadram-institute-bioscience/QuaTradis/actions/workflows/create_release.yml)
 
-Continuous integration is delivered via [travis](https://app.travis-ci.com/github/quadram-institute-bioscience/QuaTradis).
-The [travis pipeline](.travis.yml) is designed to build and test all commits pushed to github.  For `master`
-branch builds, travis will also publish the latest docker image to [dockerhub](https://hub.docker.com/r/quadraminstitute/quatradis) 
-if that commit is tagged (see below). 
+Continuous integration is delivered via [Github Actions](https://github.com/quadram-institute-bioscience/QuaTradis/actions).
+There are two pipelines in the [.github/workflows](.github/workflows) directory.  One will build and test QuaTradis on 
+any branch except for master.  The status of these builds should be checked before any PRs or merges are applied into the
+master branch.  For commit to the `master` branch no builds are executed by default, however if a git tag is applied, 
+then not only is this commit built and tested, but also the docker image is published to dockerhub.  See the next section
+for details on how we recommend tags are applied using semantic versioning.
 
 ### Versioning
 
