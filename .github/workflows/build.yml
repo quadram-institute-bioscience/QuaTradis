@@ -1,0 +1,19 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - '*'
+    pull_request:
+      branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+
+      - name: Build the Docker image
+        run: docker build . --file Dockerfile --tag sbastkowski/quatradis:$(date +%s)
+

@@ -14,15 +14,7 @@ unit_test:
 	cd tests && pytest --cov --cov-report=xml --doctest-modules --disable-warnings
 
 script_test:
-	./tradis --help > /dev/null
-	./tests/scripts/tags_test.sh
-	./tests/scripts/plot_test.sh
-	./tests/scripts/comparison_test.sh
-	./tests/scripts/utils_test.sh
-	./tests/scripts/pipeline_test.sh
-	./tests/scripts/R_test.sh
-
-
+	./test_scripts.sh
 
 test: unit_test script_test
 
@@ -42,6 +34,10 @@ docker-push: docker-build
 	docker tag ${DOCKER_PATH}:${VERSION} ${DOCKER_PATH}:latest
 	docker push ${DOCKER_PATH}:latest
 	docker push ${DOCKER_PATH}:${VERSION}
+
+docker-base:
+	docker build -t ${DOCKER_PATH}-base:latest -f Dockerfile.base .
+	docker push ${DOCKER_PATH}-base:latest
 
 
 update_master_branch:

@@ -1,12 +1,11 @@
 .idea/
 .scannerwork/
 .snakemake/
+.coverage
+coverage.xml
 quatradis.egg-info/
 build/
 dist/
 **/__pycache__/
-tests/temp/
-tests/.coverage
-tests/coverage.xml
 venv/
 test1/
