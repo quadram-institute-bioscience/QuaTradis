@@ -16,7 +16,7 @@ def load_plot_file(plot_file):
         # Note the hack for the first line.  This is so we can use 1-based access to represent line numbers / coord positions in file
         return [""] + [str(x, 'UTF-8').strip() for x in plot_handle.readlines()]
 
-data_dir = os.path.join("data", "tisp", "generator", "from_alignments")
+data_dir = os.path.join("data", "tisp", "create")
 tags_data_dir = os.path.join("data", "util", "tags")
 
 class InsertSitePlotTest(unittest.TestCase):

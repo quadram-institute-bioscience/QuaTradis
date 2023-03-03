@@ -127,12 +127,15 @@ class TradisComparisonRunner:
             self.exec = r_script
         else:
             # Otherwise try to find it on the PATH
-            if not shutil.which(self.exec):
-                raise Exception("Can't find " + self.exec + " available to execute")
+            if not shutil.which(exec):
+                raise Exception("Can't find " + exec + " available to execute")
+            else:
+                self.exec = exec
 
         if not shutil.which("Rscript"):
             raise Exception(
                 "Can't find Rscript executable.  Make sure R is installed and properly configured on your system and try again.")
+
 
     def gene_names_from_essentiality_file(self, filename):
 

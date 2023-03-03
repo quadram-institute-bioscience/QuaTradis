@@ -22,12 +22,12 @@ def add_subparser(subparsers):
                   "Calculates gene essentiality for a set of transposon insertion site plots files ",
                   description='''This pipeline uses snakemake, therefore it is possible to customise how this operates to distribute the workload
     across a cluster using a snakemake config file.''',
-                  usage="tradis pipeline compare [options] <plotfiles> <embl annotation>")
+                  usage="tradis pipeline compare [options]")
 
 
 def create_plots_options(parser):
     parser.add_argument('fastqs', type=str,
-                        help='A line separated text file containing a list of fastq formatted reads for processing.')
+                        help='Either a line separated text file containing a list of fastq formatted reads for processing or a single fastq file (can be gzipped).')
     parser.add_argument('reference', type=str,
                         help='The fasta formatted reference for processing.')
     parser.add_argument('-o', '--output_dir', default="results",
@@ -54,22 +54,25 @@ def create_plots_pipeline(args):
 
     fhh.ensure_output_dir_exists(args.output_dir)
 
-    with open(args.fastqs, 'r') as fql:
-        fastqs = [x.strip() for x in fql.readlines() if x]
-        snakemake_config = os.path.join(args.output_dir, "create_plots_config.yaml")
-        fastq_dir, fq_fn = os.path.split(args.fastqs)
-        with open(snakemake_config, 'w') as ofql:
-            ofql.write(create_yaml_option("output_dir", args.output_dir))
-            ofql.write(create_yaml_option("reference", args.reference))
-            ofql.write("fastq_dir: \"" + fastq_dir + "\"\n")
-            ofql.write("fastqs:\n")
-            for x in fastqs:
-                ofql.write("- " + x + "\n")
-            ofql.write(create_yaml_option("tag", args.tag))
-            ofql.write(create_yaml_option("aligner", args.aligner))
-            ofql.write(create_yaml_option("threads", args.threads, num=True))
-            ofql.write(create_yaml_option("mismatch", args.mismatch, num=True))
-            ofql.write(create_yaml_option("mapping_score", args.mapping_score, num=True))
+    fastqs = [args.fastqs]
+    if not fhh.is_fastq(args.fastqs):
+        with open(args.fastqs, 'r') as fql:
+            fastqs = [x.strip() for x in fql.readlines() if x]
+
+    snakemake_config = os.path.join(args.output_dir, "create_plots_config.yaml")
+    fastq_dir, fq_fn = os.path.split(args.fastqs)
+    with open(snakemake_config, 'w') as ofql:
+        ofql.write(create_yaml_option("output_dir", args.output_dir))
+        ofql.write(create_yaml_option("reference", args.reference))
+        ofql.write("fastq_dir: \"" + fastq_dir + "\"\n")
+        ofql.write("fastqs:\n")
+        for x in fastqs:
+            ofql.write("- " + x + "\n")
+        ofql.write(create_yaml_option("tag", args.tag))
+        ofql.write(create_yaml_option("aligner", args.aligner))
+        ofql.write(create_yaml_option("threads", args.threads, num=True))
+        ofql.write(create_yaml_option("mismatch", args.mismatch, num=True))
+        ofql.write(create_yaml_option("mapping_score", args.mapping_score, num=True))
 
     pipeline = find_pipeline_file("create_plots.smk")
 
