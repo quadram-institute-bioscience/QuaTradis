@@ -23,12 +23,12 @@ echo -n "Checking 'tradis plot count' ... "
 ./tradis plot count -o temp_test $DATA_DIR/analyse/reference_BW25113_short.embl $DATA_DIR/analyse/controlLBrep?.insert_site_plot_short.gz > /dev/null 2>&1 && rm -r temp_test
 echo "ok"
 
-echo -n "Checking 'tradis plot create from_fastq' ... "
-./tradis plot create from_fastq --output_dir temp_test --profile tests/data/mapper/test.fastq tests/data/mapper/smallref.fa > /dev/null 2>&1 && rm -f tests/data/mapper/smallref.fa.* && rm -r temp_test && rm tradis.profile
+echo -n "Checking 'tradis plot create' ... "
+./tradis plot create --output_dir temp_test --profile tests/data/mapper/test.fastq tests/data/mapper/smallref.fa > /dev/null 2>&1 && rm -f tests/data/mapper/smallref.fa.* && rm -r temp_test && rm tradis.profile
 echo "ok"
 
-echo -n "Checking 'tradis plot create from_alignments' ... "
-./tradis plot create from_alignments --outfile temp_test/tradis.plot -m 20 $DATA_DIR/create/small_multi_sequence.bam > /dev/null 2>&1 && rm -r temp_test
+echo -n "Checking 'tradis plot create (with alignment file)' ... "
+./tradis plot create -output_dir temp_test -m 20 --alignments $DATA_DIR/create/small_multi_sequence.bam tests/data/mapper/test.fastq tests/data/mapper/smallref.fa > /dev/null 2>&1 && rm -r temp_test
 echo "ok"
 
 echo -n "Checking 'tradis plot normalise' ... "

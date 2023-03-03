@@ -1,5 +1,6 @@
+import os
 
-import quatradis.tisp.generator.cli as generators
+from quatradis.tisp.generator.create import run_tradis
 
 from quatradis.util.parser import create_parser
 
@@ -12,8 +13,9 @@ def add_subparser(subparsers):
     plot_parser = subparsers.add_parser("plot", help=plot_parser_desc)
     plot_subparsers = plot_parser.add_subparsers(title=plot_parser_desc)
 
-    generators.add_subparser(plot_subparsers)
-
+    create_parser("create", plot_subparsers, combine_plots, combine_plot_options,
+                  "Create a TraDIS plot file.",
+                  description='''Can create a TraDIS plot file from either fastq or alignment file input''')
     create_parser("combine", plot_subparsers, combine_plots, combine_plot_options,
                   "Combine multiple TraDIS plot files into one.",
                   description='''Combine multiple TraDIS plot files into one.  
@@ -27,6 +29,38 @@ def add_subparser(subparsers):
                   "Given a set of plot files, find the one with the highest number of reads and normalise all the rest into new files",
                   usage="tradis tisp normalise [options] <plot_file>+")
 
+
+def create_plot_options(parser):
+    parser.add_argument('fastq', type=str,
+                        help='Either the fastq formatted reads for processing (can be gzipped)')
+    parser.add_argument('reference', type=str,
+                        help='The fasta formatted reference for processing.')
+    parser.add_argument('-a', '--alignments', type=str, default="",
+                        help="SAM or BAM file.  If provided then we will skip aligning the fastq to the reference.")
+    parser.add_argument('-o', '--output_dir', dest='output_dir', default="",
+                        help='The directory in which to put all output files (default: current working directory)')
+    parser.add_argument('-p', '--output_prefix', dest='output_prefix', default="quatradis_out",
+                        help='The filename prefix to use for all output files (default: quatradis_out)')
+    parser.add_argument('-n', '--threads', type=int, default=1,
+                        help='number of threads to use when mapping and sorting (default: 1)')
+    parser.add_argument('-a', '--aligner', default="bwa",
+                        help='mapping tool to use (bwa, smalt, minimap2, minimap2_long) (default: bwa)')
+    parser.add_argument('-ni', '--no_ref_index', dest='no_ref_index', action='store_true',
+                        help='If reference is alredy indexed used this flag to skip the indexing process.')
+    parser.add_argument('-m', '--mapping_score', type=int, default=30,
+                        help='mapping quality must be greater than X (Default: 30)')
+    parser.add_argument('-t', '--tag', type=str, default="",
+                        help='the tag to remove from fastq input (default: "")')
+    parser.add_argument('-mm', '--mismatch', type=int, default=0,
+                        help='number of mismatches allowed when matching tag (default: 0)')
+
+
+def create_plot(args):
+    output_prefix = os.path.join(args.output_dir, args.output_prefix)
+
+    run_tradis(args.fastq, args.reference, output_prefix, alignments=args.alignments, tag=args.tag,
+                      mapper=args.aligner, index=not args.no_ref_index, threads=args.threads, mismatch=args.mismatch,
+                      mapping_score=args.mapping_score, verbose=args.verbose)
 
 
 def combine_plot_options(parser):
