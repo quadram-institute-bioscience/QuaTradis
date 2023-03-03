@@ -8,7 +8,7 @@ dev:
 	python3 setup.py develop
 
 install:
-	python3 setup.py install
+	pip install .
 
 unit_test:
 	cd tests && pytest --cov --cov-report=xml --doctest-modules --disable-warnings

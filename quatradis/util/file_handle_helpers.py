@@ -3,6 +3,10 @@ import os
 
 from Bio import bgzf
 
+def is_fastq(filename):
+    return filename.endswith('.fastq.gz') or filename.endswith('.fastq') or filename.endswith('.fq.gz') or filename.endswith('.fq')
+
+
 
 def reader_opener(fastq_file):
     """

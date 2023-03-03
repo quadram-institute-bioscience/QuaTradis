@@ -1,4 +1,5 @@
 import os
+import shutil
 
 plotnames=[]
 controlnames=[]
@@ -16,6 +17,12 @@ for p in config["control_files"]:
     controlnames.append(plotname)
     plot_lut[plotname]=p
 
+ZCAT_CMD='gzcat'
+if not shutil.which('gzcat'):
+	if shutil.which('zcat'):
+		ZCAT_CMD='zcat'
+	else:
+		raise Error("Couldn't find gzcat or zcat on your system.  Please install and try again.")
 
 
 rule finish:
@@ -81,9 +88,10 @@ rule logfc:
         combined=os.path.join(config["output_dir"], "essentiality", controlnames[0], "combined.plot.gz"),
         output_dir="--prefix=" + os.path.join(config["output_dir"], "logfc"),
         control_dirs="--control_dirs " + " ".join(expand(os.path.join(config["output_dir"], "essentiality", "{control}"), control=controlnames)),
-        condition_dirs="--condition_dirs " + " ".join(expand(os.path.join(config["output_dir"],"essentiality","{condition}"),condition=conditionnames))
+        condition_dirs="--condition_dirs " + " ".join(expand(os.path.join(config["output_dir"],"essentiality","{condition}"),condition=conditionnames)),
+        zcat=ZCAT_CMD
     message: "Calculating logfc for {output}"
-    shell: "SEQLENGTH=$(zcat {params.combined} | wc -l); tradis compare logfc_plot {input.embl} {params.type} {params.output_dir} -g $SEQLENGTH {params.control_dirs} {params.condition_dirs}"
+    shell: "SEQLENGTH=$({params.zcat} {params.combined} | wc -l); tradis compare logfc_plot {input.embl} {params.type} {params.output_dir} -g $SEQLENGTH {params.control_dirs} {params.condition_dirs}"
 
 
 rule gene_stats:
@@ -94,6 +102,7 @@ rule gene_stats:
     params:
         input_dir=os.path.join(config["output_dir"], "logfc"),
         output_dir="--output_dir=" + config["output_dir"],
-        window_size="--window_size=" + config["window_size"]
+        window_size="--window_size=" + config["window_size"],
+        annotations="--annotations=" + config["annotations"] if not config["annotations"]=="None" else ""
     message: "Creating gene report"
-    shell: "tradis compare gene_report {params.window_size} {params.output_dir} {params.input_dir} {input.embl}"
+    shell: "tradis compare gene_report {params.window_size} {params.output_dir} {params.input_dir} {params.annotations} {input.embl}"

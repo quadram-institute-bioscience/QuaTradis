@@ -15,7 +15,7 @@ from pysam.libcalignedsegment import CIGAR_OPS
 from quatradis.util import tags
 
 data_dir = os.path.join('data', 'util', 'tags')
-tisp_data_dir = os.path.join('data', 'tisp', 'generator', 'from_alignments')
+tisp_data_dir = os.path.join('data', 'tisp', 'create')
 
 class TagsTest(unittest.TestCase):
 

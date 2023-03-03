@@ -28,7 +28,7 @@ echo -n "Checking 'tradis plot create' ... "
 echo "ok"
 
 echo -n "Checking 'tradis plot create (with alignment file)' ... "
-./tradis plot create -output_dir temp_test -m 20 --alignments $DATA_DIR/create/small_multi_sequence.bam tests/data/mapper/test.fastq tests/data/mapper/smallref.fa > /dev/null 2>&1 && rm -r temp_test
+./tradis plot create --output_dir temp_test -m 20 --alignments $DATA_DIR/create/small_multi_sequence.bam tests/data/mapper/test.fastq tests/data/mapper/smallref.fa > /dev/null 2>&1 && rm -r temp_test
 echo "ok"
 
 echo -n "Checking 'tradis plot normalise' ... "

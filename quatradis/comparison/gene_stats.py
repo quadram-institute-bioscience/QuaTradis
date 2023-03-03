@@ -39,8 +39,8 @@ def gene_statistics(comparison_dir, window_size, embl_file, output_dir="output",
         print("No significant genes found for chosen parameters.\n")
         return []
 
-    write_gene_report(all_genes, intergenic_blocks, output_dir, use_annotation)
-    write_regulated_gene_report(all_genes, output_dir)
+    write_gene_report(all_genes, intergenic_blocks, os.path.join(output_dir, "gene_report.csv"), use_annotation)
+    write_regulated_gene_report(all_genes, os.path.join(output_dir, "regulated_gene_report.csv"))
 
     # if self.verbose:
     # self.print_genes_intergenic(genes,intergenic_blocks)
@@ -96,10 +96,9 @@ def merge_windows(windows):
 
 
 
-def write_gene_report(genes, intergenic_blocks, output_dir, use_annotation):
-    block_filename = os.path.join(output_dir, "gene_report.csv")
+def write_gene_report(genes, intergenic_blocks, output_filename, use_annotation):
 
-    with open(block_filename, 'w') as bf:
+    with open(output_filename, 'w') as bf:
         bf.write(str(genes[0].header()) + "\n")
         if not use_annotation:
             for i in genes:
@@ -111,11 +110,10 @@ def write_gene_report(genes, intergenic_blocks, output_dir, use_annotation):
             bf.write(str(b) + "\n")
 
 
-def write_regulated_gene_report(genes, output_dir):
+def write_regulated_gene_report(genes, output_filename):
     regulated_genes = [g for g in genes if g.category() == 'upregulated' or g.category() == 'downregulated']
     if len(regulated_genes) > 0:
-        block_filename = os.path.join(output_dir, "regulated_gene_report.csv")
-        with open(block_filename, 'w') as bf:
+        with open(output_filename, 'w') as bf:
             bf.write(str(regulated_genes[0].header()) + "\n")
             for i in regulated_genes:
                 bf.write(str(i) + "\n")

@@ -15,7 +15,7 @@ def run_tradis(fastq, reference, output_prefix, alignments="", tag="", mapper="b
     transposon insertion site plot files for each reference sequence, along with stats related to this.
     :param input: Either a fastq formatted file containing reads (can be read gzipped or uncompressed) or an alignment file (e.g. SAM/BAM).
     :param reference: The fasta formatted reference sequences
-    :param output_prefix: Output prefix for output files
+    :param output_prefix: Output prefix for output files.  If empty, then we output to current directory and use the fastq filename as prefix
     :param alignments: The alignment file (SAM or BAM) to use as input.  If provided, then we won't try to recreate the alignments directly from fastq.
     :param tag: Tag to identify and trim in reads.  If left empty then we run tradis in tagless mode and map reads as is.
     :param mapper: The mapping tools to map reads to reference (bwa, smalt, minimap2, minimap2_long)
@@ -34,6 +34,9 @@ def run_tradis(fastq, reference, output_prefix, alignments="", tag="", mapper="b
         raise ValueError("Reference fasta file not found at " + reference)
 
     start = time.time()
+
+    if not output_prefix:
+        output_prefix = os.path.join(".", fastq)
 
     file_handle_helpers.ensure_output_dir_exists(output_prefix, includes_filename=True)
 

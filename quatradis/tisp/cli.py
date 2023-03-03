@@ -13,7 +13,7 @@ def add_subparser(subparsers):
     plot_parser = subparsers.add_parser("plot", help=plot_parser_desc)
     plot_subparsers = plot_parser.add_subparsers(title=plot_parser_desc)
 
-    create_parser("create", plot_subparsers, combine_plots, combine_plot_options,
+    create_parser("create", plot_subparsers, create_plot, create_plot_options,
                   "Create a TraDIS plot file.",
                   description='''Can create a TraDIS plot file from either fastq or alignment file input''')
     create_parser("combine", plot_subparsers, combine_plots, combine_plot_options,
@@ -35,11 +35,11 @@ def create_plot_options(parser):
                         help='Either the fastq formatted reads for processing (can be gzipped)')
     parser.add_argument('reference', type=str,
                         help='The fasta formatted reference for processing.')
-    parser.add_argument('-a', '--alignments', type=str, default="",
+    parser.add_argument('-l', '--alignments', type=str, default="",
                         help="SAM or BAM file.  If provided then we will skip aligning the fastq to the reference.")
     parser.add_argument('-o', '--output_dir', dest='output_dir', default="",
                         help='The directory in which to put all output files (default: current working directory)')
-    parser.add_argument('-p', '--output_prefix', dest='output_prefix', default="quatradis_out",
+    parser.add_argument('-p', '--output_prefix', dest='output_prefix', default="",
                         help='The filename prefix to use for all output files (default: quatradis_out)')
     parser.add_argument('-n', '--threads', type=int, default=1,
                         help='number of threads to use when mapping and sorting (default: 1)')
@@ -56,7 +56,7 @@ def create_plot_options(parser):
 
 
 def create_plot(args):
-    output_prefix = os.path.join(args.output_dir, args.output_prefix)
+    output_prefix = os.path.join(args.output_dir, args.output_prefix if args.output_prefix else os.path.split(args.fastq)[1])
 
     run_tradis(args.fastq, args.reference, output_prefix, alignments=args.alignments, tag=args.tag,
                       mapper=args.aligner, index=not args.no_ref_index, threads=args.threads, mismatch=args.mismatch,
