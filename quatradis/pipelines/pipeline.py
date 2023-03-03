@@ -18,7 +18,7 @@ def add_subparser(subparsers):
     across a cluster using a snakemake config file.''',
                   usage="tradis pipeline create_plots [options] <fastq list file> <reference>")
 
-    create_parser("essentiality", pipeline_subparsers, compare_pipeline, compare_options,
+    create_parser("compare", pipeline_subparsers, compare_pipeline, compare_options,
                   "Calculates gene essentiality for a set of transposon insertion site plots files ",
                   description='''This pipeline uses snakemake, therefore it is possible to customise how this operates to distribute the workload
     across a cluster using a snakemake config file.''',

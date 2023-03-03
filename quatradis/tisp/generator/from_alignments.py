@@ -9,6 +9,8 @@ import pysam
 from Bio import bgzf
 from pysam.libcalignedsegment import CIGAR_OPS
 
+from quatradis.util.file_handle_helpers import input_alignment_mode
+
 
 class PlotFromAlignmentsGenerator:
     def __init__(self, output_prefix, sequence_name, sequence_length):
@@ -109,12 +111,12 @@ def count_read_starts(mapped_reads, cutoff_score, plot_out_prefix):
 
     # Samtools command to return only those alignments that are mapped and exceed the mapping score cutoff
     # samtools_command = "samtools view -F 4 -q " + str(mapping_score) + " " + mapped_reads
-    samfile = pysam.AlignmentFile(mapped_reads, "rb")
+    alignments = pysam.AlignmentFile(mapped_reads, input_alignment_mode(mapped_reads))
 
-    for ref in samfile.header.references:
-        read_starts[ref] = PlotFromAlignmentsGenerator(plot_out_prefix, ref, samfile.header.get_reference_length(ref))
+    for ref in alignments.header.references:
+        read_starts[ref] = PlotFromAlignmentsGenerator(plot_out_prefix, ref, alignments.header.get_reference_length(ref))
 
-    for read in samfile.fetch():
+    for read in alignments.fetch():
         if not read.is_unmapped:
             nb_mapped += 1
             if read.mapping_quality >= cutoff_score:
