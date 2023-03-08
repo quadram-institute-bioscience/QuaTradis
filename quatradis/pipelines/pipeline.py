@@ -46,7 +46,6 @@ def create_plots_options(parser):
                         help='If provided, pass this directory onto snakemake.  Assumes there is a file called "config.yaml" in that directory.')
 
 
-
 def create_plots_pipeline(args):
     """
     Use snakemake to process multiple fastqs in parallel
@@ -76,9 +75,8 @@ def create_plots_pipeline(args):
 
     pipeline = find_pipeline_file("create_plots.smk")
 
-    start_snakemake(pipeline, snakemake_config, threads=args.threads, snakemake_profile=args.snakemake_profile, verbose=args.verbose)
-
-
+    start_snakemake(pipeline, snakemake_config, threads=args.threads,
+                                snakemake_profile=args.snakemake_profile, verbose=args.verbose)
 
 
 def compare_options(parser):
@@ -90,7 +88,9 @@ def compare_options(parser):
                         help='The output directory to use for all output files (default: results)')
     parser.add_argument('-n', '--threads', type=int, default=1,
                         help='number of threads to use when processing (default: 1)')
-    parser.add_argument('--annotations', '-a', help='If provided genes in this EMBL annotations file will expanded based on data in the plotfile.', type=str, default=None)
+    parser.add_argument('--annotations', '-a',
+                        help='If provided genes in this EMBL annotations file will expanded based on data in the plotfile.',
+                        type=str, default=None)
     parser.add_argument('--minimum_threshold', '-m',
                         help='Only include insert sites with this number or greater insertions', type=int, default=5)
     parser.add_argument('--prime_feature_size', '-z',
@@ -107,10 +107,10 @@ def compare_pipeline(args):
     """
 
     if len(args.control_files) != len(args.condition_files):
-        raise "Must have equal number of control and condition files"
+        raise ValueError("Must have equal number of control and condition files")
 
     if len(args.control_files) <= 1:
-        raise "Must have 2 or more replicates of control and condition files"
+        raise ValueError("Must have 2 or more replicates of control and condition files")
 
     fhh.ensure_output_dir_exists(args.output_dir)
 
@@ -131,10 +131,10 @@ def compare_pipeline(args):
         ofql.write(create_yaml_option("window_size", args.window_size))
         ofql.write(create_yaml_option("gzipped", "True"))
 
-
     pipeline = find_pipeline_file("compare.smk")
 
-    start_snakemake(pipeline, snakemake_config, threads=args.threads, snakemake_profile=args.snakemake_profile, verbose=args.verbose)
+    start_snakemake(pipeline, snakemake_config, threads=args.threads, snakemake_profile=args.snakemake_profile,
+                    verbose=args.verbose)
 
 
 def start_snakemake(snakefile, snakemake_config, threads=1, snakemake_profile=None, verbose=False):
@@ -143,9 +143,9 @@ def start_snakemake(snakefile, snakemake_config, threads=1, snakemake_profile=No
         print("Starting snakemake pipeline")
 
     cmd_list = ["snakemake",
-         "--snakefile=" + snakefile,
-         "--configfile=" + snakemake_config,
-         "--cores=" + str(threads)]
+                "--snakefile=" + snakefile,
+                "--configfile=" + snakemake_config,
+                "--cores=" + str(threads)]
 
     if snakemake_profile:
         cmd_list.append("--profile=" + snakemake_profile)
@@ -160,6 +160,10 @@ def start_snakemake(snakefile, snakemake_config, threads=1, snakemake_profile=No
 
     if verbose:
         print("Snakemake returned exitcode:", exit_code)
+
+    if exit_code != 0:
+        raise RuntimeError("Error running pipeline.  Return code: " + str(exit_code))
+
 
 def find_pipeline_file(pipeline_file):
     """
@@ -181,7 +185,6 @@ def find_pipeline_file(pipeline_file):
         return exe_path
 
     raise RuntimeError("Could not find nextflow pipeline file.")
-
 
 
 def create_yaml_option(option, value, num=False):

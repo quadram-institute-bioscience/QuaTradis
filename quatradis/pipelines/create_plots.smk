@@ -43,7 +43,7 @@ rule create_plot:
     threads: int(config["threads"])
     message: "Creating transposon insertion site plot file for {input.fq}"
     shell:
-        """tradis plot create from_fastq {params.aligner} {params.threads} {params.tag} {params.mismatch} {params.mapping_score} \
+        """tradis plot create {params.aligner} {params.threads} {params.tag} {params.mismatch} {params.mapping_score} \
         --output_dir={params.output_dir} --output_prefix=tradis_out --no_ref_index {input.fq} {input.ref}"""
 
 
