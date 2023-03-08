@@ -26,6 +26,16 @@ RUN wget https://github.com/samtools/htslib/releases/download/1.3.2/htslib-1.3.2
     make install && \
     rm /htslib.tar.bz2 && rm -r /htslib-1.3.2
 
+# Install samtools
+RUN wget https://github.com/samtools/samtools/releases/download/1.17/samtools-1.17.tar.bz2 -O samtools.tar.bz2 && \
+	tar -xjvf samtools.tar.bz2 && \
+	cd samtools-1.17 && \
+	./configure && \
+	make && \
+	make install && \
+	rm /samtools.tar.bz2 && rm -r /samtools-1.17
+
+
 # Install snakemake
 # Set locales (required for running in Singularity)
 RUN sed -i -e 's/# \(en_GB\.UTF-8 .*\)/\1/' /etc/locale.gen && \
