@@ -49,7 +49,7 @@ http://genome.cshlp.org/content/19/12/2308.
 ## Installation
 
 QuaTraDIS is designed to run on debian linux distros.  It may also run on other linux distros or MacOS but this has
-not been tested.
+not been tested. Please notice that due to hardware, QuaTradis currently will not install on The apple M1 or M1 cpus. We suggest running it on an extertanal VM in that case.
 
 There are multiple paths to installing QuaTraDIS depending on your use case.
 
