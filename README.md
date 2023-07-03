@@ -201,7 +201,7 @@ and add `:<tagversion>` to the previous command (replacing with whatever version
 
 ## Usage
 
-QuaTraDIS creates a single executable tool called `tradis`, all functions are available within this tool and it can be
+QuaTraDIS creates a single executable tool called `tradis`, all functions are available within this tool and can therefore be
 used in many different ways.  However, a typical use case maybe be to first convert your TraDIS sequenced reads into 
 transposon insertion site plot files.  This can be done with a command line such as this below, which has each fastq
 file (optionally gzipped) listed in `my_fastq_list.txt`:
@@ -214,20 +214,19 @@ The output will be a series of directories for each fastq, containing the plot f
 along with the aligned reads, and some statistics regarding transposon insertion sites both for each sample, and across
 all samples.  
 
-A set of plot files can then be analysed relation to each other.  To do this you must first create an experiment file, which
-lists each plot file, whether it is a control, or condition, and whether it is a replicate or not.
+A set of plot files can then be analysed in relation to each other using the `tradis pipeline compare` command.  For example:  
 
 ```bash
-tradis pipeline analyse --output_dir analysis_output experiment.txt my_annotations.embl
+tradis pipeline compare --output_dir analysis_output --annotations my_annotations.embl \
+  --condition_files cond1.fq.gz cond2.fq.fz \
+  --control_files cont1.fq.gz cont2.fq.gz 
 ```
-
-Further processing of the insert site table may be done using the R scripts mentioned above to compare or assess for gene essentiality.
 
 The `tradis` tool has multiple functions, as shown below, and can also be found using the tools help message `tradis --help`:
 
 * `pipeline`
   * `create_plots` - Creates transposon insertion site plot files from multiple fastq files.  This uses a snakemake pipeline and is capable of distributing work over a cluster, running in parallel where possible.
-  * `analyse` - Comparative analysis of multiple plot files across controls, conditions and replicates.  Predicts impact of inserts on nearby genes.
+  * `compare` - Comparative analysis of multiple plot files across controls, conditions and replicates.  Predicts impact of inserts on nearby genes.
 * `plot`
   * `create`
     * `from_fastq` - From a fastq file and reference, maps the reads to the reference and produces the transposon insertion site plot files.

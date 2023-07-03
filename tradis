@@ -35,6 +35,9 @@ def main():
         """This script contains a number of tools for running or supporting TraDIS experiments.""",
         formatter_class=argparse.RawTextHelpFormatter)
 
+    parser.add_argument('--profile', dest='profile', action='store_true',
+                        help='Turn on profiling.  Prints out cumulative time in each function to stdout and to an output file (tradis.profile).  The profile file can be read by tools such as snakeviz.')
+
     # Version option only available at top level
     parser.add_argument("-V", "--version", action='store_true', default=False, help="Output the software version")
 
