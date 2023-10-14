@@ -129,7 +129,6 @@ def compare_pipeline(args):
         ofql.write(create_yaml_option("prime_feature_size", args.prime_feature_size))
         ofql.write(create_yaml_option("window_interval", args.window_interval))
         ofql.write(create_yaml_option("window_size", args.window_size))
-        ofql.write(create_yaml_option("gzipped", "True"))
 
     pipeline = find_pipeline_file("compare.smk")
 
@@ -145,7 +144,8 @@ def start_snakemake(snakefile, snakemake_config, threads=1, snakemake_profile=No
     cmd_list = ["snakemake",
                 "--snakefile=" + snakefile,
                 "--configfile=" + snakemake_config,
-                "--cores=" + str(threads)]
+                "--cores=" + str(threads),
+                "--printshellcmds"]
 
     if snakemake_profile:
         cmd_list.append("--profile=" + snakemake_profile)

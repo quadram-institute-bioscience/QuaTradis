@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from quatradis.gene.block_identifier import BlockIdentifier
 from quatradis.gene.annotator import GeneAnnotator
@@ -7,13 +8,7 @@ from quatradis.gene.gene import Gene
 from quatradis.util.file_handle_helpers import ensure_output_dir_exists
 
 
-def gene_statistics(comparison_dir, window_size, embl_file, output_dir="output", annotation_file=None):
-
-    combined_plotfile = os.path.join(comparison_dir, "combined.logfc.plot")
-    forward_plotfile = os.path.join(comparison_dir, "forward.logfc.plot")
-    reverse_plotfile = os.path.join(comparison_dir, "reverse.logfc.plot")
-
-    combined_scorefile = os.path.join(comparison_dir, "combined.pqvals.plot")
+def gene_statistics(combined_plotfile, forward_plotfile, reverse_plotfile, combined_scorefile, window_size, embl_file, output_dir="output", annotation_file=None):
 
     ensure_output_dir_exists(output_dir)
 
@@ -35,12 +30,13 @@ def gene_statistics(comparison_dir, window_size, embl_file, output_dir="output",
         for g in genes:
             all_genes.append(g)
 
+    report_file = os.path.join(output_dir, "gene_report.tsv")
+
     if len(all_genes) == 0 and len(intergenic_blocks) == 0:
         print("No significant genes found for chosen parameters.\n")
-        return []
 
-    write_gene_report(all_genes, intergenic_blocks, os.path.join(output_dir, "gene_report.csv"), use_annotation)
-    write_regulated_gene_report(all_genes, os.path.join(output_dir, "regulated_gene_report.csv"))
+    write_gene_report(all_genes, intergenic_blocks, report_file, use_annotation)
+    write_regulated_gene_report(all_genes, os.path.join(output_dir, "regulated_gene_report.tsv"))
 
     # if self.verbose:
     # self.print_genes_intergenic(genes,intergenic_blocks)
@@ -99,7 +95,7 @@ def merge_windows(windows):
 def write_gene_report(genes, intergenic_blocks, output_filename, use_annotation):
 
     with open(output_filename, 'w') as bf:
-        bf.write(str(genes[0].header()) + "\n")
+        bf.write(str(Gene.header()) + "\n")
         if not use_annotation:
             for i in genes:
                 bf.write(i.window_string() + "\n")
@@ -112,11 +108,10 @@ def write_gene_report(genes, intergenic_blocks, output_filename, use_annotation)
 
 def write_regulated_gene_report(genes, output_filename):
     regulated_genes = [g for g in genes if g.category() == 'upregulated' or g.category() == 'downregulated']
-    if len(regulated_genes) > 0:
-        with open(output_filename, 'w') as bf:
-            bf.write(str(regulated_genes[0].header()) + "\n")
-            for i in regulated_genes:
-                bf.write(str(i) + "\n")
+    with open(output_filename, 'w') as bf:
+        bf.write(str(Gene.header()) + "\n")
+        for i in regulated_genes:
+            bf.write(str(i) + "\n")
 
 
 def print_genes_intergenic_blocks(genes, intergenic_blocks):

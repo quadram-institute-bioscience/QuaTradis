@@ -1,0 +1,57 @@
+@startuml
+
+split
+  -[hidden]->
+  #palegreen: embl;
+split again
+  -[hidden]->
+  #palegreen: control plot files;
+split again
+  -[hidden]->
+  #palegreen: condition plot files;
+end split
+
+#lightblue:start tradis pipeline compare;
+
+split
+: create count file for
+original plot and original embl;
+split again
+split
+:prepare embl file;
+split again
+: split plot file;
+split
+#lightyellow:forward;
+split again
+#lightyellow:reverse;
+split again
+#lightyellow:combined;
+end split
+end split
+: create count files for split plots
+and prepared embl;
+end split
+split
+:run essentiality for
+each plot file;
+:essentiality analysis;
+split again
+:compare plot files
+create figures;
+split again
+: logfc comparison;
+: create gene report;
+end split
+
+#lightblue: end tradis pipeline compare;
+
+split
+  #palegreen: gene report;
+  kill
+split again
+  #palegreen: figures;
+  kill
+end split
+
+@enduml
