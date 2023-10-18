@@ -1,0 +1,40 @@
+@startuml
+
+split
+  -[hidden]->
+  #palegreen: reference genome;
+split again
+  -[hidden]->
+  #palegreen: fastq files;
+end split
+
+#lightblue:start tradis pipeline create_plots;
+
+split
+  :samtools index reference (faidx);
+split again
+  :index reference (selected mapping tool);
+  split
+  :create plot file for fastq 1;
+  split again
+  :create plot file for fastq 2;
+  split again
+  :create plot file for fastq n;
+  end split
+  :combine stats from plot files;
+end split
+
+#lightblue: end tradis pipeline create_plots;
+
+split
+  #palegreen: indexed reference;
+  kill
+split again
+  #palegreen: plot files;
+  kill
+split again
+  #palegreen: statistics;
+  kill
+end split
+
+@enduml

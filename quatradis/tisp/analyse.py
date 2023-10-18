@@ -176,7 +176,7 @@ def count_insert_sites(embl_file, plot_files, joined_output=False, output_dir=""
                        trim5=False, trim3=False):
     """
     Take in a plot file(s) and an embl file and produce a tab delimited file with insert site details to use as input to
-    an another script to test for essentiality.
+    another script to test for essentiality.
     """
     file_handle_helpers.ensure_output_dir_exists(output_dir)
 

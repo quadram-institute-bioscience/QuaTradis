@@ -38,7 +38,7 @@ if(! is.null(opt$help) || is.null(opt$controls )  || is.null(opt$conditions ) )
 if( is.null(opt$filter)) {opt$filter=FALSE}
 if( is.null(opt$mincount)) {opt$mincount = 0}
 
-# parse contols and conditions files to lists
+# parse controls and conditions files to lists
 control_files <- scan(opt$controls, what="", sep="\n")
 condition_files <- scan(opt$conditions, what="", sep="\n")
 

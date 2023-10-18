@@ -212,7 +212,9 @@ tradis pipeline create_plots --output_dir plots_output my_fastq_list.txt my_refe
 
 The output will be a series of directories for each fastq, containing the plot file for each sequence in the given reference,
 along with the aligned reads, and some statistics regarding transposon insertion sites both for each sample, and across
-all samples.  
+all samples.  The workflow for `tradis pipeline create_plots` is shown in this diagram:
+
+![create_plots pipeline](docs/pipeline_create_plots.png)
 
 A set of plot files can then be analysed in relation to each other using the `tradis pipeline compare` command.  For example:  
 
@@ -221,6 +223,10 @@ tradis pipeline compare --output_dir analysis_output --annotations my_annotation
   --condition_files cond1.fq.gz cond2.fq.fz \
   --control_files cont1.fq.gz cont2.fq.gz 
 ```
+
+The workflow for `tradis pipeline compare` is shown in this diagram:
+
+![compare pipeline](docs/pipeline_combine.png)
 
 The `tradis` tool has multiple functions, as shown below, and can also be found using the tools help message `tradis --help`:
 
@@ -235,17 +241,19 @@ The `tradis` tool has multiple functions, as shown below, and can also be found 
   * `count` - Takes genome annotation in embl format along with plot files produced by "tradis pipeline" and generates tab-delimited files containing gene-wise annotations of insert sites and read counts.
   * `normalise` - Scales the insertion site counts of plot files based on the sample with the maximum number of reads. 
 * `comparison`
-  * `analyse` - Comparative analysis of TraDIS experiments whilst also predicting the impact of inserts on nearby genes
+  * `logfc_plot` - Run logfc analysis for a specific plot file direction: forward, reverse, combined, original over all experiments 
   * `presence_absence` - Take in gene report files and produce a heatmap
-  * `scatterplot` - Create scatter plot of controls vs conditions
+  * `figures` - Create graphics of controls vs conditions
+  * `gene_report` - Generate gene report from logfc_plot analysis data
+  * `split` - Splits a plot file into forward only, reverse only and combined plot files.
+  * `essentiality` - Determines how essential each gene is based on the transposon insertion sites
+  * `essentiality_analysis` - Compares essentiality across condition and control samples
+  * `prepare_embl` - Prepares an embl annotations file for comparative analysis from a plotfile. If an existing embl file is supplied then genes in that file are expanded based on data from the plot file
 * `utils`
   * `index` - Indexes a reference using the specified alignment tool
   * `extract_names` - Creates a file containing the sequence names in a fasta file
   * `annotation` - Take in an EMBL file and add flanking 3 prime and 5 prime annotation.
   * `artemis_project` - Create an artemis project file.  Sometimes you want to view the insert site plots in Artemis. It can be quite a manual task to open up different replicates and combinations. This script will generate a project.properties file from a spreadsheet which gets automatically loaded by Artemis (from the current working directory). This then makes it quicker to view multiple different insert site plots.
-  * `gene_reports` - Manipulate gene_report.csv files, such as performing set operations
-  * `prepare_embl` - Prepares an embl annotations file for comparative analysis from a plotfile. If an existing embl file is supplied then genes in that file are expanded based on data from the plot file
-  * `essentiality` - Determines how essential each gene is based on the transposon insertion sites
   * `tags`
     * `add` - Generates a BAM file with tags added to read strings.
     * `check`- Prints 1 if tags are present in alignment file, prints 0 if not.
