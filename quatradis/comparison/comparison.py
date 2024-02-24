@@ -1,11 +1,9 @@
+import os
+import shutil
 import subprocess
 from tempfile import mkstemp
-import os
-import csv
-import shutil
 
 from quatradis.comparison.plot_logfc import PlotLog
-from quatradis.comparison.essentiality import GeneEssentiality
 from quatradis.util.file_handle_helpers import ensure_output_dir_exists
 
 
@@ -45,20 +43,20 @@ def run_comparisons(controls_all, conditions_all, annotations, prefix, compariso
     if verbose:
         print("Running comparison between condition and control and write plot files and gene report.\n")
 
-    forward_plotfile, forward_scoresfile = generate_logfc_plot('forward', controls_all, conditions_all,
-                                                               annotations, prefix, comparison_options, verbose)
+    forward_plotfile, forward_scoresfile = insertion_site_comparison('forward', controls_all, conditions_all, annotations,
+                                                                     prefix, comparison_options, verbose)
     if verbose:
         print("Forward insertions have been compared.\n")
-    reverse_plotfile, reverse_scoresfile = generate_logfc_plot('reverse', controls_all, conditions_all, annotations,
-                                                               prefix, comparison_options, verbose)
+    reverse_plotfile, reverse_scoresfile = insertion_site_comparison('reverse', controls_all, conditions_all, annotations,
+                                                                     prefix, comparison_options, verbose)
     if verbose:
         print("Reverse insertions have been compared.\n")
-    combined_plotfile, combined_scoresfile = generate_logfc_plot('combined', controls_all, conditions_all, annotations,
-                                                                 prefix, comparison_options, verbose)
+    combined_plotfile, combined_scoresfile = insertion_site_comparison('combined', controls_all, conditions_all, annotations,
+                                                                       prefix, comparison_options, verbose)
     if verbose:
         print("Combined insertions have been compared.\n")
-    original_plotfile, original_scoresfile = generate_logfc_plot('original', controls_all, conditions_all, annotations,
-                                                                 prefix, comparison_options, verbose)
+    original_plotfile, original_scoresfile = insertion_site_comparison('original', controls_all, conditions_all, annotations,
+                                                                       prefix, comparison_options, verbose)
     if verbose:
         print("Original insertions have been compared.\n")
 
@@ -66,11 +64,15 @@ def run_comparisons(controls_all, conditions_all, annotations, prefix, compariso
            forward_scoresfile, reverse_scoresfile, combined_scoresfile, original_scoresfile
 
 
-def generate_logfc_plot(analysis_type, controls_all, conditions_all,
-                        annotations, prefix, options, verbose):
+def insertion_site_comparison(analysis_type, controls_all, conditions_all,
+                              annotations, prefix, options, verbose):
+
+    # Create CSV report file containing LogFC and PValue information for genes based on their insertion sites
     t = TradisComparisonRunner(conditions_all, controls_all, verbose, options.minimum_block,
                                analysis_type, prefix)
     t.run()
+
+    # Create plot sytle files containing the logfc and p and q values at every position in the reference
     p = PlotLog(t.get_report_file_path(), annotations, options,
                 output_plot_filename=os.path.join(prefix, analysis_type + ".logfc.plot"),
                 output_scores_filename=os.path.join(prefix, analysis_type + ".pqvals.plot"))

@@ -3,7 +3,7 @@
 import argparse
 import sys
 
-import pkg_resources  # part of setuptools
+import importlib.metadata
 
 import quatradis.util.cli as qutils
 import quatradis.pipelines.pipeline as pipelines
@@ -11,7 +11,7 @@ import quatradis.tisp.cli as tisp
 import quatradis.comparison.cli as ca
 
 # Establish the software version from the package resources
-version = pkg_resources.require("quatradis")[0].version
+version = importlib.metadata.version("quatradis")
 
 def call_func(parser, args):
     """

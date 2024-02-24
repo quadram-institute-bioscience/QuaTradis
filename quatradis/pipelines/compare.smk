@@ -31,7 +31,7 @@ rule finish:
         expand(os.path.join(config["output_dir"], "comparison", "{type}", "plot_absscatter.png"), type=["original", "forward", "reverse", "combined"]),
         #expand(os.path.join(config["output_dir"],"comparison","{type}","{type}.compare.csv"), type=["original", "forward", "reverse", "combined"]),
         expand(os.path.join(config["output_dir"],"comparison","{type}","essentiality.csv"), type=["original", "forward", "reverse", "combined"]),
-        expand(os.path.join(config["output_dir"],"analysis","{plot}","{type}.count.tsv.all.csv"), type=["original", "combined", "forward", "reverse"], plot=plotnames)
+        expand(os.path.join(config["output_dir"],"analysis","{plot}","{type}.count.tsv.essen.csv"), type=["original", "combined", "forward", "reverse"], plot=plotnames)
     run:
         print("All done!")
 
@@ -106,7 +106,6 @@ rule essentiality:
     input:
         c=os.path.join(config["output_dir"], "analysis", "{plot}", "{type}.count.tsv"),
     output:
-        all=os.path.join(config["output_dir"], "analysis", "{plot}", "{type}.count.tsv.all.csv"),
         ess=os.path.join(config["output_dir"], "analysis", "{plot}", "{type}.count.tsv.essen.csv")
     log: os.path.join(config["output_dir"], "analysis", "{plot}", "{type}.count.tsv.essen.log")
     message: "Determining gene essentiality for {input}"
@@ -128,7 +127,7 @@ rule plot:
     shell: "tradis compare figures {params.window_size} {params.prefix} {params.controls} {params.conditions} > /dev/null 2>&1"
 
 
-rule logfc:
+rule insertion_site_comparison:
     input:
         controls=lambda wildcards: expand(os.path.join(config["output_dir"], "analysis", "{control}", wildcards.tt + ".count.tsv"), control=controlnames),
         conditions=lambda wildcards: expand(os.path.join(config["output_dir"], "analysis", "{condition}", wildcards.tt + ".count.tsv"), condition=conditionnames),
@@ -143,7 +142,7 @@ rule logfc:
         output_dir="--prefix=" + os.path.join(config["output_dir"], "comparison", "{tt}"),
         zcat=ZCAT_CMD
     message: "Calculating logfc for {output}"
-    shell: "SEQLENGTH=$({params.zcat} {params.combined} | wc -l); tradis compare logfc_plot {input.embl} {params.tt} {params.output_dir} -g ${{SEQLENGTH}} --verbose --controls {input.controls} --conditions {input.conditions} > {log} 2>&1"
+    shell: "SEQLENGTH=$({params.zcat} {params.combined} | wc -l); tradis compare insertion_sites {input.embl} {params.tt} {params.output_dir} -g ${{SEQLENGTH}} --verbose --controls {input.controls} --conditions {input.conditions} > {log} 2>&1"
 
 
 rule gene_stats:
@@ -165,8 +164,8 @@ rule gene_stats:
 
 rule essentiality_analysis:
     input:
-        controls = lambda wildcards: expand(os.path.join(config["output_dir"],"analysis","{control}",wildcards.type + ".count.tsv.all.csv"),control=controlnames),
-        conditions = lambda wildcards: expand(os.path.join(config["output_dir"],"analysis","{condition}",wildcards.type + ".count.tsv.all.csv"),condition=conditionnames),
+        controls = lambda wildcards: expand(os.path.join(config["output_dir"],"analysis","{control}",wildcards.type + ".count.tsv"),control=controlnames),
+        conditions = lambda wildcards: expand(os.path.join(config["output_dir"],"analysis","{condition}",wildcards.type + ".count.tsv"),condition=conditionnames),
         ess_controls= lambda wildcards: expand(os.path.join(config["output_dir"],"analysis","{control}",wildcards.type + ".count.tsv.essen.csv"),control=controlnames),
         ess_conditions=lambda wildcards: expand(os.path.join(config["output_dir"],"analysis","{condition}",wildcards.type + ".count.tsv.essen.csv"),condition=conditionnames)
     output:

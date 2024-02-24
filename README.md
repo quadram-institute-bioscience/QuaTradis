@@ -149,6 +149,9 @@ conda activate quatradis
 # Install mamba if you haven't already
 conda install -c conda-forge mamba
 
+# Install edgeR separately because this doesn't get imported correctly with quatradis.
+mamba install -c conda-forge -c bioconda bioconductor-edger
+
 # Install quatradis
 mamba install -c conda-forge -c bioconda quatradis
 ```

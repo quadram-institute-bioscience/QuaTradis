@@ -74,8 +74,9 @@ class TradisEssentialityRunner:
             print(cmd)
         subprocess.check_output(cmd, shell=True)
 
+        os.remove(self.count_file + ".all.csv")
+
         if self.verbose:
-            print("all.csv\t" + self.count_file + ".all.csv")
             print("essen.csv\t" + self.count_file + ".essen.csv")
 
         return self
