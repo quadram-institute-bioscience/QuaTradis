@@ -1,7 +1,6 @@
-
-from tempfile import mkstemp
+import os
 import numpy
-
+from quatradis.util.file_handle_helpers import ensure_output_dir_exists
 from quatradis.tisp.parser import PlotParser
 from quatradis.tisp.generator.from_values import PlotFromValuesGenerator
 
@@ -9,9 +8,10 @@ from quatradis.tisp.generator.from_values import PlotFromValuesGenerator
 class NormalisePlots:
     '''Given a set of plot files, find the one with the highest number of reads and normalise all the rest into new files'''
 
-    def __init__(self, plotfiles, minimum_proportion_insertions, output_temp_files=True, verbose=False):
+    def __init__(self, plotfiles, minimum_proportion_insertions, output_dir=".", output_filename="normalised.plot_gz", verbose=False):
         self.plotfiles = plotfiles
-        self.output_temp_files=output_temp_files
+        self.output_dir = output_dir
+        self.output_filename = output_filename
         self.verbose = verbose
         self.minimum_proportion_insertions = minimum_proportion_insertions
         self.plot_objs = self.read_plots()
@@ -20,9 +20,10 @@ class NormalisePlots:
         plot_objs, max_plot_reads = self.normalise()
         output_files = []
         for p in self.plotfiles:
-            output_filename = p + ".norm"
-            if self.output_temp_files:
-                fd, output_filename = mkstemp()
+            plotname = os.path.basename(p).split('.')[0]
+            out_dir = os.path.join(self.output_dir, plotname)
+            output_filename = os.path.join(out_dir, self.output_filename)
+            ensure_output_dir_exists(out_dir)
             pg = PlotFromValuesGenerator(plot_objs[p].forward, plot_objs[p].reverse, output_filename)
             pg.construct_file()
             output_files.append(output_filename)

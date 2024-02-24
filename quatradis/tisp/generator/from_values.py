@@ -1,5 +1,9 @@
+import os
+
 import numpy
 import pyximport
+
+from quatradis.util.file_handle_helpers import ensure_output_dir_exists
 
 pyximport.install()
 
@@ -10,12 +14,10 @@ class PlotFromValuesGenerator:
     """
     Takes in arrays for forward and reverse integers and creates a new file
     """
-
-    def __init__(self, forward, reverse, filename, gzipped=False):
+    def __init__(self, forward, reverse, filename):
         self.forward = forward
         self.reverse = reverse
         self.filename = filename
-        self.gzipped = gzipped
 
         self.forward_length = len(self.forward)
         self.reverse_length = len(self.reverse)
@@ -29,7 +31,7 @@ class PlotFromValuesGenerator:
         if len(self.reverse) == 0:
             self.reverse = numpy.zeros(p_len, dtype=float)
 
-        if self.gzipped:
+        if self.filename.endswith('.gz'):
             write_gzipped_plot_file(self.filename, self.forward, self.reverse, p_len)
         else:
             write_plot_file(self.filename, self.forward, self.reverse, p_len)

@@ -48,7 +48,7 @@ class ScatterPlot:
         self.normalise = normalise
 
         if normalise:
-            n = NormalisePlots(self.conditions + self.controls, 0.0000001, verbose=self.verbose)
+            n = NormalisePlots(self.conditions + self.controls, 0.0000001, output_dir="normalised", verbose=self.verbose)
             plotfiles, max_reads = n.create_normalised_files()
             self.conditions = plotfiles[0:len(self.conditions)]
             self.controls = plotfiles[len(self.conditions):]

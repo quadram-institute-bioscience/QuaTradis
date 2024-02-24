@@ -1,21 +1,30 @@
 import os
 import shutil
 
+input_files=[]
+norm_files=[]
 plotnames=[]
 controlnames=[]
 conditionnames=[]
-plot_lut={}
+norm_lut={}
 for p in config["condition_files"]:
+    input_files.append(p)
     plotname = os.path.basename(p).split('.')[0]
     plotnames.append(plotname)
     conditionnames.append(plotname)
-    plot_lut[plotname]=p
+
 
 for p in config["control_files"]:
+    input_files.append(p)
     plotname = os.path.basename(p).split('.')[0]
     plotnames.append(plotname)
     controlnames.append(plotname)
-    plot_lut[plotname]=p
+
+for p in input_files:
+    plotname = os.path.basename(p).split('.')[0]
+    n=os.path.join(config["output_dir"], "analysis", plotname, "original.plot.gz")
+    norm_files.append(n)
+    norm_lut[plotname]=n
 
 ZCAT_CMD='gzcat'
 if not shutil.which('gzcat'):
@@ -24,14 +33,27 @@ if not shutil.which('gzcat'):
 	else:
 		raise Error("Couldn't find gzcat or zcat on your system.  Please install and try again.")
 
+def make_no_normalise_cmd():
+	cmds = []
+	for i in range(len(input_files)):
+		out_dir = os.path.join(config["output_dir"], "analysis", plotname)
+		cmds.append("mkdir -p " + out_dir)
+		cmds.append("if [[ $(file " + input_files[i] + " | grep ASCII | wc -l | cut -f 1) > 0 ]]; then gzip -c " + input_files[i] + " > " + norm_files[i] + "; else cp " + input_files[i] + " " + norm_files[i] + "; fi")
+
+	return "; ".join(cmds)
+
+def make_normalise_cmd():
+    return "tradis plot normalise -o " + os.path.join(config["output_dir"], "analysis") + " -n original.plot.gz " + \
+        ("--minimum_proportion_insertions=" + config["minimum_proportion_insertions"] if config["minimum_proportion_insertions"] else "") + \
+            " " + " ".join(input_files)
 
 rule finish:
     input:
         expand(os.path.join(config["output_dir"], "gene_report.tsv")),
         expand(os.path.join(config["output_dir"], "comparison", "{type}", "plot_absscatter.png"), type=["original", "forward", "reverse", "combined"]),
-        #expand(os.path.join(config["output_dir"],"comparison","{type}","{type}.compare.csv"), type=["original", "forward", "reverse", "combined"]),
-        expand(os.path.join(config["output_dir"],"comparison","{type}","essentiality.csv"), type=["original", "forward", "reverse", "combined"]),
-        expand(os.path.join(config["output_dir"],"analysis","{plot}","{type}.count.tsv.essen.csv"), type=["original", "combined", "forward", "reverse"], plot=plotnames)
+        #expand(os.path.join(config["output_dir"], "comparison", "{type}", "{type}.compare.csv"), type=["original", "forward", "reverse", "combined"]),
+        expand(os.path.join(config["output_dir"], "comparison", "{type}", "essentiality.csv"), type=["original", "forward", "reverse", "combined"]),
+        expand(os.path.join(config["output_dir"], "analysis", "{plot}", "{type}.count.tsv.essen.csv"), type=["original", "combined", "forward", "reverse"], plot=plotnames)
     run:
         print("All done!")
 
@@ -49,10 +71,21 @@ rule prepare_embl:
         prime_feature_size="--prime_feature_size=" + config["prime_feature_size"] if config["prime_feature_size"] else ""
     shell: "tradis compare prepare_embl --output={output} {params.minimum_threshold} {params.window_size} {params.window_interval} {params.prime_feature_size} --emblfile {input.embl} {input.plot}"
 
+rule normalise:
+    input:
+        input_files
+    output:
+        norm_files
+    message: "Normalising plot files"
+    log: os.path.join(config["output_dir"], "analysis", "normalise.log")
+    params:
+        cmd=make_normalise_cmd() if config["normalise"] else make_no_normalise_cmd()
+    shell: "{params.cmd}"
+
 
 rule split_plots:
     input:
-        p=lambda wildcards: plot_lut[wildcards.plot]
+        p=lambda wildcards: norm_lut[wildcards.plot]
     output:
         c=os.path.join(config["output_dir"], "analysis", "{plot}", "combined.plot.gz"),
         f=os.path.join(config["output_dir"], "analysis", "{plot}", "forward.plot.gz"),
@@ -74,32 +107,7 @@ rule count_plots:
     params:
         output_dir=os.path.join(config["output_dir"], "analysis", "{plot}"),
         suffix="count.tsv"
-    wildcard_constraints:
-        type="(?!original).*"
     shell: "tradis plot count -o {params.output_dir} -s {params.suffix} {input.embl} {input.p}"
-
-
-rule copy_original:
-    input:
-        lambda wildcards: plot_lut[wildcards.plot]
-    output:
-        os.path.join(config["output_dir"],"analysis","{plot}","original.plot.gz")
-    message: "Copying original plot file to target folder: {input}"
-    params:
-        output_dir=os.path.join(config["output_dir"],"analysis","{plot}")
-    shell: "if [[ $(file {input} | grep ASCII | wc -l | cut -f 1) > 0 ]]; then gzip -c {input} > {output}; else cp {input} {output}; fi"
-
-
-rule count_original_plots:
-	input:
-		p=rules.copy_original.output,
-		embl=config["annotations"]
-	output:
-		os.path.join(config["output_dir"], "analysis", "{plot}", "original.count.tsv")
-	message: "Analysing original plot and embl file {input.p}, {input.embl}"
-	params:
-		output_dir=os.path.join(config["output_dir"], "analysis", "{plot}")
-	shell: "tradis plot count -o {params.output_dir} -s count.tsv {input.embl} {input.p}"
 
 
 rule essentiality:

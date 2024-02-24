@@ -12,7 +12,7 @@ split again
 end split
 
 #lightblue:start tradis pipeline compare;
-
+:normalise plot files;
 split
 : create count file for
 original plot and original embl;

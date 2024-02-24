@@ -1,7 +1,6 @@
 import csv
 import os
 from dataclasses import dataclass
-from tempfile import mkstemp
 
 from quatradis.comparison.essentiality import GeneEssentiality
 from quatradis.util.file_handle_helpers import ensure_output_dir_exists
@@ -33,7 +32,7 @@ def get_all_gene_names(control_files, condition_files):
             gene_names1 = [r[1] for r in reader if len(r) > 1 and r[1] != "gene_name"]
             all_gene_names = all_gene_names.union(set(gene_names1))
 
-    for f in control_files:
+    for filename in control_files:
         with open(filename, "r") as fileh:
             reader = csv.reader(fileh, delimiter="\t", quotechar='"')
             gene_names2 = [r[1] for r in reader if len(r) > 1 and r[1] != "gene_name"]
@@ -51,7 +50,7 @@ def all_gene_essentiality(input: EssentialityInput, analysis_type, verbose=False
     genes_ess = {g: GeneEssentiality() for g in all_gene_names}
     if analysis_type == "original":
         for f in input.only_ess_condition_files:
-            ess_gene_names = gene_names_from_essentiality_file(f, verbose)
+            ess_gene_names = gene_names_from_essentiality_file(f)
             if verbose:
                 print("ess_gene_names condition: " + str(len(ess_gene_names)))
                 print("genes_ess: " + str(len(genes_ess)))
@@ -60,7 +59,7 @@ def all_gene_essentiality(input: EssentialityInput, analysis_type, verbose=False
                     genes_ess[e].condition += 1
                 genes_ess[e].number_of_reps = len(input.only_ess_condition_files)
         for f in input.only_ess_control_files:
-            ess_gene_names = gene_names_from_essentiality_file(f, verbose)
+            ess_gene_names = gene_names_from_essentiality_file(f)
             if verbose:
                 print("ess_gene_names control: " + str(len(ess_gene_names)))
                 print("genes_ess: " + str(len(genes_ess)))

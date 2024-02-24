@@ -8,6 +8,7 @@ from quatradis.tisp.combine import combine
 from quatradis.tisp.analyse import count_insert_sites
 from quatradis.tisp.normalise import NormalisePlots
 
+
 def add_subparser(subparsers):
     plot_parser_desc = "TraDIS plot file tools"
     plot_parser = subparsers.add_parser("plot", help=plot_parser_desc)
@@ -103,9 +104,13 @@ def normalise_plot_options(parser):
     parser.add_argument('--minimum_proportion_insertions', '-d',
                         help='If the proportion of insertions is too low compared to control, dont call decreased insertions below this level',
                         type=float, default=0.1)
+    parser.add_argument('-o', '--output_dir', type=str, default="",
+                        help='The directory in which to put all output files (default: current working directory)')
+    parser.add_argument('-n', '--output_filename', type=str, default="normalised.plot.gz",
+                        help='The name for the normalised output files.  Normalised files will be distinguished by directory')
 
 
 def normalise_plots(args):
-    n = NormalisePlots(args.plot_files, args.minimum_proportion_insertions, output_temp_files=False)
+    n = NormalisePlots(args.plot_files, args.minimum_proportion_insertions, output_dir=args.output_dir, output_filename=args.output_filename, verbose=args.verbose)
     plotfiles, max_plot_reads = n.create_normalised_files()
     n.decreased_insertion_reporting(max_plot_reads)

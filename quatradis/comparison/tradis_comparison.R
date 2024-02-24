@@ -119,4 +119,4 @@ abline(v=2, col="red")
 
 
 #write results
-write.table(diff,file=opt$output,append=FALSE, quote=TRUE, sep=",", row.names=FALSE, col.names=c("locus_tag","gene_name","function","logFC","logCPM","PValue","q.value"))
+write.table(diff,file=opt$output,append=FALSE, quote=FALSE, sep=",", row.names=FALSE, col.names=c("locus_tag","gene_name","function","logFC","logCPM","PValue","q.value"))
