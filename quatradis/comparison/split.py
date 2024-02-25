@@ -27,7 +27,7 @@ class SplitPlotFile:
         return self._construct_file_path("combined")
 
     def _create_split_plot_file(self, forward, reverse, filename):
-        p = PlotFromValuesGenerator(forward, reverse, filename, self.gzipped)
+        p = PlotFromValuesGenerator(forward, reverse, filename)
         p.construct_file()
 
     def create_all_files(self):

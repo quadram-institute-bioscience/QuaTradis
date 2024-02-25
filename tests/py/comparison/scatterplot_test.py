@@ -1,3 +1,4 @@
+import shutil
 import unittest
 import os
 from quatradis.comparison.scatterplot import ScatterPlot
@@ -24,3 +25,4 @@ class TestScatterPlot(unittest.TestCase):
         os.remove("scattertest_absscatter.png")
         os.remove("scattertest_linear.png")
         os.remove("scattertest_scatter.png")
+        shutil.rmtree("normalised")

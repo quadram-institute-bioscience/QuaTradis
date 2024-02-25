@@ -3,7 +3,7 @@ from quatradis.util.parser import create_parser
 from quatradis.comparison.scatterplot import scatterplot_run
 from quatradis.comparison.presence_absence import presence_absence_run
 from quatradis.comparison.comparison import prep_essentiality_pipeline_output_for_comparison, run_comparisons, \
-    generate_logfc_plot
+    insertion_site_comparison
 from quatradis.comparison.gene_stats import gene_statistics
 from quatradis.comparison.plot_logfc import PlotLogOptions
 from quatradis.comparison.split import split_plot as sp
@@ -16,9 +16,9 @@ def add_subparser(subparsers):
     compare_parser_desc = "Comparative analysis and visualisation of TraDIS experiments (albatradis)"
     compare_parser = subparsers.add_parser("compare", help=compare_parser_desc)
     compare_subparsers = compare_parser.add_subparsers(title=compare_parser_desc)
-    create_parser("logfc_plot", compare_subparsers, logfc_plot, add_logfc_options,
-                  "Run logfc analysis for a specific plot file direction: forward, reverse, combined, original over all experiments.",
-                  usage="tradis compare logfc_plot [options] --condition_dirs <condition_plotfiles>+ --control_dirs <control_plotfiles>+ <EMBL_file> <analysis_type>")
+    create_parser("insertion_sites", compare_subparsers, insertion_site_comparison_cli, add_insertion_site_comparison_options,
+                  "Run an insertion site comparison for a specific plot file direction: forward, reverse, combined, original over all experiments to produce a file including edgeR output (logfc, p and q values)",
+                  usage="tradis compare insertion_sites [options] --condition_dirs <condition_plotfiles>+ --control_dirs <control_plotfiles>+ <EMBL_file> <analysis_type>")
     create_parser("presence_absence", compare_subparsers, presence_absence, add_pa_options,
                   "Take in gene report files and produce a heatmap",
                   usage="tradis compare presence_absence [options] <EMBLfile> <gene_reports>+")
@@ -42,7 +42,7 @@ def add_subparser(subparsers):
                   usage="tradis compare essentiality_analysis [options] --controls <control_gene_files> --conditions <condition_gene_files> --ess_controls <control_essential_gene_files> --ess_conditions <condition_essential_gene_files>")
 
 
-def add_logfc_options(parser):
+def add_insertion_site_comparison_options(parser):
     parser.add_argument('emblfile', help='Annotation file in EMBL format', type=str)
     parser.add_argument('analysis_type', help='Analysis type: forward, reverse, combined, original', type=str)
     parser.add_argument('--controls',
@@ -71,7 +71,7 @@ def add_logfc_options(parser):
                         required=True)
 
 
-def logfc_plot(args):
+def insertion_site_comparison_cli(args):
     if len(args.controls) != len(args.conditions):
         raise "Must have equal number of control and condition files to process"
 
@@ -92,8 +92,8 @@ def logfc_plot(args):
         report_decreased_insertions=not args.dont_report_decreased_insertions,
         minimum_block=args.minimum_block)
 
-    plotfile, scoresfile = generate_logfc_plot(args.analysis_type, args.controls, args.conditions,
-                                               args.emblfile, args.prefix, options, args.verbose)
+    plotfile, scoresfile = insertion_site_comparison(args.analysis_type, args.controls, args.conditions,
+                                                     args.emblfile, args.prefix, options, args.verbose)
 
     return plotfile, scoresfile
 

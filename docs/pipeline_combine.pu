@@ -12,7 +12,7 @@ split again
 end split
 
 #lightblue:start tradis pipeline compare;
-
+:normalise plot files;
 split
 : create count file for
 original plot and original embl;
@@ -37,10 +37,8 @@ split
 each plot file;
 :essentiality analysis;
 split again
-:compare plot files
-create figures;
-split again
-: logfc comparison;
+:compare insertion sites
+create logfc and pval for genes;
 : create gene report;
 end split
 

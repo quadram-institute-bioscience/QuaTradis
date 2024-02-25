@@ -11,7 +11,7 @@ echo -n "Checking 'tradis compare' help messages ... "
 ./tradis compare --help > /dev/null
 ./tradis compare figures --help  > /dev/null
 ./tradis compare presence_absence --help  > /dev/null
-./tradis compare logfc_plot --help  > /dev/null
+./tradis compare insertion_sites --help  > /dev/null
 ./tradis compare gene_report --help  > /dev/null
 ./tradis compare split --help  > /dev/null
 ./tradis compare essentiality --help  > /dev/null
@@ -46,7 +46,7 @@ echo "ok"
 echo -n "Checking 'tradis compare essentiality' ... "
 ESS_DATA_DIR=$DATA_DIR/comparison/essentiality
 ./tradis compare essentiality $ESS_DATA_DIR/combined.count.tsv
-ESS_OUT=$ESS_DATA_DIR/combined.count.tsv.all.csv
+ESS_OUT=$ESS_DATA_DIR/combined.count.tsv.essen.csv
 if [ ! -f "$ESS_OUT" ]; then
     echo "tradis compare essentiality test failed.  $ESS_OUT does not exist."
     exit 1

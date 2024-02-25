@@ -140,7 +140,7 @@ class PlotParser:
 
     def read(self):
         handle = PlotParser.create_file_handle(self.filename)
-        insert_site_array = pandas.read_csv(handle, delim_whitespace=True, dtype=float, engine='c',
+        insert_site_array = pandas.read_csv(handle, sep='\s+', dtype=float, engine='c',
                                             header=None).values
 
         self.genome_length = len(insert_site_array)
@@ -176,7 +176,7 @@ class ScoreParser:
         self.split_lines()
 
     def split_lines(self):
-        insert_site_array = pandas.read_csv(self.filename, delim_whitespace=True, dtype=float, engine='c',
+        insert_site_array = pandas.read_csv(self.filename, sep='\s+', dtype=float, engine='c',
                                             header=None).values
 
         self.genome_length = len(insert_site_array)
