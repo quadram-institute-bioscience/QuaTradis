@@ -214,9 +214,9 @@ def compare_options(parser):
     parser.add_argument(
         "--minimum_block",
         "-b",
-        help="Minimum number of reads which must be in 1 block in comparison (default: 100)",
+        help="Minimum number of reads which must be in 1 block in comparison (default: 10)",
         type=int,
-        default=100,
+        default=10,
     )
     parser.add_argument(
         "--minimum_logfc",
