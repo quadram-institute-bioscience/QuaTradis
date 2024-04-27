@@ -53,6 +53,12 @@ def create_plots_options(parser):
         help="The output directory to use for all output files (default: results)",
     )
     parser.add_argument(
+        "--cores",
+        type=int,
+        default=1,
+        help="Number of processing cores to use for paralleising snakemake tasks (default: 1)",
+    )
+    parser.add_argument(
         "-n",
         "--threads",
         type=int,
@@ -126,7 +132,7 @@ def create_plots_pipeline(args):
     start_snakemake(
         pipeline,
         snakemake_config,
-        threads=args.threads,
+        cores=args.cores,
         snakemake_profile=args.snakemake_profile,
         verbose=args.verbose,
     )
@@ -152,17 +158,24 @@ def compare_options(parser):
         help="The output directory to use for all output files (default: results)",
     )
     parser.add_argument(
+        "--cores",
+        type=int,
+        default=1,
+        help="Number of processing cores to use for paralleising snakemake tasks (default: 1)",
+    )
+    parser.add_argument(
         "--disable_normalisation",
         action="store_true",
         default=False,
         help="Don't normalise the plots prior to comparison (default: false)",
     )
+
     parser.add_argument(
         "-n",
         "--threads",
         type=int,
         default=1,
-        help="number of threads to use when processing (default: 1)",
+        help="number of threads to use when processing (default: 1) (deprecated: use --cores instead)",
     )
     parser.add_argument(
         "--annotations",
@@ -278,7 +291,6 @@ def compare_pipeline(args):
         ofql.write(
             create_yaml_option("normalise", not args.disable_normalisation, bool=True)
         )
-        ofql.write(create_yaml_option("threads", args.threads, num=True))
         ofql.write(create_yaml_option("annotations", args.annotations))
         ofql.write(create_yaml_option("minimum_threshold", args.minimum_threshold))
         ofql.write(create_yaml_option("prime_feature_size", args.prime_feature_size))
@@ -301,14 +313,19 @@ def compare_pipeline(args):
     start_snakemake(
         pipeline,
         snakemake_config,
-        threads=args.threads,
+        cores=(
+            # For backward compatibility
+            args.cores
+            if args.cores > args.threads
+            else args.threads
+        ),
         snakemake_profile=args.snakemake_profile,
         verbose=args.verbose,
     )
 
 
 def start_snakemake(
-    snakefile, snakemake_config, threads=1, snakemake_profile=None, verbose=False
+    snakefile, snakemake_config, cores=1, snakemake_profile=None, verbose=False
 ):
     if verbose:
         print("Using snakemake config files at: " + ", ".join([snakemake_config]))
@@ -318,7 +335,7 @@ def start_snakemake(
         "snakemake",
         "--snakefile=" + snakefile,
         "--configfile=" + snakemake_config,
-        "--cores=" + str(threads),
+        "--cores=" + str(cores),
         "--printshellcmds",
     ]
 
