@@ -4,6 +4,7 @@ Creating insert site plot files (originally designed for artemis)
 import collections
 import os
 import subprocess
+import sys
 
 import pysam
 from Bio import bgzf
@@ -144,12 +145,15 @@ def create_plot_files(mapped_reads, plot_out_prefix="tradis.plot", cutoff_score=
 
 def get_number_reads(seq_file_in):
 
+    # If running on mac take form stdin
+    joiner = " < " if sys.platform == "darwin" else " "
+
     # Make sure we can handle gzipped or non-gzipped fastq input
     if seq_file_in.endswith('.gz'):
         cat_cmd = "zcat"
     else:
         cat_cmd = "cat"
-    lines = int(subprocess.check_output(["bash", "-c", cat_cmd + " " + seq_file_in + " | wc -l"]).strip())
+    lines = int(subprocess.check_output(["bash", "-c", cat_cmd + joiner + seq_file_in + " | wc -l"]).strip())
     return lines / 4
 
 

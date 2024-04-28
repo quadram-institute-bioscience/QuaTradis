@@ -32,24 +32,25 @@ rule create_plot:
         fq=os.path.join(config["fastq_dir"], "{fq}"),
         ref=config["reference"]
     output:
-        stats=os.path.join(config["output_dir"], "{fq}", "tradis_out.plot.stats")
+        stats=os.path.join(config["output_dir"], "{fq}", "{fq}.plot.stats")
     params:
         aligner=("--aligner=" + config["aligner"]) if config["aligner"] else "",
         tag=("--tag=" + config["tag"]) if config["tag"] else "",
         mismatch=("--mismatch=" + str(config["mismatch"])) if config["mismatch"] else "",
         mapping_score=("--mapping_score=" + str(config["mapping_score"])) if config["mapping_score"] else "",
         threads="--threads=" + str(config["threads"]) if config["threads"] else "",
-        output_dir=os.path.join(config["output_dir"], "{fq}")
+        output_dir=os.path.join(config["output_dir"], "{fq}"),
+        output_prefix="{fq}"
     threads: int(config["threads"])
     message: "Creating transposon insertion site plot file for {input.fq}"
     shell:
         """tradis plot create {params.aligner} {params.threads} {params.tag} {params.mismatch} {params.mapping_score} \
-        --output_dir={params.output_dir} --output_prefix=tradis_out --no_ref_index {input.fq} {input.ref}"""
+        --output_dir={params.output_dir} --output_prefix={params.output_prefix} --no_ref_index {input.fq} {input.ref}"""
 
 
 rule combine_stats:
     input:
-        stats=expand(os.path.join(config["output_dir"], "{fq}", "tradis_out.plot.stats"), fq=config["fastqs"])
+        stats=expand(os.path.join(config["output_dir"], "{fq}", "{fq}.plot.stats"), fq=config["fastqs"])
     output: os.path.join(config["output_dir"], "combined.plot.stats")
     message: "Combining plot stats"
     shell:

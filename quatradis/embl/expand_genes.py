@@ -1,10 +1,13 @@
-''' Given an annotation file, take each gene, and create a new feature at the start and end to capture promotors'''
+""" Given an annotation file, take each gene, and create a new feature at the start and end to capture promotors"""
+
 from quatradis.embl.reader import EMBLReader
 from quatradis.embl.sequence import EMBLSequence
 
 
 class FeatureProperties:
-    def __init__(self, start=0, end=0, direction="", gene_name="", locus_tag="", product=""):
+    def __init__(
+        self, start=0, end=0, direction="", gene_name="", locus_tag="", product=""
+    ):
         self.start = start
         self.end = end
         self.direction = direction
@@ -30,16 +33,39 @@ class EMBLExpandGenes:
 
             # The gene itself
             new_features.append(
-                FeatureProperties(feature.location.start, feature.location.end, feature.strand, gene_name, locus_tag,
-                                  product))
+                FeatureProperties(
+                    feature.location.start,
+                    feature.location.end,
+                    feature.location.strand,
+                    gene_name,
+                    locus_tag,
+                    product,
+                )
+            )
 
             # forward direction
-            if feature.strand == 1:
-                new_features.append(self.construct_start_feature(feature, gene_name, "__5prime", locus_tag, product))
-                new_features.append(self.construct_end_feature(feature, gene_name, "__3prime", locus_tag, product))
+            if feature.location.strand == 1:
+                new_features.append(
+                    self.construct_start_feature(
+                        feature, gene_name, "__5prime", locus_tag, product
+                    )
+                )
+                new_features.append(
+                    self.construct_end_feature(
+                        feature, gene_name, "__3prime", locus_tag, product
+                    )
+                )
             else:
-                new_features.append(self.construct_end_feature(feature, gene_name, "__5prime", locus_tag, product))
-                new_features.append(self.construct_start_feature(feature, gene_name, "__3prime", locus_tag, product))
+                new_features.append(
+                    self.construct_end_feature(
+                        feature, gene_name, "__5prime", locus_tag, product
+                    )
+                )
+                new_features.append(
+                    self.construct_start_feature(
+                        feature, gene_name, "__3prime", locus_tag, product
+                    )
+                )
 
         return new_features
 
@@ -53,7 +79,14 @@ class EMBLExpandGenes:
         if start >= end or end - start < 10:
             return None
 
-        return FeatureProperties(start, end, feature.strand, gene_name + suffix, locus_tag + suffix, product)
+        return FeatureProperties(
+            start,
+            end,
+            feature.location.strand,
+            gene_name + suffix,
+            locus_tag + suffix,
+            product,
+        )
 
     def construct_start_feature(self, feature, gene_name, suffix, locus_tag, product):
         start = feature.location.start - self.feature_size
@@ -63,10 +96,17 @@ class EMBLExpandGenes:
             start = 1
         if start >= end or end - start < 10:
             return None
-        return FeatureProperties(start, end, feature.strand, gene_name + suffix, locus_tag + suffix, product)
+        return FeatureProperties(
+            start,
+            end,
+            feature.location.strand,
+            gene_name + suffix,
+            locus_tag + suffix,
+            product,
+        )
 
     def construct_file(self, filename):
-        with open(filename, 'w') as emblfile:
+        with open(filename, "w") as emblfile:
             emblfile.write(self.header())
 
             for f in self.create_3_5_prime_features():
@@ -106,20 +146,32 @@ FH   Key             Location/Qualifiers
 FH
 FT   source          1..{length}
 FT                   /organism="Bacteria"
-""".format(length=str(self.genome_length))
+""".format(
+            length=str(self.genome_length)
+        )
 
     def construct_feature_forward(self, feature):
         return """FT   CDS             {window_start}..{window_end}
 FT                   /gene="{gene_name}"
 FT                   /locus_tag="{locus_tag}"
 FT                   /product="{product}"
-""".format(gene_name=feature.gene_name, window_start=str(feature.start + 1), window_end=str(feature.end),
-           locus_tag=feature.locus_tag, product=feature.product)
+""".format(
+            gene_name=feature.gene_name,
+            window_start=str(feature.start + 1),
+            window_end=str(feature.end),
+            locus_tag=feature.locus_tag,
+            product=feature.product,
+        )
 
     def construct_feature_reverse(self, feature):
         return """FT   CDS             complement({window_start}..{window_end})
 FT                   /gene="{gene_name}"
 FT                   /locus_tag="{locus_tag}"
 FT                   /product="{product}"
-""".format(gene_name=feature.gene_name, window_start=str(feature.start + 1), window_end=str(feature.end),
-           locus_tag=feature.locus_tag, product=feature.product)
+""".format(
+            gene_name=feature.gene_name,
+            window_start=str(feature.start + 1),
+            window_end=str(feature.end),
+            locus_tag=feature.locus_tag,
+            product=feature.product,
+        )

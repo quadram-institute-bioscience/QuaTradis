@@ -53,6 +53,12 @@ def create_plots_options(parser):
         help="The output directory to use for all output files (default: results)",
     )
     parser.add_argument(
+        "--cores",
+        type=int,
+        default=1,
+        help="Number of processing cores to use for paralleising snakemake tasks (default: 1)",
+    )
+    parser.add_argument(
         "-n",
         "--threads",
         type=int,
@@ -126,7 +132,7 @@ def create_plots_pipeline(args):
     start_snakemake(
         pipeline,
         snakemake_config,
-        threads=args.threads,
+        cores=args.cores,
         snakemake_profile=args.snakemake_profile,
         verbose=args.verbose,
     )
@@ -152,17 +158,24 @@ def compare_options(parser):
         help="The output directory to use for all output files (default: results)",
     )
     parser.add_argument(
+        "--cores",
+        type=int,
+        default=1,
+        help="Number of processing cores to use for paralleising snakemake tasks (default: 1)",
+    )
+    parser.add_argument(
         "--disable_normalisation",
-        action='store_true',
+        action="store_true",
         default=False,
         help="Don't normalise the plots prior to comparison (default: false)",
     )
+
     parser.add_argument(
         "-n",
         "--threads",
         type=int,
         default=1,
-        help="number of threads to use when processing (default: 1)",
+        help="number of threads to use when processing (default: 1) (deprecated: use --cores instead)",
     )
     parser.add_argument(
         "--annotations",
@@ -174,28 +187,74 @@ def compare_options(parser):
     parser.add_argument(
         "--minimum_threshold",
         "-m",
-        help="Only include insert sites with this number or greater insertions",
+        help="Only include insert sites with this number or greater insertions (default: 5)",
         type=int,
         default=5,
     )
     parser.add_argument(
         "--minimum_proportion_insertions",
-        help="If the proportion of insertions is too low compared to control, dont call decreased insertions below this level",
+        help="If the proportion of insertions is too low compared to control, dont call decreased insertions below this level (default: 0.1)",
         type=float,
         default=0.1,
     )
     parser.add_argument(
         "--prime_feature_size",
         "-z",
-        help="Feature size when adding 5/3 prime block when --use_annotation",
+        help="Feature size when adding 5/3 prime block when --use_annotation (default: 198)",
         type=int,
         default=198,
     )
     parser.add_argument(
-        "--window_interval", "-l", help="Window interval", type=int, default=25
+        "--window_interval",
+        "-l",
+        help="Window interval (default: 25)",
+        type=int,
+        default=25,
     )
     parser.add_argument(
-        "--window_size", "-w", help="Window size", type=int, default=100
+        "--minimum_block",
+        "-b",
+        help="Minimum number of reads which must be in 1 block in comparison (default: 10)",
+        type=int,
+        default=10,
+    )
+    parser.add_argument(
+        "--minimum_logfc",
+        "-f",
+        help="Minimum log fold change +/- (default: 1)",
+        type=float,
+        default=1,
+    )
+    parser.add_argument(
+        "--minimum_logcpm",
+        "-c",
+        help="Minimum log counts per million +/- (default: 8.0)",
+        type=float,
+        default=8.0,
+    )
+    parser.add_argument(
+        "--pvalue",
+        "-p",
+        help="Do not report anything above this p-value (default: 0.05)",
+        type=float,
+        default=0.05,
+    )
+    parser.add_argument(
+        "--qvalue",
+        "-q",
+        help="Do not report anything above this q-value (default: 0.05)",
+        type=float,
+        default=0.05,
+    )
+    parser.add_argument(
+        "--span_gaps",
+        "-s",
+        help="Span a gap if it is this multiple of a window size (default: 1)",
+        type=int,
+        default=1,
+    )
+    parser.add_argument(
+        "--window_size", "-w", help="Window size (default: 100)", type=int, default=100
     )
     parser.add_argument(
         "-sp",
@@ -229,13 +288,20 @@ def compare_pipeline(args):
         ofql.write("control_files:\n")
         for x in args.control_files:
             ofql.write("- " + x + "\n")
-        ofql.write(create_yaml_option("normalise", not args.disable_normalisation, bool=True))
-        ofql.write(create_yaml_option("threads", args.threads, num=True))
+        ofql.write(
+            create_yaml_option("normalise", not args.disable_normalisation, bool=True)
+        )
         ofql.write(create_yaml_option("annotations", args.annotations))
         ofql.write(create_yaml_option("minimum_threshold", args.minimum_threshold))
         ofql.write(create_yaml_option("prime_feature_size", args.prime_feature_size))
         ofql.write(create_yaml_option("window_interval", args.window_interval))
         ofql.write(create_yaml_option("window_size", args.window_size))
+        ofql.write(create_yaml_option("minimum_block", args.minimum_block))
+        ofql.write(create_yaml_option("minimum_logfc", args.minimum_logfc))
+        ofql.write(create_yaml_option("minimum_logcpm", args.minimum_logcpm))
+        ofql.write(create_yaml_option("p_value", args.pvalue))
+        ofql.write(create_yaml_option("q_value", args.qvalue))
+        ofql.write(create_yaml_option("span_gaps", args.span_gaps))
         ofql.write(
             create_yaml_option(
                 "minimum_proportion_insertions", args.minimum_proportion_insertions
@@ -247,14 +313,19 @@ def compare_pipeline(args):
     start_snakemake(
         pipeline,
         snakemake_config,
-        threads=args.threads,
+        cores=(
+            # For backward compatibility
+            args.cores
+            if args.cores > args.threads
+            else args.threads
+        ),
         snakemake_profile=args.snakemake_profile,
         verbose=args.verbose,
     )
 
 
 def start_snakemake(
-    snakefile, snakemake_config, threads=1, snakemake_profile=None, verbose=False
+    snakefile, snakemake_config, cores=1, snakemake_profile=None, verbose=False
 ):
     if verbose:
         print("Using snakemake config files at: " + ", ".join([snakemake_config]))
@@ -264,7 +335,7 @@ def start_snakemake(
         "snakemake",
         "--snakefile=" + snakefile,
         "--configfile=" + snakemake_config,
-        "--cores=" + str(threads),
+        "--cores=" + str(cores),
         "--printshellcmds",
     ]
 
