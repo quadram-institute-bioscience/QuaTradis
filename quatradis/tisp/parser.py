@@ -2,6 +2,7 @@ import numpy
 import os
 import pandas
 import subprocess
+import sys
 
 from Bio import bgzf
 
@@ -133,8 +134,9 @@ class PlotParser:
     @staticmethod
     def get_plot_file_length(plot_file, working_dir):
         plot_file = working_dir + os.sep + plot_file if working_dir else plot_file
+        joiner = " < " if sys.platform == "darwin" else " "
         cat = "zcat" if plot_file[-3:] == ".gz" else "cat"
-        wc = subprocess.check_output(["bash", "-c", cat + " " + plot_file + " | wc | awk '{print $1}'"])
+        wc = subprocess.check_output(["bash", "-c", cat + joiner + plot_file + " | wc | awk '{print $1}'"])
         file_length = str(wc, 'UTF-8').strip()
         return int(file_length)
 

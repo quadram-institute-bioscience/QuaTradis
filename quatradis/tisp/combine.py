@@ -3,6 +3,7 @@ Combining insert site plot files
 """
 import csv
 import os
+import sys
 
 from Bio import bgzf
 
@@ -31,7 +32,9 @@ def prepare_and_create_tabix_for_combined_plots(tabix_plot, combined_dir):
         for line in tabix_plot:
             tabix_plot_fh.write(line + "\n")
 
-    os.system("zcat " + tabix_plot_name + " | sort -k1,1 -k2,2n | bgzip > " + sorted_tabix_plot_name +
+    joiner = " < " if sys.platform == "darwin" else " "
+
+    os.system("zcat" + joiner + tabix_plot_name + " | sort -k1,1 -k2,2n | bgzip > " + sorted_tabix_plot_name +
               " && tabix -b 2 -e 2 " + sorted_tabix_plot_name)
     os.remove(tabix_plot_name)
 
