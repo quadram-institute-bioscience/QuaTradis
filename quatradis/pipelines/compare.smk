@@ -1,5 +1,6 @@
 import os
 import shutil
+import sys
 
 input_files=[]
 norm_files=[]
@@ -32,6 +33,8 @@ if not shutil.which('gzcat'):
 		ZCAT_CMD='zcat'
 	else:
 		raise Error("Couldn't find gzcat or zcat on your system.  Please install and try again.")
+
+ZCAT_JOIN=' <' if sys.platform == "darwin" else ''
 
 def make_no_normalise_cmd():
 	cmds = []
@@ -156,9 +159,9 @@ rule insertion_site_comparison:
         p_value="--pvalue=" + config["p_value"],
         q_value="--qvalue=" + config["q_value"],
         window_size="--window_size=" + config["window_size"],
-        zcat=ZCAT_CMD
+        zcat=ZCAT_CMD + ZCAT_JOIN
     message: "Calculating logfc for {output}"
-    shell: "SEQLENGTH=$({params.zcat} {params.combined} | wc -l); tradis compare insertion_sites {input.embl} {params.tt} {params.output_dir} --genome_length=${{SEQLENGTH}} {params.span_gaps} {params.window_size} {params.p_value} {params.q_value} {params.minimum_block} {params.minimum_logfc} {params.minimum_logcpm} {params.minimum_proportion_insertions} --verbose --controls {input.controls} --conditions {input.conditions} > {log} 2>&1"
+    shell: "SEQLENGTH=$({params.zcat} {params.combined} | wc -l | awk '{{$1=$1}};1'); tradis compare insertion_sites {input.embl} {params.tt} {params.output_dir} --genome_length=${{SEQLENGTH}} {params.span_gaps} {params.window_size} {params.p_value} {params.q_value} {params.minimum_block} {params.minimum_logfc} {params.minimum_logcpm} {params.minimum_proportion_insertions} --verbose --controls {input.controls} --conditions {input.conditions} > {log} 2>&1"
 
 
 rule gene_stats:
