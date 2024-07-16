@@ -143,7 +143,7 @@ Rough steps are described here (adapt as needed for your system):
 
 # Create a virtual environment for quatradis and activate it.  You'll need to reactivate it in every session
 # in which you wish to use quatradis.
-conda create -n "quatradis" python=3.11
+conda create -n "quatradis" python=3.10
 conda activate quatradis
 
 # Install mamba if you haven't already
