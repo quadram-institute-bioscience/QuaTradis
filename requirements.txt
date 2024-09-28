@@ -1,7 +1,7 @@
 pysam
 biopython
 cython
-dendropy
+dendropy==4.6
 graphviz
 matplotlib
 numpy
