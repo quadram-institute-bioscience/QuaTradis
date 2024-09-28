@@ -37,7 +37,7 @@ rule create_plot:
         aligner=("--aligner=" + config["aligner"]) if config["aligner"] else "",
         tag=("--tag=" + config["tag"]) if config["tag"] else "",
         mismatch=("--mismatch=" + str(config["mismatch"])) if config["mismatch"] else "",
-        mapping_score=("--mapping_score=" + str(config["mapping_score"])) if config["mapping_score"] else "",
+        mapping_score="--mapping_score=" + str(config["mapping_score"]),
         threads="--threads=" + str(config["threads"]) if config["threads"] else "",
         output_dir=os.path.join(config["output_dir"], "{fq}")
     threads: int(config["threads"])
