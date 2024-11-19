@@ -134,7 +134,7 @@ sudo apt install r-base
 Before installing QuaTraDIS via conda, first [install conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/linux.html)
 and enable the bioconda channel as described [here](https://bioconda.github.io/). After which if you
 don't have mamba installed then we recommend you do this to make the installation process much faster.
-We also recommend using a virtual environment with python pinned to 3.11. This should help to avoid version mixups.
+We also recommend using a virtual environment with python pinned to 3.10. This should help to avoid version mixups.
 [conda virtual environment](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html).  
 Rough steps are described here (adapt as needed for your system):
 
