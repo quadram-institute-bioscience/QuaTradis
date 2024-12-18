@@ -50,12 +50,6 @@ def make_normalise_cmd():
         ("--minimum_proportion_insertions=" + config["minimum_proportion_insertions"] if config["minimum_proportion_insertions"] else "") + \
             " " + " ".join(input_files)
             
-# Print command function for easier traceability
-def print_command(stage, input_files, output_files, params):
-    print(f"Executing {stage} with:")
-    print(f"  Inputs: {input_files}")
-    print(f"  Outputs: {output_files}")
-    print(f"  Params: {params}")
 
 rule finish:
     input:
@@ -85,8 +79,6 @@ rule prepare_embl:
     shell:
         "tradis compare prepare_embl --output={output} {params.minimum_threshold} {params.window_size} {params.window_interval} {params.prime_feature_size} {params.dynamic_window} --emblfile {input.embl} {input.plot}"
 
-#    run:
-#        print_command("prepare_embl", input, output, params)
 
 rule normalise:
     input:
@@ -98,8 +90,7 @@ rule normalise:
     params:
         cmd=make_normalise_cmd() if config["normalise"] else make_no_normalise_cmd()
     shell: "{params.cmd}"
-#    run:
-#        print_command("normalise", input, output, params)
+
 
 rule split_plots:
     input:
@@ -118,8 +109,6 @@ rule split_plots:
         echo "Executing: $cmd"
         eval $cmd
         """
-#    run:
-#        print_command("split_plots", input, output, params)
 
 
 rule count_plots:
@@ -138,8 +127,7 @@ rule count_plots:
         echo "Executing: $cmd"
         eval $cmd
         """
-#    run:
-#        print_command("count_plots", input, output, params)
+
 
 
 rule essentiality:
@@ -155,8 +143,6 @@ rule essentiality:
         echo "Executing: $cmd"
         eval $cmd
         """
-#    run:
-#        print_command("essentiality", input, output, {})
 
 
 rule plot:
