@@ -16,13 +16,16 @@ class FeatureProperties:
         self.product = product
 
 
-class EMBLExpandGenes:
-    def __init__(self, embl_file, feature_size):
+class   EMBLExpandGenes:
+    def __init__(self, embl_file, feature_size,dynamic_window=False):
+        # Modification 6
         self.embl_file = embl_file
         self.feature_size = feature_size
         self.er = EMBLReader(self.embl_file)
         self.features = self.er.features
         self.genome_length = self.er.genome_length
+        self.dynamic_window=dynamic_window
+        self.max_window = 2000
 
     def create_3_5_prime_features(self):
         new_features = []
@@ -68,10 +71,35 @@ class EMBLExpandGenes:
                 )
 
         return new_features
+    # Modification 7
+    def get_windows(self,data, start, end, max_window):
+        #red inserts is zero, blue is one
+        low = max(1, start - max_window)
+        high = min(data.size, end + max_window) 
+        blue = self.get_shifts(data[end:high].iloc[:, 1])
+        red = self.get_shifts(data[low:start].iloc[:, 0].iloc[::-1])
+        red.append(max(1, start - 200))
+        blue.append(min(len(data), end + 200))
+        return min(red), max(blue)
 
+    # Modification 8
+    def get_shifts(self,data, window_size=20):
+
+        moving_average = data.rolling(window=window_size).mean()
+        deviation = abs(data - moving_average)
+        threshold = 2 * data.std()  
+        potential_shifts = deviation[deviation > threshold].index.tolist()
+        return potential_shifts
+
+    # Modification 9
     def construct_end_feature(self, feature, gene_name, suffix, locus_tag, product):
-        start = feature.location.end
-        end = feature.location.end + self.feature_size
+        if self.dynamic_window:
+            left, right = self.get_windows(self.plot_file, feature.location.start, feature.location.end, self.max_window)
+            start= feature.location.end
+            end = right
+        else:
+            start = feature.location.end
+            end = feature.location.end + self.feature_size
 
         if end > self.genome_length:
             end = self.genome_length
@@ -88,10 +116,15 @@ class EMBLExpandGenes:
             product,
         )
 
-    def construct_start_feature(self, feature, gene_name, suffix, locus_tag, product):
-        start = feature.location.start - self.feature_size
-        end = feature.location.start
-
+    # Modification 10
+    def construct_start_feature(self, feature, gene_name, suffix, locus_tag, product,dynamic_window=False):
+        if self.dynamic_window:
+            left, right = self.get_windows(self.plot_file, feature.location.start, feature.location.end, self.max_window)
+            start= left
+            end =feature.location.start
+        else:
+            start = feature.location.start - self.feature_size
+            end = feature.location.start
         if start < 1:
             start = 1
         if start >= end or end - start < 10:
@@ -104,11 +137,11 @@ class EMBLExpandGenes:
             locus_tag + suffix,
             product,
         )
-
-    def construct_file(self, filename):
+    # Modification 11
+    def construct_file(self, filename,plot_file):
         with open(filename, "w") as emblfile:
             emblfile.write(self.header())
-
+            self.plot_file= plot_file
             for f in self.create_3_5_prime_features():
                 if f == None:
                     continue

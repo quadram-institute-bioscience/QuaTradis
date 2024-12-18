@@ -262,6 +262,8 @@ def compare_options(parser):
         type=str,
         help='If provided, pass this directory onto snakemake.  Assumes there is a file called "config.yaml" in that directory.',
     )
+    # Modification 1.0
+    parser.add_argument("--dynamic_window", "-dw", help="Dynamic Window for 3,5 Prime_Features (default: True)", action='store_true')
 
 
 def compare_pipeline(args):
@@ -291,11 +293,13 @@ def compare_pipeline(args):
         ofql.write(
             create_yaml_option("normalise", not args.disable_normalisation, bool=True)
         )
+        # Modification 1.1
         ofql.write(create_yaml_option("annotations", args.annotations))
         ofql.write(create_yaml_option("minimum_threshold", args.minimum_threshold))
         ofql.write(create_yaml_option("prime_feature_size", args.prime_feature_size))
         ofql.write(create_yaml_option("window_interval", args.window_interval))
         ofql.write(create_yaml_option("window_size", args.window_size))
+        ofql.write(create_yaml_option("dynamic_window", args.dynamic_window))
         ofql.write(create_yaml_option("minimum_block", args.minimum_block))
         ofql.write(create_yaml_option("minimum_logfc", args.minimum_logfc))
         ofql.write(create_yaml_option("minimum_logcpm", args.minimum_logcpm))

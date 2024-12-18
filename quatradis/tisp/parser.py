@@ -120,6 +120,7 @@ class PlotParser:
         self.reverse = []
         self.combined = []
         self.genome_length = 0
+        self.insert_site_array= None
 
         self.read()
 
@@ -142,10 +143,13 @@ class PlotParser:
 
     def read(self):
         handle = PlotParser.create_file_handle(self.filename)
-        insert_site_array = pandas.read_csv(handle, sep='\s+', dtype=float, engine='c',
-                                            header=None).values
+        self.insert_site_array = pandas.read_csv(handle, sep='\s+', dtype=float, engine='c',
+                                            header=None)
+        #Modification N
+        insert_site_array= self.insert_site_array.values
 
         self.genome_length = len(insert_site_array)
+        # print("insert_site_array",insert_site_array)
 
         self.forward = insert_site_array[:, 0]
         self.reverse = insert_site_array[:, 1]

@@ -371,9 +371,12 @@ def prepare_embl_utils_options(parser):
     parser.add_argument(
         "--window_size", "-w", help="Window size (default: 100)", type=int, default=100
     )
+    # Modification 2
+    parser.add_argument("--dynamic_window", "-dw", help="Dynamic Window for 3,5 Prime_Features (default: True)", action='store_true')
 
 
 def prepare_embl(args):
+    # Modification 3
     pef = PrepareEMBLFile(
         args.plotfile,
         args.minimum_threshold,
@@ -381,6 +384,7 @@ def prepare_embl(args):
         args.window_interval,
         args.prime_feature_size,
         args.emblfile,
+        args.dynamic_window
     )
     pef.create_file(args.output)
 

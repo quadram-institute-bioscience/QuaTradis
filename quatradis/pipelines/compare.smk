@@ -49,6 +49,13 @@ def make_normalise_cmd():
     return "tradis plot normalise -o " + os.path.join(config["output_dir"], "analysis") + " -n original.plot.gz " + \
         ("--minimum_proportion_insertions=" + config["minimum_proportion_insertions"] if config["minimum_proportion_insertions"] else "") + \
             " " + " ".join(input_files)
+            
+# Print command function for easier traceability
+def print_command(stage, input_files, output_files, params):
+    print(f"Executing {stage} with:")
+    print(f"  Inputs: {input_files}")
+    print(f"  Outputs: {output_files}")
+    print(f"  Params: {params}")
 
 rule finish:
     input:
@@ -60,19 +67,26 @@ rule finish:
     run:
         print("All done!")
 
-
+# Modification 2.0
 rule prepare_embl:
     input:
-        plot=config["control_files"][0],
+        plot=config["condition_files"][0],
         embl=config["annotations"]
-    output: os.path.join(config["output_dir"], "prepared.embl")
-    message: "Preparing embl annotations file"
+    output:
+        os.path.join(config["output_dir"], "prepared.embl")
+    message:
+        "Preparing embl annotations file"
     params:
-        minimum_threshold="--minimum_threshold=" + config["minimum_threshold"] if config["minimum_threshold"] else "",
-        window_size="--window_size=" + config["window_size"] if config["window_size"] else "",
-        window_interval="--window_interval=" + config["window_interval"] if config["window_interval"] else "",
-        prime_feature_size="--prime_feature_size=" + config["prime_feature_size"] if config["prime_feature_size"] else ""
-    shell: "tradis compare prepare_embl --output={output} {params.minimum_threshold} {params.window_size} {params.window_interval} {params.prime_feature_size} --emblfile {input.embl} {input.plot}"
+        minimum_threshold="--minimum_threshold=" + str(config["minimum_threshold"]) if config.get("minimum_threshold") else "",
+        window_size="--window_size=" + str(config["window_size"]) if config.get("window_size") else "",
+        window_interval="--window_interval=" + str(config["window_interval"]) if config.get("window_interval") else "",
+        prime_feature_size="--prime_feature_size=" + str(config["prime_feature_size"]) if config.get("prime_feature_size") else "",
+        dynamic_window="--dynamic_window" if config.get("dynamic_window", False) else ""
+    shell:
+        "tradis compare prepare_embl --output={output} {params.minimum_threshold} {params.window_size} {params.window_interval} {params.prime_feature_size} {params.dynamic_window} --emblfile {input.embl} {input.plot}"
+
+#    run:
+#        print_command("prepare_embl", input, output, params)
 
 rule normalise:
     input:
@@ -84,7 +98,8 @@ rule normalise:
     params:
         cmd=make_normalise_cmd() if config["normalise"] else make_no_normalise_cmd()
     shell: "{params.cmd}"
-
+#    run:
+#        print_command("normalise", input, output, params)
 
 rule split_plots:
     input:
@@ -97,7 +112,14 @@ rule split_plots:
     params:
         output_dir=os.path.join(config["output_dir"], "analysis", "{plot}"),
         minimum_threshold="--minimum_threshold=" + config["minimum_threshold"] if config["minimum_threshold"] else ""
-    shell: "tradis compare split -o {params.output_dir} --gzipped {params.minimum_threshold} {input.p}"
+    shell:
+        """
+        cmd="tradis compare split -o {params.output_dir} --gzipped {params.minimum_threshold} {input.p}"
+        echo "Executing: $cmd"
+        eval $cmd
+        """
+#    run:
+#        print_command("split_plots", input, output, params)
 
 
 rule count_plots:
@@ -110,7 +132,14 @@ rule count_plots:
     params:
         output_dir=os.path.join(config["output_dir"], "analysis", "{plot}"),
         suffix="count.tsv"
-    shell: "tradis plot count -o {params.output_dir} -s {params.suffix} {input.embl} {input.p}"
+    shell:
+        """
+        cmd="tradis plot count -o {params.output_dir} -s {params.suffix} {input.embl} {input.p}"
+        echo "Executing: $cmd"
+        eval $cmd
+        """
+#    run:
+#        print_command("count_plots", input, output, params)
 
 
 rule essentiality:
@@ -120,7 +149,14 @@ rule essentiality:
         ess=os.path.join(config["output_dir"], "analysis", "{plot}", "{type}.count.tsv.essen.csv")
     log: os.path.join(config["output_dir"], "analysis", "{plot}", "{type}.count.tsv.essen.log")
     message: "Determining gene essentiality for {input}"
-    shell: "tradis compare essentiality --verbose {input} > {log} 2>&1"
+    shell:
+        """
+        cmd="tradis compare essentiality --verbose {input} > {log} 2>&1"
+        echo "Executing: $cmd"
+        eval $cmd
+        """
+#    run:
+#        print_command("essentiality", input, output, {})
 
 
 rule plot:
@@ -135,7 +171,12 @@ rule plot:
         controls=lambda wildcards: "--controls " + " ".join(expand(os.path.join(config["output_dir"], "analysis", "{control}", wildcards.type + ".plot.gz"), control=controlnames)),
         conditions=lambda wildcards: "--conditions " + " ".join(expand(os.path.join(config["output_dir"], "analysis", "{condition}", wildcards.type + ".plot.gz"), condition=conditionnames))
     message: "Creating figures for type: {params.typestr}"
-    shell: "tradis compare figures {params.window_size} {params.prefix} {params.controls} {params.conditions} > /dev/null 2>&1"
+    shell:
+        """
+        cmd="tradis compare figures {params.window_size} {params.prefix} {params.controls} {params.conditions} > /dev/null 2>&1"
+        echo "Executing: $cmd"
+        eval $cmd
+        """
 
 
 rule insertion_site_comparison:
@@ -161,7 +202,13 @@ rule insertion_site_comparison:
         window_size="--window_size=" + config["window_size"],
         zcat=ZCAT_CMD + ZCAT_JOIN
     message: "Calculating logfc for {output}"
-    shell: "SEQLENGTH=$({params.zcat} {params.combined} | wc -l | awk '{{$1=$1}};1'); tradis compare insertion_sites {input.embl} {params.tt} {params.output_dir} --genome_length=${{SEQLENGTH}} {params.span_gaps} {params.window_size} {params.p_value} {params.q_value} {params.minimum_block} {params.minimum_logfc} {params.minimum_logcpm} {params.minimum_proportion_insertions} --verbose --controls {input.controls} --conditions {input.conditions} > {log} 2>&1"
+    shell:
+        """
+        SEQLENGTH=$({params.zcat} {params.combined} | wc -l | awk '{{ $1=$1 }};1')
+        cmd="tradis compare insertion_sites {input.embl} {params.tt} {params.output_dir} --genome_length=${{SEQLENGTH}} {params.span_gaps} {params.window_size} {params.p_value} {params.q_value} {params.minimum_block} {params.minimum_logfc} {params.minimum_logcpm} {params.minimum_proportion_insertions} --verbose --controls {input.controls} --conditions {input.conditions} > {log} 2>&1"
+        echo "Executing: $cmd"
+        eval $cmd
+        """
 
 
 rule gene_stats:
@@ -178,7 +225,12 @@ rule gene_stats:
         annotations="--annotations=" + config["annotations"] if not config["annotations"]=="None" else "",
         scores="--scores=" + os.path.join(config["output_dir"],"comparison","combined","combined.pqvals.plot")
     message: "Creating gene report"
-    shell: "tradis compare gene_report --combined={input.combined} --forward={input.forward} --reverse={input.rev} {params.scores} {params.window_size} {params.output_dir} {params.annotations} {input.embl}"
+    shell:
+        """
+        cmd="tradis compare gene_report --combined={input.combined} --forward={input.forward} --reverse={input.rev} {params.scores} {params.window_size} {params.output_dir} {params.annotations} {input.embl}"
+        echo "Executing: $cmd"
+        eval $cmd
+        """
 
 
 rule essentiality_analysis:
@@ -194,4 +246,9 @@ rule essentiality_analysis:
         output_dir = "--output_dir=" + os.path.join(config["output_dir"], "comparison", "{type}"),
         t = "--type={type}"
     message: "Running essentiality analysis for {output}"
-    shell: "tradis compare essentiality_analysis {params.output_dir} {params.t} --verbose --controls {input.controls} --conditions {input.conditions} --ess_controls {input.ess_controls} --ess_conditions {input.ess_conditions} > {log} 2>&1"
+    shell:
+        """
+        cmd="tradis compare essentiality_analysis {params.output_dir} {params.t} --verbose --controls {input.controls} --conditions {input.conditions} --ess_controls {input.ess_controls} --ess_conditions {input.ess_conditions} > {log} 2>&1"
+        echo "Executing: $cmd"
+        eval $cmd
+        """

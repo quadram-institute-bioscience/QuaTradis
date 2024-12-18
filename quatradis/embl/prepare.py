@@ -9,15 +9,15 @@ from quatradis.embl.expand_genes import EMBLExpandGenes
 
 class PrepareEMBLFile:
     '''Take in the input files, parse them to create new files.'''
-
-    def __init__(self, plotfile, minimum_threshold, window_size, window_interval, prime_feature_size, emblfile):
+    # Modification 4
+    def __init__(self, plotfile, minimum_threshold, window_size, window_interval, prime_feature_size, emblfile,dynamic_window):
         self.plotfile = plotfile
         self.minimum_threshold = minimum_threshold
         self.window_size = window_size
         self.window_interval = window_interval
         self.prime_feature_size = prime_feature_size
         self.emblfile = emblfile
-
+        self.dynamic_window= dynamic_window
         self.forward_plot_filename = ""
         self.reverse_plot_filename = ""
         self.combined_plot_filename = ""
@@ -44,9 +44,9 @@ class PrepareEMBLFile:
     def embl_file_expand_genes(self, embl_filename):
         if not embl_filename:
             fd, embl_filename = mkstemp()
-
-        eg = EMBLExpandGenes(self.emblfile, self.prime_feature_size)
-        eg.construct_file(embl_filename)
+        # Modification 5
+        eg = EMBLExpandGenes(self.emblfile, self.prime_feature_size,self.dynamic_window)
+        eg.construct_file(embl_filename, self.plot_parser_obj.insert_site_array)
         return embl_filename
 
     def create_file(self, embl_filename=None):
