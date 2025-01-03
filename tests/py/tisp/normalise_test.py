@@ -1,76 +1,43 @@
 import filecmp
 import os
-import shutil
 import unittest
 
+import shutil
+
 from quatradis.tisp.normalise import NormalisePlots
+from tests.py.tisp import DATA_DIR
+
+data_dir = os.path.join(DATA_DIR, "normalise")
+plotparser_dir = os.path.join(DATA_DIR, "parser")
 
 
-class ErrorReadingFile(Exception):
-    pass
-
-
-class InvalidFileFormat(Exception):
-    pass
-
-
-data_dir = os.path.join("data", "tisp", "normalise")
-plotparser_dir = os.path.join("data", "tisp", "parser")
-
-
-class TestNormalisePlots(unittest.TestCase):
+class NormaliseTest(unittest.TestCase):
 
     def test_big_differences(self):
-        p = NormalisePlots(
-            [os.path.join(data_dir, "sample1"), os.path.join(data_dir, "sample2")],
-            0.1,
-            output_dir="normalised",
-        )
-        output_files, max_reads = p.create_normalised_files()
+        n = NormalisePlots([os.path.join(data_dir, "sample1"), os.path.join(data_dir, "sample2")],
+                           0.1, output_dir="normalised")
+        output_files, max_reads = n.create_normalised_files()
         self.assertEqual(2, len(output_files))
         self.assertTrue(filecmp.cmp(os.path.join(data_dir, "sample2"), output_files[1]))
-        self.assertTrue(
-            filecmp.cmp(os.path.join(data_dir, "expected_sample1"), output_files[0])
-        )
-        self.assertTrue(p.decreased_insertion_reporting())
+        self.assertTrue(filecmp.cmp(os.path.join(data_dir, "expected_sample1"), output_files[0]))
+        self.assertTrue(n.decreased_insertion_reporting())
         shutil.rmtree("normalised")
 
-    def test_ignore_decreased_insertions(self):
-        p = NormalisePlots(
-            [
-                os.path.join(data_dir, "lowinsertions"),
-                os.path.join(data_dir, "highinsertions"),
-            ],
-            0.1,
-            output_dir="normalised"
-        )
-        self.assertFalse(p.decreased_insertion_reporting())
+    def test_decreased_insertion_reporting(self):
+        tests = [
+            ([os.path.join(data_dir, "lowinsertions"), os.path.join(data_dir, "highinsertions")], False),
+            ([os.path.join(data_dir, "fewinsertions"), os.path.join(data_dir, "manyinsertions")], False),
+            ([os.path.join(plotparser_dir, "Control2.out.CP009273.insert_site_plot.gz"),
+              os.path.join(plotparser_dir, "Chloramrep2-MICpool.out.CP009273.insert_site_plot.gz")], True)
+        ]
 
-    def test_ignore_decreased_insertions_insert_sites(self):
-        p = NormalisePlots(
-            [
-                os.path.join(data_dir, "fewinsertions"),
-                os.path.join(data_dir, "manyinsertions"),
-            ],
-            0.1,
-            output_dir="normalised",
-        )
-        self.assertFalse(p.decreased_insertion_reporting())
+        for i, t in enumerate(tests):
+            with self.subTest(i=i):
+                n = NormalisePlots(t[0], 0.1, output_dir="normalised")
+                if t[1]:
+                    output_files, max_reads = n.create_normalised_files()
+                actual = n.decreased_insertion_reporting()
+                self.assertEqual(actual, t[1])
+                if actual:
+                    shutil.rmtree("normalised")
 
-    def test_large_file_zipped(self):
-        p = NormalisePlots(
-            [
-                os.path.join(
-                    plotparser_dir, "Control2.out.CP009273.insert_site_plot.gz"
-                ),
-                os.path.join(
-                    plotparser_dir,
-                    "Chloramrep2-MICpool.out.CP009273.insert_site_plot.gz",
-                ),
-            ],
-            0.1,
-            output_dir="normalised",
-        )
-        output_files, max_reads = p.create_normalised_files()
-        self.assertTrue(p.decreased_insertion_reporting())
-        shutil.rmtree("normalised")

@@ -2,6 +2,7 @@ import unittest
 import os
 
 from quatradis.gene.report import GeneReport
+from tests.py.gene import DATA_DIR
 
 
 class ErrorReadingFile(Exception): pass
@@ -10,7 +11,7 @@ class ErrorReadingFile(Exception): pass
 class InvalidFileFormat(Exception): pass
 
 
-data_dir = os.path.join('data', 'gene', 'report')
+data_dir = os.path.join(DATA_DIR, 'report')
 
 
 class TestGeneReport(unittest.TestCase):

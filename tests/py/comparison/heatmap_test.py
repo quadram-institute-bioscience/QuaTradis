@@ -3,6 +3,7 @@ import unittest
 
 from quatradis.gene.gene import Gene
 from quatradis.comparison.heatmap import HeatMap
+from tests.py.comparison import DATA_DIR
 
 
 class ErrorReadingFile(Exception): pass
@@ -11,7 +12,7 @@ class ErrorReadingFile(Exception): pass
 class InvalidFileFormat(Exception): pass
 
 
-data_dir = os.path.join('data', 'comparison', 'heatmap')
+data_dir = os.path.join(DATA_DIR, 'heatmap')
 
 
 def create_genes(logfcs):

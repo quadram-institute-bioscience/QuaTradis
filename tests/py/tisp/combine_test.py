@@ -9,8 +9,10 @@ import os.path
 import unittest
 
 from quatradis.tisp import combine
+from tests.py.tisp import DATA_DIR
 
-data_dir = os.path.join("data", "tisp", "combine")
+data_dir = os.path.join(DATA_DIR, "combine")
+
 
 class CombinePlotsTest(unittest.TestCase):
 

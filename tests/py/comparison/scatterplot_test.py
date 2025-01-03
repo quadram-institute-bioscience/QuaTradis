@@ -2,8 +2,9 @@ import shutil
 import unittest
 import os
 from quatradis.comparison.scatterplot import ScatterPlot
+from tests.py.comparison import DATA_DIR
 
-data_dir = os.path.join('data', 'comparison', 'scatterplot')
+data_dir = os.path.join(DATA_DIR, 'scatterplot')
 
 
 class ErrorReadingFile(Exception): pass

@@ -2,8 +2,9 @@ import os
 import unittest
 
 from quatradis.artemis.experiment import ExperimentCollection, ExperimentMetaData
+from tests.py.artemis import DATA_DIR
 
-data_dir = os.path.join('data', 'artemis', 'experimentcollection')
+data_dir = os.path.join(DATA_DIR, 'experimentcollection')
 
 
 class TestExperimentCollection(unittest.TestCase):

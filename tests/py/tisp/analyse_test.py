@@ -10,8 +10,10 @@ import unittest
 from Bio.SeqFeature import SeqFeature
 
 from quatradis.tisp import analyse
+from tests.py.tisp import DATA_DIR
 
-data_dir = os.path.join("data", "tisp", "analyse")
+data_dir = os.path.join(DATA_DIR, "analyse")
+
 
 class AnalyseInsertSitesTest(unittest.TestCase):
 
