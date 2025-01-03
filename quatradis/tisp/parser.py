@@ -24,6 +24,9 @@ class PlotFiles:
 
     @staticmethod
     def check_plot_files_lengths(plot_files, working_dir):
+        if len(plot_files) == 0:
+            return 0, []
+
         lengths = []
         for f in plot_files:
             lengths.append(PlotParser.get_plot_file_length(f, working_dir))
@@ -33,7 +36,7 @@ class PlotFiles:
             if lengths[x] != length:
                 length = -1
 
-        return length + 1, lengths
+        return length, lengths
 
     @staticmethod
     def create_file_handles(plot_files, working_dir=""):
@@ -46,7 +49,7 @@ class PlotFiles:
 
         length, lengths = PlotFiles.check_plot_files_lengths(self.plot_files, self.working_dir)
         if length == -1:
-            raise ValueError("Inconsistent file lengths for \"" + self.id + "\" : " + lengths)
+            raise ValueError("Inconsistent file lengths for \"" + self.id + "\" : [" + ",".join(str(x) for x in lengths) + "]")
 
         file_handles = self.create_file_handles(self.plot_files, self.working_dir)
 
@@ -81,7 +84,7 @@ class PlotFiles:
                 current_lines.append(line)
             else:
                 self.close_file_handles(file_handles)
-                raise ValueError("Unexpected blank line in \"" + self.id + "\" line " + (line_number))
+                raise ValueError("Unexpected blank line in \"" + self.id + "\" line " + str(line_number))
 
         return PlotFiles.combine_lines(current_lines)
 
@@ -136,7 +139,7 @@ class PlotParser:
         plot_file = working_dir + os.sep + plot_file if working_dir else plot_file
         joiner = " < " if sys.platform == "darwin" else " "
         cat = "zcat" if plot_file[-3:] == ".gz" else "cat"
-        wc = subprocess.check_output(["bash", "-c", cat + joiner + plot_file + " | wc | awk '{print $1}'"])
+        wc = subprocess.check_output(["bash", "-c", cat + joiner + plot_file + " | grep -c ''"])
         file_length = str(wc, 'UTF-8').strip()
         return int(file_length)
 
