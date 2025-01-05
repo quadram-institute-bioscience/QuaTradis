@@ -8,6 +8,7 @@ import os
 import unittest
 
 from quatradis.tisp.generator import from_alignments
+from tests.py.tisp.generator import DATA_DIR
 
 
 def load_plot_file(plot_file):
@@ -16,8 +17,8 @@ def load_plot_file(plot_file):
         # Note the hack for the first line.  This is so we can use 1-based access to represent line numbers / coord positions in file
         return [""] + [str(x, 'UTF-8').strip() for x in plot_handle.readlines()]
 
-data_dir = os.path.join("data", "tisp", "create")
-tags_data_dir = os.path.join("data", "util", "tags")
+data_dir = os.path.join(DATA_DIR, "tisp", "create")
+tags_data_dir = os.path.join(DATA_DIR, "util", "tags")
 
 class InsertSitePlotTest(unittest.TestCase):
 

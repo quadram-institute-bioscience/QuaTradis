@@ -3,8 +3,9 @@ import os
 
 from quatradis.embl.generator import EMBLGenerator
 from quatradis.embl.window import WindowGenerator
+from tests.py.embl import DATA_DIR
 
-data_dir = os.path.join('data', 'embl', 'generator')
+data_dir = os.path.join(DATA_DIR, 'generator')
 
 
 class TestEMBLGenerator(unittest.TestCase):

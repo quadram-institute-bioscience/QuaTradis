@@ -3,6 +3,7 @@ import unittest
 
 from quatradis.gene.block import Block
 from quatradis.gene.annotator import GeneAnnotator
+from tests.py.gene import DATA_DIR
 
 
 class ErrorReadingFile(Exception): pass
@@ -10,7 +11,7 @@ class ErrorReadingFile(Exception): pass
 
 class InvalidFileFormat(Exception): pass
 
-data_dir = os.path.join('data', 'gene', 'annotator')
+data_dir = os.path.join(DATA_DIR, 'annotator')
 
 
 class TestGeneAnnotator(unittest.TestCase):

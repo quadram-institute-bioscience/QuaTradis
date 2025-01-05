@@ -2,8 +2,9 @@ import os
 import unittest
 
 from quatradis.gene.block_identifier import BlockIdentifier
+from tests.py.gene import DATA_DIR
 
-data_dir = os.path.join('data', 'gene', 'blockidentifier')
+data_dir = os.path.join(DATA_DIR, 'blockidentifier')
 
 
 def create_block_identifier(basename):

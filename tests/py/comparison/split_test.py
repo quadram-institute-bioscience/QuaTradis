@@ -3,8 +3,9 @@ import shutil
 import unittest
 import os
 from quatradis.comparison.split import split_plot
+from tests.py.comparison import DATA_DIR
 
-data_dir = os.path.join('data', 'comparison', 'split')
+data_dir = os.path.join(DATA_DIR, 'split')
 
 
 class TestSplit(unittest.TestCase):

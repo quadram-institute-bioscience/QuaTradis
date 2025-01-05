@@ -3,6 +3,7 @@ import shutil
 import unittest
 
 from quatradis.comparison.presence_absence import PresenceAbsence
+from tests.py.comparison import DATA_DIR
 
 
 class ErrorReadingFile(Exception): pass
@@ -11,7 +12,7 @@ class ErrorReadingFile(Exception): pass
 class InvalidFileFormat(Exception): pass
 
 
-data_dir = os.path.join('data', 'comparison', 'presenceabsence')
+data_dir = os.path.join(DATA_DIR, 'presenceabsence')
 
 
 class TestPresenceAbsence(unittest.TestCase):

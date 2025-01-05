@@ -2,8 +2,9 @@ import os
 import unittest
 
 from quatradis.comparison.plot_logfc import PlotLog, PlotLogOptions
+from tests.py.comparison import DATA_DIR
 
-data_dir = os.path.join('data', 'comparison', 'plotlogfc')
+data_dir = os.path.join(DATA_DIR, 'plotlogfc')
 
 
 class TestPlotLog(unittest.TestCase):

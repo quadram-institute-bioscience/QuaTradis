@@ -13,102 +13,57 @@ import pysam
 from pysam.libcalignedsegment import CIGAR_OPS
 
 from quatradis.util import tags
+from tests.py.util import DATA_DIR, CWD
 
-data_dir = os.path.join('data', 'util', 'tags')
-tisp_data_dir = os.path.join('data', 'tisp', 'create')
+data_dir = os.path.join(DATA_DIR, 'tags')
+tisp_data_dir = os.path.join(CWD, '..', '..', 'data', 'tisp', 'create')
+
 
 class TagsTest(unittest.TestCase):
 
     # ##### Tests for finding the tag
 
-    def test_find_tag_exact(self):
-        found = tags.find_tag("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", "CAACGTTTT")
-        self.assertTrue(found)
+    def test_find_tag(self):
+        tests = [
+            ("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", "CAACGTTTT", 0, True),
+            ("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", "CAACGTATT", 1, True),
+            ("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", "CAACGTATT", 0, False),
+            ("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", "TNAGAGACAG", 1, False),
+            ("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", "TNAGAGACAG", 50, True),
+            ("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", "CAACGTTTTCAACGTTTTCAACGTTTTCAACGTTTTCAACGTTTTCAACGTTTTCAACGTTTT", 0, False),
+            ("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", "CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCACAACGTTTT", 0, False),
+            ("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", "", 0, False),
+            ("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", "AT", 0, False),
+            ("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", ".*CGT", 0, True),
+            ("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", ".*..CGT", 0, True),
+            ("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", ".*...CGT", 0, True),
+            ("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", ".*...CGTA", 0, False),
+            ("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", ".*...CGT...CTG", 0, True),
+            ("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", ".*...CGT...CTGA", 0, False)
 
-    def test_find_tag_1mm(self):
-        found = tags.find_tag("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", "CAACGTATT", max_mismatches=1)
-        self.assertTrue(found)
+        ]
+        for i, t in enumerate(tests):
+            with self.subTest(i=i):
+                found = tags.find_tag(t[0], t[1], max_mismatches=t[2])
+                self.assertEqual(found, t[3])
 
-    def test_find_notag_exact(self):
-        found = tags.find_tag("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", "CAACGTATT", max_mismatches=0)
-        self.assertFalse(found)
-
-    def test_find_notag_1mm(self):
-        found = tags.find_tag("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", "TNAGAGACAG", max_mismatches=1)
-        self.assertFalse(found)
-
-    def test_find_lots_of_mismatches(self):
-        found = tags.find_tag("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", "TNAGAGACAG", max_mismatches=50)
-        self.assertTrue(found)
-
-    def test_find_long_tag(self):
-        found = tags.find_tag("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", "CAACGTTTTCAACGTTTTCAACGTTTTCAACGTTTTCAACGTTTTCAACGTTTTCAACGTTTT")
-        self.assertFalse(found)
-
-    def test_find_long_tag2(self):
-        found = tags.find_tag("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", "CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCACAACGTTTT")
-        self.assertFalse(found)
-
-    def test_find_notag(self):
-        found = tags.find_tag("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", "")
-        self.assertFalse(found)
-
-    def test_find_too_short_tag(self):
-        found = tags.find_tag("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", "AT")
-        self.assertFalse(found)
-
-    def test_find_tag_regex_1(self):
-        found = tags.find_tag("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", ".*CGT")
-        self.assertTrue(found)
-
-    def test_find_tag_regex_2(self):
-        found = tags.find_tag("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", ".*..CGT")
-        self.assertTrue(found)
-
-    def test_find_tag_regex_3(self):
-        found = tags.find_tag("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", ".*...CGT")
-        self.assertTrue(found)
-
-    def test_find_tag_regex_4(self):
-        found = tags.find_tag("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", ".*...CGTA")
-        self.assertFalse(found)
-
-    def test_find_tag_regex_5(self):
-        found = tags.find_tag("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", ".*...CGT...CTG")
-        self.assertTrue(found)
-
-    def test_find_tag_regex_6(self):
-        found = tags.find_tag("CAACGTTTTCTGCGTGTTGCCGATATTTTGGAAAGCA", ".*...CGT...CTGA")
-        self.assertFalse(found)
-
-    # ##### Tests for file processing
-
-    def test_file_exact_match(self):
-        tags.remove_tags(os.path.join(data_dir, "sample.caa.fastq"), "output.fastq", "CAACGTTTT")
-        self.assertTrue(filecmp.cmp('output.fastq', os.path.join(data_dir, 'expected.rm.caa.fastq')))
-        os.remove("output.fastq")
-
-    def test_file_1mm(self):
-        tags.remove_tags(os.path.join(data_dir, "sample.caa.fastq"), "output.fastq", tag="CAACGTTTT", max_mismatches=1)
-        self.assertTrue(filecmp.cmp('output.fastq', os.path.join(data_dir, 'expected.rm.1mm.caa.fastq')))
-        os.remove("output.fastq")
-
-    def test_file_tna(self):
-        tags.remove_tags(os.path.join(data_dir, "sample.tna.fastq"), "output.fastq", tag="TNAGAGACAG", max_mismatches=1)
-        self.assertTrue(filecmp.cmp('output.fastq', os.path.join(data_dir, 'expected.rm.tna.fastq')))
-        os.remove("output.fastq")
-
-    def test_file_tna(self):
-        try:
-            tags.remove_tags(os.path.join(data_dir, "doesnotexist.fastq"), "output.fastq", tag="TNAGAGACAG", max_mismatches=1)
-            self.assertTrue(False)
-        except FileNotFoundError:
-            self.assertTrue(True)
-
-    def test_file_exact_match_gzin(self):
-        tags.remove_tags(os.path.join(data_dir, "sample.caa.fastq.gz"), "output.fastq", "CAACGTTTT")
-        self.assertTrue(filecmp.cmp('output.fastq', os.path.join(data_dir, 'expected.rm.caa.fastq')))
-        os.remove("output.fastq")
+    def test_remove_tags(self):
+        tests = [
+            ("sample.caa.fastq", "CAACGTTTT", 0, "expected.rm.caa.fastq", True),
+            ("sample.caa.fastq", "CAACGTTTT", 1, "expected.rm.1mm.caa.fastq", True),
+            ("sample.tna.fastq", "TNAGAGACAG", 1, "expected.rm.tna.fastq", True),
+            ("doesnotexist.fastq", "TNAGAGACAG", 1, "expected.does.not.exist.fastq", False),
+            ("sample.caa.fastq.gz", "CAACGTTTT", 0, "expected.rm.caa.fastq", True)
+        ]
+        for i, t in enumerate(tests):
+            with self.subTest(i=i):
+                try:
+                    tags.remove_tags(os.path.join(data_dir, t[0]), "output.fastq", tag=t[1], max_mismatches=t[2])
+                    self.assertTrue(t[4])
+                    self.assertTrue(filecmp.cmp('output.fastq', os.path.join(data_dir, t[3])))
+                    os.remove("output.fastq")
+                except FileNotFoundError:
+                    self.assertFalse(t[4])
 
     def test_file_exact_match_gzout(self):
         tags.remove_tags(os.path.join(data_dir, "sample.caa.fastq.gz"), "output.fastq.gz", "CAACGTTTT")
@@ -118,24 +73,17 @@ class TagsTest(unittest.TestCase):
         os.remove("output.fastq")
         os.remove("expected.fastq")
 
-
-    # Test tag detection in SAM/BAM/CRAM
-
-    def testGoodBam(self):
-        bamfile = os.path.join(data_dir, "sample_sm_tr.bam")
-        self.assertTrue(tags.tags_in_alignment(bamfile))
-
-    # This won't work until we regenerate a suitable cram file
-    # def testGoodCram(self):
-    #     cramfile = "data/tags/sample_sm_tr.cram"
-    #     self.assertTrue(tags.tags_in_alignment(cramfile))
-
-    def testNoTradis(self):
-        bamfile = os.path.join(data_dir, "sample_sm_no_tr.bam")
-        self.assertFalse(tags.tags_in_alignment(bamfile))
-
-
-    # Add tags
+    def testTagsInAlignment(self):
+        tests = [
+            ("sample_sm_tr.bam", True),
+            ("sample_sm_no_tr.bam", False)
+            #("sample_sm_tr.cram", True) # This won't work until we regenerate a suitable cram file
+        ]
+        for i, t in enumerate(tests):
+            with self.subTest(i=i):
+                bamfile = os.path.join(data_dir, t[0])
+                res = tags.tags_in_alignment(bamfile)
+                self.assertEqual(res, t[1])
 
     def testAddTag(self):
         a = pysam.AlignedSegment()

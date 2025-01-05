@@ -9,8 +9,9 @@ import os
 import unittest
 
 from quatradis.util import mapper
+from tests.py.util import DATA_DIR
 
-data_dir = os.path.join("data", "util", "mapper")
+data_dir = os.path.join(DATA_DIR, "mapper")
 
 
 class MapperTest(unittest.TestCase):

@@ -3,8 +3,9 @@ import os
 import filecmp
 
 from quatradis.embl.expand_genes import EMBLExpandGenes
+from tests.py.embl import DATA_DIR
 
-data_dir = os.path.join('data', 'embl', 'expandgenes')
+data_dir = os.path.join(DATA_DIR, 'expandgenes')
 
 class TestEMBLExpandGenes(unittest.TestCase):
 

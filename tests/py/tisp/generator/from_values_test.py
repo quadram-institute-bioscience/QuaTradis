@@ -4,8 +4,9 @@ import unittest
 
 from quatradis.tisp.generator.from_values import PlotFromValuesGenerator
 from quatradis.tisp.parser import PlotParser
+from tests.py.tisp.generator import DATA_DIR
 
-data_dir = os.path.join('data', 'tisp', 'create')
+data_dir = os.path.join(DATA_DIR, 'tisp', 'create')
 
 
 class TestPlotGenerator(unittest.TestCase):

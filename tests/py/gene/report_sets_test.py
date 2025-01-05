@@ -7,6 +7,7 @@ import collections
 collections.Callable = collections.abc.Callable
 
 from quatradis.gene.report_sets import GeneReportSets
+from tests.py.gene import DATA_DIR
 
 
 class ErrorReadingFile(Exception): pass
@@ -15,7 +16,7 @@ class ErrorReadingFile(Exception): pass
 class InvalidFileFormat(Exception): pass
 
 
-data_dir = os.path.join('data', 'gene', 'reportsets')
+data_dir = os.path.join(DATA_DIR, 'reportsets')
 
 
 class TestGeneReportSets(unittest.TestCase):
