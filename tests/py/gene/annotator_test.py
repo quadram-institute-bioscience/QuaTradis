@@ -16,99 +16,32 @@ data_dir = os.path.join(DATA_DIR, 'annotator')
 
 class TestGeneAnnotator(unittest.TestCase):
 
-    def test_fully_contained(self):
-        embl_file = os.path.join(data_dir, 'annotation.embl')
-        blocks = [Block(1, 110, 110, 10, 'x')]
-        a = GeneAnnotator(embl_file, blocks)
-        genes = a.annotate_genes()
-        self.assertEqual(1, len(genes))
-        self.assertEqual('knockout', genes[0].category())
+    def test_annotate_genes_single_block(self):
 
-    def test_fully_contained_three(self):
-        embl_file = os.path.join(data_dir, 'annotation.embl')
-        blocks = [Block(1, 200, 110, 10, 'x')]
-        a = GeneAnnotator(embl_file, blocks)
-        genes = a.annotate_genes()
-        self.assertEqual(3, len(genes))
-        self.assertEqual('knockout', genes[0].category())
+        tests = [
+            ('annotation.embl', Block(1, 110, 110, 10, 'x'), 'NA', 1, 'knockout'),
+            ('annotation.embl', Block(1, 200, 110, 10, 'x'), 'NA', 3, 'knockout'),
+            ('annotation.embl', Block(1, 600, 600, 10, 'x'), 'NA', 4, 'knockout'),
+            ('annotation.embl', Block(90, 110, 20, 10, 'x'), 'reverse', 1, 'increased_mutants_at_end_of_gene'),
+            ('reverse.embl', Block(1, 20, 20, 10, 'x'), 'forward', 1, 'increased_mutants_at_end_of_gene'),
+            ('annotation.embl', Block(90, 110, 20, -10, 'x'), 'reverse', 1, 'decreased_mutants_at_end_of_gene', '1_100'),
+            ('prime.embl', Block(1345296, 1345494, (1345494 - 1345296), 10, 'xx'), 'reverse', 1, 'upregulated', 'fabI'),
+            ('annotation.embl', Block(90, 110, 20, -10, 'increased_insertions'), 'reverse', 1, 'decreased_mutants_at_end_of_gene', '1_100'),
+            ('annotation.embl', Block(90, 110, 20, -10, 'decreased_insertions'), 'reverse', 1, 'decreased_mutants_at_end_of_gene', '1_100'),
+            ('prime.embl', Block(3984512, 3987059, (3987059 - 3984512), 10, 'increased_insertions'), 'forward', 2, 'knockout', 'cyaA')
+        ]
+        for i, t in enumerate(tests):
+            with self.subTest(i=i):
+                block = t[1]
+                block.direction = t[2]
+                genes = GeneAnnotator(os.path.join(data_dir, t[0]), [block]).annotate_genes()
+                self.assertEqual(t[3], len(genes))
+                if len(genes) > 0:
+                    self.assertEqual(t[4], genes[0].category())
+                if len(t) == 6:
+                    self.assertEqual(t[5], genes[0].gene_name)
 
-    def test_total_file_in_block(self):
-        embl_file = os.path.join(data_dir, 'annotation.embl')
-        blocks = [Block(1, 600, 600, 10, 'x')]
-        a = GeneAnnotator(embl_file, blocks)
-        genes = a.annotate_genes()
-        self.assertEqual(4, len(genes))
-        self.assertEqual('knockout', genes[0].category())
 
-    def test_block_near_end(self):
-        embl_file = os.path.join(data_dir, 'annotation.embl')
-        blocks = [Block(90, 110, 20, 10, 'x')]
-        blocks[0].direction = 'reverse'
-        a = GeneAnnotator(embl_file, blocks)
-        genes = a.annotate_genes()
-        self.assertEqual(1, len(genes))
-        self.assertEqual('increased_mutants_at_end_of_gene', genes[0].category())
-
-    def test_block_near_end_reverse(self):
-        embl_file = os.path.join(data_dir, 'reverse.embl')
-        blocks = [Block(1, 20, 20, 10, 'x')]
-        blocks[0].direction = 'forward'
-        a = GeneAnnotator(embl_file, blocks)
-        genes = a.annotate_genes()
-        self.assertEqual(1, len(genes))
-        self.assertEqual('increased_mutants_at_end_of_gene', genes[0].category())
-
-    def test_block_near_end_decrease(self):
-        embl_file = os.path.join(data_dir, 'annotation.embl')
-        blocks = [Block(90, 110, 20, -10, 'x')]
-        blocks[0].direction = 'reverse'
-        a = GeneAnnotator(embl_file, blocks)
-        genes = a.annotate_genes()
-        self.assertEqual(1, len(genes))
-        self.assertEqual('decreased_mutants_at_end_of_gene', genes[0].category())
-        self.assertEqual('1_100', genes[0].gene_name)
-
-    def test_fabI(self):
-        blocks = [Block(1345296, 1345494, (1345494 - 1345296), 10, 'xx')]
-        blocks[0].direction = 'reverse'
-        embl_file = os.path.join(data_dir, 'prime.embl')
-        a = GeneAnnotator(embl_file, blocks)
-        genes = a.annotate_genes()
-
-        self.assertEqual(1, len(genes))
-        self.assertEqual(
-            'fabI	upregulated	1344507	1345296	10	xx	reverse	yciW__3prime	1.0	1.0',
-            str(genes[0]))
-
-    def test_increased_neg(self):
-        embl_file = os.path.join(data_dir, 'annotation.embl')
-        blocks = [Block(90, 110, 20, -10, 'increased_insertions')]
-        blocks[0].direction = 'reverse'
-        a = GeneAnnotator(embl_file, blocks)
-        genes = a.annotate_genes()
-        self.assertEqual(
-            "1_100	decreased_mutants_at_end_of_gene	0	100	10.0	increased_insertions	reverse	NA	1.0	1.0",
-            str(genes[0]))
-
-    def test_downregulated_neg(self):
-        embl_file = os.path.join(data_dir, 'annotation.embl')
-        blocks = [Block(90, 110, 20, -10, 'decreased_insertions')]
-        blocks[0].direction = 'reverse'
-        a = GeneAnnotator(embl_file, blocks)
-        genes = a.annotate_genes()
-        self.assertEqual(
-            "1_100	decreased_mutants_at_end_of_gene	0	100	-10.0	decreased_insertions	reverse	NA	1.0	1.0",
-            str(genes[0]))
-
-    def test_increased_knockout(self):
-        embl_file = os.path.join(data_dir, 'prime.embl')
-        blocks = [Block(3984512, 3987059, (3987059 - 3984512), 10, 'increased_insertions')]
-        blocks[0].direction = 'forward'
-        a = GeneAnnotator(embl_file, blocks)
-        genes = a.annotate_genes()
-        self.assertEqual(
-            "cyaA	knockout	3984512	3987059	10	increased_insertions	forward	yifL	1.0	1.0",
-            str(genes[0]))
 
     def test_real_annotation_prime(self):
         blocks = [

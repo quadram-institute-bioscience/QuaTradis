@@ -1,5 +1,4 @@
 import csv
-from tempfile import mkstemp
 
 import numpy
 
@@ -39,16 +38,23 @@ class PlotLog:
         logfc_coord_values = self.read_comparison_file()
         logfc_to_bases, pval_to_bases, qval_to_bases = self.genome_wide_logfc(logfc_coord_values)
 
-        forward_logfc = [i if i >= 0 else 0.0 for i in logfc_to_bases]
-        reverse_logfc = [i if i < 0 else 0.0 for i in logfc_to_bases]
+        forward_logfc = [i if i >= 0.0 else 0.0 for i in logfc_to_bases]
+        reverse_logfc = [i if i < 0.0 else 0.0 for i in logfc_to_bases]
 
         self.create_plotfile(self.plot_filename, forward_logfc, reverse_logfc)
         self.create_plotfile(self.scores_filename, pval_to_bases, qval_to_bases)
 
         return self
 
-    # Creates a space separated file that allows two columns of equal length.
     def create_plotfile(self, outputfilename, list1, list2):
+        """
+        Creates a space separated file that allows two columns of equal length.
+
+        Args:
+        outputfilename -- the filename for the plot file
+        list1 -- forward counts
+        list2 -- reverse counts
+        """
         output = []
         for i in range(0, len(list1)):
             output.append('{} {}\n'.format(list1[i], list2[i]))
@@ -70,22 +76,22 @@ class PlotLog:
         abs_logfc_values = numpy.absolute(logfc_values)
         for i in range(0, self.options.genome_length):
             lfc = abs_logfc_values[i]
-            if lfc > 0 and not inblock:
+            if lfc > 0.0 and not inblock:
                 inblock = True
                 start = i
                 max_logfc = logfc_values[i]
                 min_pval = p_values[i]
                 min_qval = q_values[i]
-            elif lfc > 0 and inblock:
+            elif lfc > 0.0 and inblock:
                 if numpy.absolute(max_logfc) < lfc:
                     max_logfc = logfc_values[i]
                     min_pval = p_values[i]
                     min_qval = q_values[i]
-            elif lfc <= 0 and inblock:
+            elif lfc <= 0.0 and inblock:
                 inblock = False
                 end = i
                 blocks.append(Block(start + 1, end, end - start, max_logfc, 'x', min_pval, min_qval))
-                max_logfc = 0
+                max_logfc = 0.0
 
             # Check for block at end
         if inblock:
@@ -129,11 +135,11 @@ class PlotLog:
                     if numpy.absolute(logfc_to_bases[a]) > self.options.minimum_logfc:
                         continue
 
-                    if logfc_to_bases[b.end - 1] < 0:
+                    if logfc_to_bases[b.end - 1] < 0.0:
                         logfc_to_bases[a] = -1 * self.options.minimum_logfc
                         pval_to_bases[a] = self.options.maximum_pvalue
                         qval_to_bases[a] = self.options.maximum_qvalue
-                    elif logfc_to_bases[b.end - 1] > 0:
+                    elif logfc_to_bases[b.end - 1] > 0.0:
                         logfc_to_bases[a] = self.options.minimum_logfc
                         pval_to_bases[a] = self.options.maximum_pvalue
                         qval_to_bases[a] = self.options.maximum_qvalue
@@ -147,7 +153,7 @@ class PlotLog:
         for b in blocks:
             if b.block_length < self.options.window_size:
                 for i in range(b.start - 1, b.end):
-                    logfc_to_bases[i] = 0
+                    logfc_to_bases[i] = 0.0
                     pval_to_bases[i] = 1.0
                     qval_to_bases[i] = 1.0
 
@@ -171,17 +177,17 @@ class PlotLog:
                 temp_logcpm = float(row[4])
                 temp_qval = float(row[6])
 
-                if not self.options.report_decreased_insertions and logfc < 0:
-                    logfc = 0
+                if not self.options.report_decreased_insertions and logfc < 0.0:
+                    logfc = 0.0
 
                 if numpy.absolute(logfc) < self.options.minimum_logfc or temp_pval >= self.options.maximum_pvalue:
-                    logfc = 0
+                    logfc = 0.0
 
                 if numpy.absolute(temp_logcpm) < self.options.minimum_logcpm:
-                    logfc = 0
+                    logfc = 0.0
 
                 if temp_qval >= self.options.maximum_qvalue:
-                    logfc = 0
+                    logfc = 0.0
 
                 # Get coordinates
                 gene_name = row[1]
