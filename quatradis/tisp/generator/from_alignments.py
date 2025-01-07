@@ -169,7 +169,7 @@ def get_number_reads(seq_file_in):
     else:
         cat_cmd = "cat"
     lines = int(subprocess.check_output(["bash", "-c", cat_cmd + joiner + seq_file_in + " | wc -l"]).strip())
-    return lines / 4
+    return int(lines / 4)
 
 
 def generate_stats(mapped_reads, out_file, fastq, nb_reads, nb_tagged_reads, nb_mapped, uis_map):
