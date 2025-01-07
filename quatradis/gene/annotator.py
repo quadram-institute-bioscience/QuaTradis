@@ -83,22 +83,22 @@ class GeneAnnotator:
     def find_nearest_upstream_gene(self, block):
         if block.direction == 'forward':
             for f in self.features:
-                if f.location.start - 1 > block.end and f.strand == 1:
+                if f.location.start - 1 > block.end and f.location.strand == 1:
                     return self.feature_to_gene_name(f)
         elif block.direction == 'reverse':
             for f in reversed(self.features):
-                if f.location.end < block.start and f.strand == -1:
+                if f.location.end < block.start and f.location.strand == -1:
                     return self.feature_to_gene_name(f)
         return "NA"
 
     def find_upstream_gene(self, block, gene_number):
         if block.direction == 'reverse':
             for upstream_i in range(gene_number - 1, 0, -1):
-                if self.features[upstream_i].strand == -1 and block.start - 1 > self.features[upstream_i].location.end:
+                if self.features[upstream_i].location.strand == -1 and block.start - 1 > self.features[upstream_i].location.end:
                     return self.feature_to_gene_name(self.features[upstream_i])
         elif block.direction == 'forward':
             for upstream_i in range(gene_number + 1, len(self.features)):
-                if self.features[upstream_i].strand == 1 and block.end < self.features[upstream_i].location.start:
+                if self.features[upstream_i].location.strand == 1 and block.end < self.features[upstream_i].location.start:
                     return self.feature_to_gene_name(self.features[upstream_i])
         return "NA"
 
@@ -106,7 +106,7 @@ class GeneAnnotator:
         base_coverage = 0
         for b in blocks:
             for b_index in range(b.start - 1, b.end):
-                if b_index >= gene.location.start and b_index < gene.location.end:
+                if gene.location.start <= b_index < gene.location.end:
                     base_coverage += 1
 
         gene_length = gene.location.end - gene.location.start
@@ -150,12 +150,12 @@ class GeneAnnotator:
 
     def is_block_near_end_of_feature(self, block, feature):
         # forward
-        if feature.strand == 1 and block.direction in ['reverse', 'nodirection']:
+        if feature.location.strand == 1 and block.direction in ['reverse', 'nodirection']:
             knock_out_start = feature.location.start + int(self.knockout_proportion_start * len(feature))
             if block.start - 1 >= knock_out_start and block.start - 1 < feature.location.end:
                 return True
         # reverse
-        if feature.strand == -1 and block.direction in ['forward', 'nodirection']:
+        if feature.location.strand == -1 and block.direction in ['forward', 'nodirection']:
             knock_out_end = feature.location.end - int(self.knockout_proportion_start * len(feature))
             if block.end <= knock_out_end and block.end > feature.location.start:
                 return True
@@ -164,12 +164,12 @@ class GeneAnnotator:
 
     def is_block_near_start_of_feature(self, block, feature):
         # forward
-        if feature.strand == 1 and block.direction in ['forward', 'nodirection']:
+        if feature.location.strand == 1 and block.direction in ['forward', 'nodirection']:
             expression_end = feature.location.start + int(self.increased_expression_proportion_end * len(feature))
             if block.end <= expression_end and block.end > feature.location.start:
                 return True
         # reverse
-        if feature.strand == -1 and block.direction in ['reverse', 'nodirection']:
+        if feature.location.strand == -1 and block.direction in ['reverse', 'nodirection']:
             expression_end = feature.location.start + int(self.increased_expression_proportion_end * len(feature))
             if block.end <= expression_end and block.end > feature.location.start:
                 return True
@@ -208,7 +208,7 @@ class GeneAnnotator:
                                                                     [])
                     filtered_names_to_genes[found_gene_name].blocks = gene.blocks
 
-                    regulation_category = self.regulation(filtered_names_to_genes[found_gene_name].feature.strand,
+                    regulation_category = self.regulation(filtered_names_to_genes[found_gene_name].feature.location.strand,
                                                           prime_end, directions)
                     if regulation_category:
                         filtered_names_to_genes[found_gene_name].categories.append(regulation_category)
@@ -217,7 +217,7 @@ class GeneAnnotator:
 
                 else:
                     filtered_names_to_genes[found_gene_name] = name_to_genes[found_gene_name]
-                    regulation_category = self.regulation(filtered_names_to_genes[found_gene_name].feature.strand,
+                    regulation_category = self.regulation(filtered_names_to_genes[found_gene_name].feature.location.strand,
                                                           prime_end, directions)
                     if regulation_category:
                         filtered_names_to_genes[found_gene_name].categories.append(regulation_category)

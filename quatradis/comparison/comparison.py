@@ -72,7 +72,7 @@ def insertion_site_comparison(analysis_type, controls_all, conditions_all,
                                analysis_type, prefix)
     t.run()
 
-    # Create plot sytle files containing the logfc and p and q values at every position in the reference
+    # Create plot style files containing the logfc and p and q values at every position in the reference
     p = PlotLog(t.get_report_file_path(), annotations, options,
                 output_plot_filename=os.path.join(prefix, analysis_type + ".logfc.plot"),
                 output_scores_filename=os.path.join(prefix, analysis_type + ".pqvals.plot"))

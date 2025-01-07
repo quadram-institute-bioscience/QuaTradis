@@ -147,6 +147,7 @@ class PlotParser:
         handle = PlotParser.create_file_handle(self.filename)
         insert_site_array = pandas.read_csv(handle, sep='\s+', dtype=float, engine='c',
                                             header=None).values
+        handle.close()
 
         self.genome_length = len(insert_site_array)
 

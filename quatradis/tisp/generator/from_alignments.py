@@ -43,7 +43,7 @@ class PlotFromAlignmentsGenerator:
         return 0
 
     # Prints out the current coordinate counts for both strands.  Automatically applies any necessary padding to file
-    # prior to this read coord in necessary
+    # prior to this read coord if necessary
     def print_coord(self, read_coord):
         padding_string = self.create_padding_string(read_coord)
         forward_reads = self.number_of_reads(read_coord, 1)
@@ -51,17 +51,30 @@ class PlotFromAlignmentsGenerator:
         self.output_file_handle.write(padding_string + str(forward_reads) + " " + str(reverse_reads) + "\n")
 
     def process_read_starts(self):
+        """
+        Actually creates the output plot file by processing all read start positions in order.  Before writing the
+        count at the current position it pads any skipped positions with '0 0'.
+
+        There is a hack implemented here to avoid accidentally creating plot files that are too large.
+        Any reads that start off the end of the reference, which can happen from alignments to circular sequences,
+        are ignored.  We just count how often we are ignoring them and return that value along with the number of
+        insertion sites found in this reference sequence.
+        """
         nb_unique_insertion_sites = 0
+        nb_skipped = 0
         for read_coord in sorted(self.read_starts.keys()):
+            if read_coord > self.sequence_length:
+                nb_skipped += 1
+                continue
             self.print_coord(read_coord)
             nb_unique_insertion_sites += 1
 
-        # Finish up this sequence with padding then close
+        # Finish up this sequence with any required padding then close the file
         padding_string = self.create_padding_string(self.sequence_length+1)
         self.output_file_handle.write(padding_string)
         self.output_file_handle.close()
 
-        return nb_unique_insertion_sites
+        return nb_unique_insertion_sites, nb_skipped
 
 
 def op_is_aligned(op):
@@ -137,15 +150,17 @@ def create_plot_files(mapped_reads, plot_out_prefix="tradis.plot", cutoff_score=
     uis_map = {}
     is_plotters, nb_mapped, nb_mapped_and_good = count_read_starts(mapped_reads, cutoff_score, plot_out_prefix)
     for sequence_name in sorted(is_plotters.keys()):
-        nb_unique_insertion_sites = is_plotters[sequence_name].process_read_starts()
+        nb_unique_insertion_sites, nb_skipped = is_plotters[sequence_name].process_read_starts()
         uis_map[sequence_name] = nb_unique_insertion_sites
+        if nb_skipped > 0:
+            print("Skipped", nb_skipped, "insertion sites which were found off the end of the reference sequence:", sequence_name)
 
     return nb_mapped, nb_mapped_and_good, uis_map
 
 
 def get_number_reads(seq_file_in):
 
-    # If running on mac take form stdin
+    # If running on mac take from stdin
     joiner = " < " if sys.platform == "darwin" else " "
 
     # Make sure we can handle gzipped or non-gzipped fastq input
@@ -154,7 +169,7 @@ def get_number_reads(seq_file_in):
     else:
         cat_cmd = "cat"
     lines = int(subprocess.check_output(["bash", "-c", cat_cmd + joiner + seq_file_in + " | wc -l"]).strip())
-    return lines / 4
+    return int(lines / 4)
 
 
 def generate_stats(mapped_reads, out_file, fastq, nb_reads, nb_tagged_reads, nb_mapped, uis_map):

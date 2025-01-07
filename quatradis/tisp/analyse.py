@@ -83,7 +83,7 @@ def get_feature_id(feature):
     elif 'systematic_id' in feature.qualifiers:
         feature_id = feature.qualifiers['systematic_id'][0]
     else:
-        feature_id = "_".join([feature.id, str(feature.strand), str(feature.location.start), str(feature.location.end)])
+        feature_id = "_".join([feature.id, str(feature.location.strand), str(feature.location.start), str(feature.location.end)])
 
     # Remove quotes from feature id
     feature_id.strip('\"')
@@ -119,7 +119,7 @@ def trim_read(feature, trim5=0, trim3=0):
     :param trim3: Multiple of gene length to trim from 3' end of feature
     """
 
-    if feature.strand == 1:
+    if feature.location.strand == 1:
         read_start = feature.location.start + (trim5 * int(feature.location.end - feature.location.start + 1))
         read_end = feature.location.end - (trim3 * int(feature.location.end - feature.location.start + 1))
     else:
@@ -168,7 +168,7 @@ def create_row(feature, insert_sites, trim5=False, trim3=False):
     ins_index = inserts / (read_end - read_start)
     gene_length = feature.location.end - feature.location.start
 
-    return [feature_id, gene_name, rna_value, feature.location.start + 1, feature.location.end, feature.strand, count,
+    return [feature_id, gene_name, rna_value, feature.location.start + 1, feature.location.end, feature.location.strand, count,
             ins_index, gene_length, inserts, product_value]
 
 
