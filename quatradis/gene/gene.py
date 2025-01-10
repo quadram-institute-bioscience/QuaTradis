@@ -16,7 +16,6 @@ class Gene:
         self.min_pvalue = 1.0
         self.min_qvalue = 1.0
         self.gene_name = self.calc_gene_name() if not self.feature is None else ""
-
         # Used for merging windows
         self.start = feature.location.start if feature and feature.location else 0
         self.end = feature.location.end if feature and feature.location else 0
@@ -51,6 +50,18 @@ class Gene:
 
 
     def category(self):
+        # if 'knockout' in self.categories:
+        #     return 'knockout'
+        # elif 'upregulated' in self.categories:
+        #     return 'upregulated'
+        # elif 'downregulated' in self.categories:
+        #     return 'downregulated'
+        # else:
+        #     return "/".join(list(set(self.categories)))
+
+        #Modified Code
+        if len(list(set(self.categories)))>1:
+            return "/".join(list(set(self.categories)))
         if 'knockout' in self.categories:
             return 'knockout'
         elif 'upregulated' in self.categories:
@@ -59,6 +70,7 @@ class Gene:
             return 'downregulated'
         else:
             return "/".join(list(set(self.categories)))
+
 
     def upstream_gene(self):
         return "/".join(list(set(self.upstream)))

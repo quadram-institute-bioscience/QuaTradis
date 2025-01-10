@@ -2,6 +2,7 @@
 
 from quatradis.embl.reader import EMBLReader
 from quatradis.embl.sequence import EMBLSequence
+import numpy as np
 
 
 class FeatureProperties:
@@ -16,18 +17,26 @@ class FeatureProperties:
         self.product = product
 
 
-class EMBLExpandGenes:
-    def __init__(self, embl_file, feature_size):
+class   EMBLExpandGenes:
+    def __init__(self, embl_file, feature_size,dynamic_window=False):
+        # Modification 6
         self.embl_file = embl_file
         self.feature_size = feature_size
         self.er = EMBLReader(self.embl_file)
         self.features = self.er.features
+        self.genes_to_features= self.er.genes_to_features
         self.genome_length = self.er.genome_length
+        self.dynamic_window=dynamic_window
+        self.max_window = 2000
+        self.prime_density_threshold= 2
+        self.shift_continuity_requirement=150
+
 
     def create_3_5_prime_features(self):
         new_features = []
-        for feature in self.features:
-            gene_name = self.feature_to_gene_name(feature)
+        for gene, feature in self.genes_to_features.items():
+            gene_name= gene
+            # gene_name = self.feature_to_gene_name(feature)
             locus_tag = self.feature_to_locus_tag(feature)
             product = self.feature_to_product(feature)
 
@@ -68,10 +77,100 @@ class EMBLExpandGenes:
                 )
 
         return new_features
+    # Modification 7
+    def get_windows(self,prime_type,geneName,data, start, end, max_window):
+        #red inserts is zero, blue is one
+        low = max(1, start - max_window)
+        high = min(data.size, end + max_window)
+         
+        if prime_type=="start": 
+            # blue = self.get_shifts(geneName,data[end:high].iloc[:, 1],)
+            shifts = self.get_shifts(data[low:start].iloc[:, 0].iloc[::-1])
+            shifts.append(max(1, start - 200))
+            if geneName in ["acrA"]:
+              print(prime_type)
+              print("Start: ",geneName)
+              print("shifts",shifts)
+            return min(shifts)
+        elif prime_type=="end":
+            shifts= self.get_shifts(data[end:high].iloc[:, 1])
+            shifts.append(min(len(data), end + 200))
+            if geneName in ["acrA"]:
+              print(prime_type)
+              print("End: ",geneName)
+              print("shifts",shifts)
+            return max(shifts)
 
+            
+
+    # Modification 8
+    def get_shifts(self,data, window_size=20):
+        moving_average = data.rolling(window=window_size).mean()
+        deviation = abs(data - moving_average)
+        threshold = 2 * data.std()  
+        potential_shifts = deviation[deviation > threshold].index.tolist()
+        if len(potential_shifts)>1:
+            for indx in range(len(potential_shifts) - 1):
+                    diff = abs(potential_shifts[indx+1] - potential_shifts[indx])
+                    if diff > self.shift_continuity_requirement:
+                        return potential_shifts[0:indx]
+        return potential_shifts
+    
+    def check_prime_feature_density(self,prime_type,gene_index):
+        condition_sum = 0
+        control_sum = 0
+        # print("gene_index",gene_index)
+        genome_length= self.plot_file_objs["Condition1"].genome_length
+        
+        for key, parser in self.plot_file_objs.items():
+            if prime_type == 'start':
+                if gene_index - self.feature_size <0:
+                    start_index=0
+                else:
+                    start_index=gene_index - self.feature_size
+                array_slice = parser.insert_site_array.values[start_index:gene_index, 0]
+            elif prime_type == 'end':
+                if gene_index + self.feature_size>genome_length:
+                    end_index=genome_length
+                else:
+                    end_index=gene_index + self.feature_size
+                array_slice = parser.insert_site_array.values[gene_index:end_index, 1]
+            else:
+                raise ValueError("prime_type must be 'start' or 'end'")
+
+            if key.startswith("Condition"):
+                condition_sum += np.sum(array_slice)
+            elif key.startswith("Control"):
+                control_sum += np.sum(array_slice)
+
+        if control_sum == 0 and condition_sum!=0:
+            return True
+        elif control_sum == 0 and condition_sum==0:
+            return False
+
+        ratio = condition_sum / control_sum
+        return ratio > self.prime_density_threshold
+
+    # Modification 9
     def construct_end_feature(self, feature, gene_name, suffix, locus_tag, product):
-        start = feature.location.end
-        end = feature.location.end + self.feature_size
+        density_check= self.check_prime_feature_density("end",feature.location.end)
+        if gene_name=="yciW":
+            print("construct_end_feature")
+            print("gene_name",gene_name)
+            print("density_check",density_check)
+        if density_check and self.dynamic_window:
+            end_index_list=[]
+            for key, parser in self.plot_file_objs.items():
+                if key.startswith("Condition"):
+                    index= self.get_windows("end",gene_name,parser.insert_site_array, feature.location.start, feature.location.end, self.max_window)
+                    end_index_list.append(index)
+            if gene_name=="acrA":
+                print("end_index_list",end_index_list)
+            start= feature.location.end
+            end = min(end_index_list)
+        else:
+            start = feature.location.end
+            end = feature.location.end + self.feature_size
 
         if end > self.genome_length:
             end = self.genome_length
@@ -88,10 +187,27 @@ class EMBLExpandGenes:
             product,
         )
 
-    def construct_start_feature(self, feature, gene_name, suffix, locus_tag, product):
-        start = feature.location.start - self.feature_size
-        end = feature.location.start
-
+    # Modification 10
+    def construct_start_feature(self, feature, gene_name, suffix, locus_tag, product,dynamic_window=False):
+        density_check= self.check_prime_feature_density("start",feature.location.start)
+        if gene_name=="yciW":
+            print("construct_start_feature")
+            print("gene_name",gene_name)
+            print("density_check",density_check)
+        if density_check and self.dynamic_window:
+            start_index_list=[]
+            for key, parser in self.plot_file_objs.items():
+                if key.startswith("Condition"):
+                    index= self.get_windows("start",gene_name,parser.insert_site_array, feature.location.start, feature.location.end, self.max_window)
+                    start_index_list.append(index)
+            if gene_name=="acrA":
+                print("start_index_list",start_index_list)
+            start= max(start_index_list)
+            end =feature.location.start
+            
+        else:
+            start = feature.location.start - self.feature_size
+            end = feature.location.start
         if start < 1:
             start = 1
         if start >= end or end - start < 10:
@@ -104,11 +220,11 @@ class EMBLExpandGenes:
             locus_tag + suffix,
             product,
         )
-
-    def construct_file(self, filename):
+    # Modification 11
+    def construct_file(self, filename,plot_file_objs):
         with open(filename, "w") as emblfile:
             emblfile.write(self.header())
-
+            self.plot_file_objs= plot_file_objs
             for f in self.create_3_5_prime_features():
                 if f == None:
                     continue

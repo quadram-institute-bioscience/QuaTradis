@@ -4,44 +4,157 @@ from pathlib import Path
 from quatradis.gene.block_identifier import BlockIdentifier
 from quatradis.gene.annotator import GeneAnnotator
 from quatradis.gene.gene import Gene
-
+import pandas as pd
 from quatradis.util.file_handle_helpers import ensure_output_dir_exists
 
+def write_regulated_gene_report(genes, output_filename):
+    regulated_genes = [g for g in genes if g.category() == 'upregulated' or g.category() == 'downregulated']
+    with open(output_filename, 'w') as bf:
+        bf.write(str(Gene.header()) + "\n")
+        for i in regulated_genes:
+            bf.write(str(i) + "\n")
 
-def gene_statistics(combined_plotfile, forward_plotfile, reverse_plotfile, combined_scorefile, window_size, embl_file, output_dir="output", annotation_file=None):
+def write_gene_report(output_dir,genes_report):
+    """
+    Saves the gene report as a CSV file in the specified output directory.
 
+    Args:
+        output_dir (str): The directory where the gene report will be saved.
+        genes_report (pandas.DataFrame): A DataFrame containing the annotated gene report.
+
+    Returns:
+        None: The function writes the DataFrame to a CSV file and does not return any value.
+
+    Example:
+        write_gene_report("results", annotated_genes_df)
+
+    Notes:
+        - The function assumes `genes_report` is a valid pandas DataFrame.
+        - If the output directory does not exist, the caller must ensure it is created
+          before invoking this function.
+    """
+    output_file_path= os.path.join(output_dir, "gene_report.csv")
+    genes_report.reset_index(drop=True).to_csv(output_file_path, index=False)
+    return None
+
+def merge_insertion_index(condition1_countfiles,condition2_countfiles):
+
+    """
+    Merges insertion index data from two sets of count files (condition1 and condition2) 
+    for combined, forward, and reverse cases.
+
+    This function processes and merges insertion index data from two conditions. It identifies
+    the minimum insertion index for genes across the combined, forward, and reverse datasets
+    and generates corresponding CSV files. The function is currently under development and 
+    is intended for use in generating confidence scores for downstream applications.
+
+    Args:
+        condition1_countfiles (list of str): List of file paths for count files in condition1.
+        condition2_countfiles (list of str): List of file paths for count files in condition2.
+
+    Returns:
+        tuple: A tuple containing:
+            - combined_ins_idx_file (pd.DataFrame): Processed DataFrame for combined case.
+            - forward_ins_idx_file (pd.DataFrame): Processed DataFrame for forward case.
+            - reverse_ins_idx_file (pd.DataFrame): Processed DataFrame for reverse case.
+
+    Notes:
+        - This function is a work in progress and is aimed at supporting confidence score
+          generation for genes based on insertion index data.
+    """
+
+    combined_ins_idx_file=None
+    forward_ins_idx_file=None
+    reverse_ins_idx_file= None
+
+    for idx in range(len(condition1_countfiles)):
+        file_name_condition1 = os.path.basename(condition1_countfiles[idx])
+        file_name_condition2 = os.path.basename(condition2_countfiles[idx])
+        condition1_df = pd.read_csv(condition1_countfiles[idx],sep='\t')
+        condition2_df = pd.read_csv(condition2_countfiles[idx],sep='\t')
+        if "combined" in file_name_condition1 and "combined" in file_name_condition2:
+            merged_df = pd.merge(condition1_df[['gene_name', 'strand', 'ins_index']],
+                     condition2_df[['gene_name', 'strand', 'ins_index']],
+                     on='gene_name',
+                     suffixes=('_df1', '_df2'))
+
+            # Calculate minimum ins_index
+            merged_df['min_ins_index'] = merged_df[['ins_index_df1', 'ins_index_df2']].min(axis=1)
+            combined_ins_idx_file = merged_df[['gene_name', 'strand_df1', 'min_ins_index']]
+            combined_ins_idx_file.rename(columns={'strand_df1': 'strand'}, inplace=True)
+        elif "forward" in file_name_condition1 and "forward" in file_name_condition2:
+            merged_df = pd.merge(condition1_df[['gene_name', 'strand', 'ins_index']],
+                     condition2_df[['gene_name', 'strand', 'ins_index']],
+                     on='gene_name',
+                     suffixes=('_df1', '_df2'))
+
+            # Calculate minimum ins_index
+            merged_df['min_ins_index'] = merged_df[['ins_index_df1', 'ins_index_df2']].min(axis=1)
+            forward_ins_idx_file = merged_df[['gene_name', 'strand_df1', 'min_ins_index']]
+            forward_ins_idx_file.rename(columns={'strand_df1': 'strand'}, inplace=True)
+        elif "reverse" in file_name_condition1 and "reverse" in file_name_condition2:
+            merged_df = pd.merge(condition1_df[['gene_name', 'strand', 'ins_index']],
+                     condition2_df[['gene_name', 'strand', 'ins_index']],
+                     on='gene_name',
+                     suffixes=('_df1', '_df2'))
+            # Calculate minimum ins_index
+            merged_df['min_ins_index'] = merged_df[['ins_index_df1', 'ins_index_df2']].min(axis=1)
+            reverse_ins_idx_file = merged_df[['gene_name', 'strand_df1', 'min_ins_index']]
+            reverse_ins_idx_file.rename(columns={'strand_df1': 'strand'}, inplace=True)
+    combined_ins_idx_file.to_csv("combined_ins_idx_file.csv",index=False)
+    forward_ins_idx_file.to_csv("forward_ins_idx_file.csv",index=False)
+    reverse_ins_idx_file.to_csv("reverse_ins_idx_file.csv",index=False)
+    return combined_ins_idx_file, forward_ins_idx_file, reverse_ins_idx_file
+
+def gene_statistics(conditions_all,combined_csv_file, forward_csv_file, reverse_csv_file, embl_file, output_dir="output", annotation_file=None, use_annotation=None):
+    
+    """
+    Generates a gene report by annotating genes based on input data and conditions.
+
+    Args:
+        conditions_all (list of str): List of normalized plot files for all conditions 
+            (e.g., combine.plot.gz files).
+        combined_csv_file (str): Path to the combined compare CSV file containing 
+            logFC, p-values, and q-values.
+        forward_csv_file (str): Path to the forward compare CSV file containing 
+            logFC, p-values, and q-values.
+        reverse_csv_file (str): Path to the reverse compare CSV file containing 
+            logFC, p-values, and q-values.
+        embl_file (str): Path to the prepared EMBL file used for analysis.
+        output_dir (str, optional): Output directory for saving the gene report. 
+            Defaults to "output".
+        annotation_file (str, optional): Path to the EMBL file used for annotations. 
+            Used if `use_annotation` is set to True.
+        use_annotation (bool, optional): Flag indicating whether to use the annotation 
+            file instead of the prepared EMBL file. Defaults to False.
+
+    Returns:
+        None: The function writes the annotated gene report to the specified output directory.
+    
+    Raises:
+        Exception: If there are issues with file reading, writing, or missing inputs.
+    
+    Example:
+        gene_statistics(
+            ["condition1.combined.plot.gz", "condition2.combined.plot.gz"],
+            "combined.compare.csv",
+            "forward.compare.csv",
+            "reverse.compare.csv",
+            "prepared.embl",
+            output_dir="output/",
+            annotation_file="annotations.embl",
+            use_annotation=True
+        )
+    """
+    
     ensure_output_dir_exists(output_dir)
-
-    use_annotation = True if annotation_file else False
-
-    b = BlockIdentifier(combined_plotfile, forward_plotfile, reverse_plotfile, combined_scorefile, window_size)
-    blocks = b.block_generator()
     ant_file = embl_file
     if use_annotation:
-        ant_file = annotation_file
-
-    genes = GeneAnnotator(ant_file, blocks).annotate_genes()
-    intergenic_blocks = [block for block in blocks if block.intergenic]
-
-    if not use_annotation:
-        all_genes = merge_windows(genes)
-    else:
-        all_genes = []
-        for g in genes:
-            all_genes.append(g)
-
-    report_file = os.path.join(output_dir, "gene_report.tsv")
-
-    if len(all_genes) == 0 and len(intergenic_blocks) == 0:
-        print("No significant genes found for chosen parameters.\n")
-
-    write_gene_report(all_genes, intergenic_blocks, report_file, use_annotation)
-    write_regulated_gene_report(all_genes, os.path.join(output_dir, "regulated_gene_report.tsv"))
-
-    # if self.verbose:
-    # self.print_genes_intergenic(genes,intergenic_blocks)
-
-    return genes
+        ant_file=annotation_file
+    genes_report = GeneAnnotator(ant_file,conditions_all,combined_csv_file,forward_csv_file,reverse_csv_file).annotate_genes()
+    write_gene_report(output_dir,genes_report)
+    
+    return None
 
 
 def merge_windows(windows):
@@ -89,30 +202,6 @@ def merge_windows(windows):
 
     merged_windows.append(start_window)
     return merged_windows
-
-
-
-def write_gene_report(genes, intergenic_blocks, output_filename, use_annotation):
-
-    with open(output_filename, 'w') as bf:
-        bf.write(str(Gene.header()) + "\n")
-        if not use_annotation:
-            for i in genes:
-                bf.write(i.window_string() + "\n")
-        else:
-            for i in genes:
-                bf.write(str(i) + "\n")
-        for b in intergenic_blocks:
-            bf.write(str(b) + "\n")
-
-
-def write_regulated_gene_report(genes, output_filename):
-    regulated_genes = [g for g in genes if g.category() == 'upregulated' or g.category() == 'downregulated']
-    with open(output_filename, 'w') as bf:
-        bf.write(str(Gene.header()) + "\n")
-        for i in regulated_genes:
-            bf.write(str(i) + "\n")
-
 
 def print_genes_intergenic_blocks(genes, intergenic_blocks):
     print(genes[0].header())

@@ -202,6 +202,7 @@ def insertion_site_comparison_cli(args):
         report_decreased_insertions=not args.dont_report_decreased_insertions,
         minimum_block=args.minimum_block,
     )
+    print(args.analysis_type,"||",args.controls,"||",args.conditions,"||",args.emblfile,args.prefix,options,args.verbose)
 
     plotfile, scoresfile = insertion_site_comparison(
         args.analysis_type,
@@ -261,30 +262,60 @@ def figures(args):
 
 
 def add_genereport_options(parser):
-    parser.add_argument("embl", help="Original EMBL file used for analysis", type=str)
-    parser.add_argument("--combined", help="Combined plotfile", type=str)
-    parser.add_argument("--forward", help="Forward plotfile", type=str)
-    parser.add_argument("--reverse", help="Reverse plotfile", type=str)
-    parser.add_argument("--scores", help="Combined scores", type=str)
-    parser.add_argument("--window_size", "-w", help="Window size", type=int, default=50)
+    parser.add_argument(
+        "--conditionfiles",
+        help="Normalized plot files for all conditions (combine.plot.gz).",
+        nargs='+',  # Accept one or more arguments as a list
+        type=str,
+    )
+    parser.add_argument("--embl", help="Prepared EMBL file used for analysis", type=str)
+    parser.add_argument("--combined_compare", help="Combined compare csv with logfc, p and q values.", type=str)
+    parser.add_argument("--forward_compare", help="Forward compare csv with logfc, p and q values.", type=str)
+    parser.add_argument("--reverse_compare", help="Reverse compare csv with logfc, p and q values.", type=str)
     parser.add_argument(
         "--output_dir", "-o", help="Output filename prefix", type=str, default="."
     )
     parser.add_argument(
         "--annotations", "-a", help="EMBL file used for annotations", type=str
     )
+    parser.add_argument("--use_annotation", "-ua", help="Flag to use annotation file in place of prepared embl file (default: False)", action='store_true')
 
 
 def gene_report(args):
+    """
+    Wrapper function to generate a gene report by passing command-line arguments 
+    to the `gene_statistics` function.
+
+    Args:
+        args (argparse.Namespace): Parsed command-line arguments containing the following:
+            - conditionfiles (list of str): Normalized plot files for all conditions (e.g., combine.plot.gz).
+            - combined_compare (str): Path to the combined compare CSV file with logFC, p-values, and q-values.
+            - forward_compare (str): Path to the forward compare CSV file with logFC, p-values, and q-values.
+            - reverse_compare (str): Path to the reverse compare CSV file with logFC, p-values, and q-values.
+            - embl (str): Path to the prepared EMBL file used for analysis.
+            - output_dir (str): Output filename prefix for saving the report.
+            - annotations (str, optional): Path to the EMBL file used for annotations.
+            - use_annotation (bool, optional): Flag to use the annotation file instead of the EMBL file.
+
+    Returns:
+        None: The function calls `gene_statistics` and does not return a value.
+
+    Example:
+        parser = argparse.ArgumentParser()
+        # Add arguments to parser as described above
+        args = parser.parse_args()
+        gene_report(args)
+    """
+
     gene_statistics(
-        combined_plotfile=args.combined,
-        forward_plotfile=args.forward,
-        reverse_plotfile=args.reverse,
-        combined_scorefile=args.scores,
-        window_size=args.window_size,
-        embl_file=args.embl,
-        output_dir=args.output_dir,
-        annotation_file=args.annotations,
+    conditions_all=args.conditionfiles,
+    combined_csv_file=args.combined_compare,
+    forward_csv_file=args.forward_compare,
+    reverse_csv_file=args.reverse_compare,
+    embl_file=args.embl,
+    output_dir=args.output_dir,
+    annotation_file=args.annotations,
+    use_annotation=args.use_annotation,
     )
 
 
@@ -331,7 +362,10 @@ def essentiality(args):
 
 def prepare_embl_utils_options(parser):
     parser.add_argument(
-        "plotfile", help="Transposon insertion site plot file to be used", type=str
+        "--plotfile",
+        help="Transposon insertion site plot files to be used (accepts multiple paths)",
+        nargs='+',  # Accept one or more arguments as a list
+        type=str,
     )
     parser.add_argument(
         "--output",
@@ -359,7 +393,7 @@ def prepare_embl_utils_options(parser):
         "-z",
         help="Feature size when adding 5/3 prime block when --use_annotation (default: 198)",
         type=int,
-        default=198,
+        default=400,
     )
     parser.add_argument(
         "--window_interval",
@@ -371,9 +405,12 @@ def prepare_embl_utils_options(parser):
     parser.add_argument(
         "--window_size", "-w", help="Window size (default: 100)", type=int, default=100
     )
+    # Modification 2
+    parser.add_argument("--dynamic_window", "-dw", help="Dynamic Window for 3,5 Prime_Features (default: True)", action='store_true')
 
 
 def prepare_embl(args):
+    # Modification 3
     pef = PrepareEMBLFile(
         args.plotfile,
         args.minimum_threshold,
@@ -381,6 +418,7 @@ def prepare_embl(args):
         args.window_interval,
         args.prime_feature_size,
         args.emblfile,
+        args.dynamic_window
     )
     pef.create_file(args.output)
 

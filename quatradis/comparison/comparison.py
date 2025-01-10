@@ -151,6 +151,7 @@ class TradisComparisonRunner:
         cmd = self.construct_command()
         if self.verbose:
             print(cmd)
+        print("TradisComparisonRunner CMD",cmd)
 
         ensure_output_dir_exists(self.prefix)
 
