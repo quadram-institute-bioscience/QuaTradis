@@ -56,14 +56,14 @@ class PlotFromAlignmentsGenerator:
         count at the current position it pads any skipped positions with '0 0'.
 
         There is a hack implemented here to avoid accidentally creating plot files that are too large.
-        Any reads that start off the end of the reference, which can happen from alignments to circular sequences,
-        are ignored.  We just count how often we are ignoring them and return that value along with the number of
-        insertion sites found in this reference sequence.
+        Any reads that start off the beginning or end of the reference, which can happen from alignments to circular sequences,
+        or through soft clipping are ignored.  We just count how often we are ignoring them and return that value along
+        with the number of insertion sites found in this reference sequence.
         """
         nb_unique_insertion_sites = 0
         nb_skipped = 0
         for read_coord in sorted(self.read_starts.keys()):
-            if read_coord > self.sequence_length:
+            if read_coord > self.sequence_length or read_coord < 0:
                 nb_skipped += 1
                 continue
             self.print_coord(read_coord)
