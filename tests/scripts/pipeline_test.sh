@@ -20,6 +20,6 @@ rm -f $MAPPER_DATA_DIR/smallref.fa.* && rm -r temp_test .snakemake
 echo "ok"
 
 echo -n "Checking 'tradis pipeline compare' ... "
-./tradis pipeline compare --output_dir temp_test --annotations $PIPELINE_DATA_DIR/annotation.embl --condition_files $PIPELINE_DATA_DIR/small_case.insert_site_plot.gz $PIPELINE_DATA_DIR/small_case_2.insert_site_plot.gz --control_files $PIPELINE_DATA_DIR/small_control.insert_site_plot.gz $PIPELINE_DATA_DIR/small_control_high_insertions.insert_site_plot.gz > /dev/null 2>&1
+./tradis pipeline compare --output_dir temp_test --annotations $PIPELINE_DATA_DIR/annotation.embl --condition_files $PIPELINE_DATA_DIR/small_case.insert_site_plot.gz $PIPELINE_DATA_DIR/small_case_2.insert_site_plot.gz --control_files $PIPELINE_DATA_DIR/small_control.insert_site_plot.gz $PIPELINE_DATA_DIR/small_control_high_insertions.insert_site_plot.gz --dynamic_window > /dev/null 2>&1
 rm -r temp_test .snakemake
 echo "ok"
