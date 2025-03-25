@@ -5,6 +5,10 @@ import shutil
 
 from quatradis.util.parser import create_parser
 import quatradis.util.file_handle_helpers as fhh
+import yaml
+from quatradis.util.read_threshold_config import load_thresholds
+import warnings
+warnings.filterwarnings("ignore") 
 
 
 def add_subparser(subparsers):
@@ -263,14 +267,19 @@ def compare_options(parser):
         help='If provided, pass this directory onto snakemake.  Assumes there is a file called "config.yaml" in that directory.',
     )
     # Modification 1.0
-    parser.add_argument("--dynamic_window", "-dw", help="Dynamic Window for 3,5 Prime_Features (default: True)", action='store_true')
-
+    # parser.add_argument("--dynamic_window", "-dw", help="Dynamic Window for 3,5 Prime_Features (default: True)", action='store_true')
+    parser.add_argument(
+        "--input_thresholds_config",
+        type=str,
+        help="Yaml config containing thresholds and parameters required for dynamic window based prime-end generation and categorization of genes.",
+    )
 
 def compare_pipeline(args):
     """
     Use snakemake to process multiple fastqs in parallel
     """
-
+    print("args.control_files",args.control_files)
+    print("args.condition_files",args.condition_files)
     if len(args.control_files) != len(args.condition_files):
         raise ValueError("Must have equal number of control and condition files")
 
@@ -280,6 +289,7 @@ def compare_pipeline(args):
         )
 
     fhh.ensure_output_dir_exists(args.output_dir)
+    tradis_input_data= load_thresholds(args.input_thresholds_config)
 
     snakemake_config = os.path.join(args.output_dir, "analysis_config.yaml")
     with open(snakemake_config, "w") as ofql:
@@ -293,13 +303,14 @@ def compare_pipeline(args):
         ofql.write(
             create_yaml_option("normalise", not args.disable_normalisation, bool=True)
         )
+        ofql.write(create_yaml_option("input_thresholds_config", args.input_thresholds_config))
         # Modification 1.1
         ofql.write(create_yaml_option("annotations", args.annotations))
         ofql.write(create_yaml_option("minimum_threshold", args.minimum_threshold))
         ofql.write(create_yaml_option("prime_feature_size", args.prime_feature_size))
         ofql.write(create_yaml_option("window_interval", args.window_interval))
         ofql.write(create_yaml_option("window_size", args.window_size))
-        ofql.write(create_yaml_option("dynamic_window", args.dynamic_window))
+        # ofql.write(create_yaml_option("dynamic_window", args.dynamic_window))
         ofql.write(create_yaml_option("minimum_block", args.minimum_block))
         ofql.write(create_yaml_option("minimum_logfc", args.minimum_logfc))
         ofql.write(create_yaml_option("minimum_logcpm", args.minimum_logcpm))
@@ -311,6 +322,8 @@ def compare_pipeline(args):
                 "minimum_proportion_insertions", args.minimum_proportion_insertions
             )
         )
+        yaml.dump(tradis_input_data, ofql, default_flow_style=False)
+        
 
     pipeline = find_pipeline_file("compare.smk")
 

@@ -7,6 +7,7 @@ library("MASS")
 options(warn=-1)
 options(width=80)
 
+
 args <- commandArgs(trailingOnly = TRUE)
 input = args[1]
 
@@ -69,6 +70,18 @@ lines(c(upper/10000, upper/10000), c(0,20), col="red")
 mtext(paste(essen, ":", "Essential changepoint"), side=3, adj=1, padj=2)
 mtext(paste(ambig, ":", "Ambiguous changepoint"), side=3, adj=1, padj=3.75)
 dev.off()
+
+# Create a JSON string manually
+json_content <- paste0(
+  '{\n',
+  '  "essential_changepoint": ', essen, ',\n',
+  '  "ambiguous_changepoint": ', ambig, '\n',
+  '}'
+)
+
+# Save to a JSON file
+json_file <- paste(input, "changepoints", "json", sep = ".")
+writeLines(json_content, json_file)
 
 
 write.csv(STM_baseline, file=paste(input, "all", "csv", sep="."), row.names = FALSE, col.names= TRUE, quote=FALSE)

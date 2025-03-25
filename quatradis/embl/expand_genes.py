@@ -3,6 +3,7 @@
 from quatradis.embl.reader import EMBLReader
 from quatradis.embl.sequence import EMBLSequence
 import numpy as np
+import pandas as pd
 
 
 class FeatureProperties:
@@ -18,25 +19,30 @@ class FeatureProperties:
 
 
 class   EMBLExpandGenes:
-    def __init__(self, embl_file, feature_size,dynamic_window=False):
+    def __init__(self, embl_file,dynamic_window=False,**kwargs):
         # Modification 6
         self.embl_file = embl_file
-        self.feature_size = feature_size
+        self.dynamic_window=dynamic_window
+        # Initialize dynamic parameters here
+        self.drop_ratio_threshold = kwargs.get("drop_ratio_threshold", None)
+        self.gap_threshold = kwargs.get("gap_threshold", None)
+        self.initial_win = kwargs.get("initial_win", None)
+        self.initial_win_sum_thres = kwargs.get("initial_win_sum_thres", None)
+        self.max_window = kwargs.get("max_window", None)
+        self.min_window = kwargs.get("min_window", None)
+        self.moving_average = kwargs.get("moving_average", None)
+        self.feature_size = kwargs.get("prime_feature_size",None)
+
         self.er = EMBLReader(self.embl_file)
         self.features = self.er.features
         self.genes_to_features= self.er.genes_to_features
         self.genome_length = self.er.genome_length
-        self.dynamic_window=dynamic_window
-        self.max_window = 2000
-        self.prime_density_threshold= 2
-        self.shift_continuity_requirement=150
-
+        
 
     def create_3_5_prime_features(self):
         new_features = []
         for gene, feature in self.genes_to_features.items():
             gene_name= gene
-            # gene_name = self.feature_to_gene_name(feature)
             locus_tag = self.feature_to_locus_tag(feature)
             product = self.feature_to_product(feature)
 
@@ -77,95 +83,63 @@ class   EMBLExpandGenes:
                 )
 
         return new_features
-    # Modification 7
-    def get_windows(self,prime_type,geneName,data, start, end, max_window):
+    
+
+    def get_windows(self,prime_type, data, start, end, max_window, min_window):
         #red inserts is zero, blue is one
         low = max(1, start - max_window)
-        high = min(data.size, end + max_window)
-         
-        if prime_type=="start": 
-            # blue = self.get_shifts(geneName,data[end:high].iloc[:, 1],)
-            shifts = self.get_shifts(data[low:start].iloc[:, 0].iloc[::-1])
-            shifts.append(max(1, start - 200))
-            if geneName in ["acrA"]:
-              print(prime_type)
-              print("Start: ",geneName)
-              print("shifts",shifts)
-            return min(shifts)
-        elif prime_type=="end":
-            shifts= self.get_shifts(data[end:high].iloc[:, 1])
-            shifts.append(min(len(data), end + 200))
-            if geneName in ["acrA"]:
-              print(prime_type)
-              print("End: ",geneName)
-              print("shifts",shifts)
-            return max(shifts)
+        high = min(data.shape[0], end + max_window) 
 
+        #Indices are preserved when slicing, even after reversing
+        if prime_type=="start": 
+            shifts = self.get_shifts(data.loc[low:start-1].iloc[:, 0].iloc[::-1])
+            if (not shifts.empty) and (shifts[0] < (start - self.initial_win)):
+                if(data.loc[(start - self.initial_win):(start - self.initial_win + 99)].iloc[:, 0].sum() < self.initial_win_sum_thres):
+                    return max(1, start - min_window)
+            
+            gap_in_shifts = shifts.diff(periods=1)
+            for index in gap_in_shifts.index:
+                if gap_in_shifts[index] > self.gap_threshold:
+                    return min(min(shifts[0:index]),(max(1, start - min_window)))
+            
+            if shifts.empty:
+                return max(1, start - min_window)
+            else:
+                return min(min(shifts),(max(1, start - min_window)))
+
+        elif prime_type=="end":
+            shifts = self.get_shifts(data.loc[end+1:high].iloc[:, 1])
+            if (not shifts.empty) and (shifts[0] > (end + self.initial_win)):
+                if(data.loc[(end + self.initial_win - 99):(end + self.initial_win)].iloc[:, 1].sum() < self.initial_win_sum_thres):
+                    return min(data.shape[0], end + min_window)
+            gap_in_shifts = shifts.diff(periods=1)
+            for index in gap_in_shifts.index:
+                if gap_in_shifts[index] > self.gap_threshold:
+                    return max(max(shifts[0:index]),(min(data.shape[0], end + min_window)))
+                
+            if shifts.empty:
+                return min(data.shape[0], end + min_window)
+            else:
+                return max(max(shifts),(min(data.shape[0], end + min_window)))
             
 
-    # Modification 8
-    def get_shifts(self,data, window_size=20):
-        moving_average = data.rolling(window=window_size).mean()
-        deviation = abs(data - moving_average)
-        threshold = 2 * data.std()  
-        potential_shifts = deviation[deviation > threshold].index.tolist()
-        if len(potential_shifts)>1:
-            for indx in range(len(potential_shifts) - 1):
-                    diff = abs(potential_shifts[indx+1] - potential_shifts[indx])
-                    if diff > self.shift_continuity_requirement:
-                        return potential_shifts[0:indx]
-        return potential_shifts
-    
-    def check_prime_feature_density(self,prime_type,gene_index):
-        condition_sum = 0
-        control_sum = 0
-        # print("gene_index",gene_index)
-        genome_length= self.plot_file_objs["Condition1"].genome_length
+    def get_shifts(self, data, window_size=5):
+        moving_average = data.rolling(window=window_size, min_periods=1).mean().shift(1)
+        drop_ratio = data/moving_average
+        potential_shifts = drop_ratio[(drop_ratio < self.drop_ratio_threshold) & (moving_average > self.moving_average)].index.tolist()
+        return pd.Series(potential_shifts)
         
-        for key, parser in self.plot_file_objs.items():
-            if prime_type == 'start':
-                if gene_index - self.feature_size <0:
-                    start_index=0
-                else:
-                    start_index=gene_index - self.feature_size
-                array_slice = parser.insert_site_array.values[start_index:gene_index, 0]
-            elif prime_type == 'end':
-                if gene_index + self.feature_size>genome_length:
-                    end_index=genome_length
-                else:
-                    end_index=gene_index + self.feature_size
-                array_slice = parser.insert_site_array.values[gene_index:end_index, 1]
-            else:
-                raise ValueError("prime_type must be 'start' or 'end'")
-
-            if key.startswith("Condition"):
-                condition_sum += np.sum(array_slice)
-            elif key.startswith("Control"):
-                control_sum += np.sum(array_slice)
-
-        if control_sum == 0 and condition_sum!=0:
-            return True
-        elif control_sum == 0 and condition_sum==0:
-            return False
-
-        ratio = condition_sum / control_sum
-        return ratio > self.prime_density_threshold
 
     # Modification 9
     def construct_end_feature(self, feature, gene_name, suffix, locus_tag, product):
-        density_check= self.check_prime_feature_density("end",feature.location.end)
-        if gene_name=="yciW":
-            print("construct_end_feature")
-            print("gene_name",gene_name)
-            print("density_check",density_check)
-        if density_check and self.dynamic_window:
+        # density_check= self.check_prime_feature_density("end",feature.location.end)
+        # if density_check and self.dynamic_window:
+        if self.dynamic_window:
             end_index_list=[]
             for key, parser in self.plot_file_objs.items():
                 if key.startswith("Condition"):
-                    index= self.get_windows("end",gene_name,parser.insert_site_array, feature.location.start, feature.location.end, self.max_window)
+                    index= self.get_windows("end",parser.insert_site_array, feature.location.start, feature.location.end, self.max_window,self.min_window)
                     end_index_list.append(index)
-            if gene_name=="acrA":
-                print("end_index_list",end_index_list)
             start= feature.location.end
             end = min(end_index_list)
         else:
@@ -189,19 +163,13 @@ class   EMBLExpandGenes:
 
     # Modification 10
     def construct_start_feature(self, feature, gene_name, suffix, locus_tag, product,dynamic_window=False):
-        density_check= self.check_prime_feature_density("start",feature.location.start)
-        if gene_name=="yciW":
-            print("construct_start_feature")
-            print("gene_name",gene_name)
-            print("density_check",density_check)
-        if density_check and self.dynamic_window:
+
+        if self.dynamic_window:
             start_index_list=[]
             for key, parser in self.plot_file_objs.items():
                 if key.startswith("Condition"):
-                    index= self.get_windows("start",gene_name,parser.insert_site_array, feature.location.start, feature.location.end, self.max_window)
+                    index= self.get_windows("start",parser.insert_site_array, feature.location.start, feature.location.end, self.max_window,self.min_window)
                     start_index_list.append(index)
-            if gene_name=="acrA":
-                print("start_index_list",start_index_list)
             start= max(start_index_list)
             end =feature.location.start
             

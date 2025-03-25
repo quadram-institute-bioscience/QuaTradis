@@ -106,7 +106,7 @@ def merge_insertion_index(condition1_countfiles,condition2_countfiles):
     reverse_ins_idx_file.to_csv("reverse_ins_idx_file.csv",index=False)
     return combined_ins_idx_file, forward_ins_idx_file, reverse_ins_idx_file
 
-def gene_statistics(conditions_all,combined_csv_file, forward_csv_file, reverse_csv_file, embl_file, output_dir="output", annotation_file=None, use_annotation=None):
+def gene_statistics(plotfiles_all,forward_count_condition,reverse_count_condition,forward_count_control,reverse_count_control,combined_compare_csv, forward_compare_csv, reverse_compare_csv, embl_file, output_dir="output",gene_categorization_params_values=None):
     
     """
     Generates a gene report by annotating genes based on input data and conditions.
@@ -114,7 +114,7 @@ def gene_statistics(conditions_all,combined_csv_file, forward_csv_file, reverse_
     Args:
         conditions_all (list of str): List of normalized plot files for all conditions 
             (e.g., combine.plot.gz files).
-        combined_csv_file (str): Path to the combined compare CSV file containing 
+        combined_compare_csv (str): Path to the combined compare CSV file containing 
             logFC, p-values, and q-values.
         forward_csv_file (str): Path to the forward compare CSV file containing 
             logFC, p-values, and q-values.
@@ -149,9 +149,8 @@ def gene_statistics(conditions_all,combined_csv_file, forward_csv_file, reverse_
     
     ensure_output_dir_exists(output_dir)
     ant_file = embl_file
-    if use_annotation:
-        ant_file=annotation_file
-    genes_report = GeneAnnotator(ant_file,conditions_all,combined_csv_file,forward_csv_file,reverse_csv_file).annotate_genes()
+    print("Embl/Ant file being used",ant_file)
+    genes_report = GeneAnnotator(ant_file,plotfiles_all,forward_count_condition,reverse_count_condition,forward_count_control,reverse_count_control,combined_compare_csv,forward_compare_csv,reverse_compare_csv,**gene_categorization_params_values).annotate_genes()
     write_gene_report(output_dir,genes_report)
     
     return None

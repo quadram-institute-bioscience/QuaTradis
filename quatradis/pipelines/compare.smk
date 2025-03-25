@@ -8,11 +8,14 @@ plotnames=[]
 controlnames=[]
 conditionnames=[]
 norm_lut={}
+
+
 for p in config["condition_files"]:
     input_files.append(p)
     plotname = os.path.basename(p).split('.')[0]
     plotnames.append(plotname)
     conditionnames.append(plotname)
+    print("condition_files",p)
 
 
 for p in config["control_files"]:
@@ -20,12 +23,14 @@ for p in config["control_files"]:
     plotname = os.path.basename(p).split('.')[0]
     plotnames.append(plotname)
     controlnames.append(plotname)
+    print("Control Files",p)
 
 for p in input_files:
     plotname = os.path.basename(p).split('.')[0]
     n=os.path.join(config["output_dir"], "analysis", plotname, "original.plot.gz")
     norm_files.append(n)
     norm_lut[plotname]=n
+    print("norm_files",norm_files)
 
 ZCAT_CMD='gzcat'
 if not shutil.which('gzcat'):
@@ -46,6 +51,7 @@ def make_no_normalise_cmd():
 	return "; ".join(cmds)
 
 def make_normalise_cmd():
+    print("HATA make_normalise_cmd")
     return "tradis plot normalise -o " + os.path.join(config["output_dir"], "analysis") + " -n original.plot.gz " + \
         ("--minimum_proportion_insertions=" + config["minimum_proportion_insertions"] if config["minimum_proportion_insertions"] else "") + \
             " " + " ".join(input_files)
@@ -70,7 +76,7 @@ rule finish:
 # Modification 2.0
 rule prepare_embl:
     input:
-        plot=config["condition_files"]+config["control_files"],
+        plot=norm_files,
         embl=config["annotations"]
     output:
         os.path.join(config["output_dir"], "prepared.embl")
@@ -80,10 +86,18 @@ rule prepare_embl:
         minimum_threshold="--minimum_threshold=" + str(config["minimum_threshold"]) if config.get("minimum_threshold") else "",
         window_size="--window_size=" + str(config["window_size"]) if config.get("window_size") else "",
         window_interval="--window_interval=" + str(config["window_interval"]) if config.get("window_interval") else "",
-        prime_feature_size="--prime_feature_size=" + str(config["prime_feature_size"]) if config.get("prime_feature_size") else "",
-        dynamic_window="--dynamic_window" if config.get("dynamic_window", False) else ""
+        dynamic_window = "--dynamic_window" if config.get("Dynamic_Window_3_5_Prime_Ends_Params", {}).get("dynamic_window", False) else "",
+        dynamic_params = lambda wildcards: " ".join(
+            f"" if isinstance(value, bool) and value else f"--{key}={value}"
+            for key, value in config["Dynamic_Window_3_5_Prime_Ends_Params"].items() if value
+        )
     shell:
-        "tradis compare prepare_embl --output={output} {params.minimum_threshold} {params.window_size} {params.window_interval} {params.prime_feature_size} {params.dynamic_window} --emblfile {input.embl} --plotfile {input.plot}"
+        """
+        echo "Running command: tradis compare prepare_embl --output={output} {params.minimum_threshold} {params.window_size} {params.window_interval} {params.dynamic_window} {params.dynamic_params} --emblfile {input.embl} --plotfile {input.plot}"
+        tradis compare prepare_embl --output={output} {params.minimum_threshold} {params.window_size} {params.window_interval} {params.dynamic_window} {params.dynamic_params} --emblfile {input.embl} --plotfile {input.plot}
+        """
+
+
 
 rule normalise:
     input:
@@ -209,9 +223,22 @@ rule insertion_site_comparison:
 
 rule gene_stats:
     input:
-        conditions_all=lambda wildcards: list(expand(
-            os.path.join(config["output_dir"], "analysis", "{condition}", "combined.plot.gz"),
+        plotfiles_all=norm_files,
+        conditions_forward_count_all=lambda wildcards: list(expand(
+            os.path.join(config["output_dir"], "analysis", "{condition}", "forward.count.tsv"),
             condition=conditionnames
+        )),
+        control_forward_count_all=lambda wildcards: list(expand(
+            os.path.join(config["output_dir"], "analysis", "{control}", "forward.count.tsv"),
+            control=controlnames
+        )),
+        conditions_reverse_count_all=lambda wildcards: list(expand(
+            os.path.join(config["output_dir"], "analysis", "{condition}", "reverse.count.tsv"),
+            condition=conditionnames
+        )),
+        control_reverse_count_all=lambda wildcards: list(expand(
+            os.path.join(config["output_dir"], "analysis", "{control}", "reverse.count.tsv"),
+            control=controlnames
         )),
         combined_compare_csv=os.path.join(config["output_dir"], "comparison", "combined", "combined.compare.csv"),
         forward_compare_csv=os.path.join(config["output_dir"], "comparison", "forward", "forward.compare.csv"),
@@ -222,7 +249,10 @@ rule gene_stats:
     params:
         output_dir="--output_dir=" + config["output_dir"],
         annotations="--annotations=" + config["annotations"] if config["annotations"] != "None" else "",
-        use_annotation="--use_annotation" if config.get("use_annotation", False) else ""
+        use_annotation="--use_annotation" if config.get("use_annotation", False) else "",
+        gene_report_params=lambda wildcards: " ".join(
+            f"--{key}={value}" for key, value in config.get("Gene_Report_Categorization_Params", {}).items() if value
+        )
     message:
         "Creating gene report"
     shell:
@@ -234,11 +264,17 @@ rule gene_stats:
             {params.output_dir} \
             {params.annotations} \
             {params.use_annotation} \
+            {params.gene_report_params} \
             --embl={input.embl} \
-            --conditionfiles {input.conditions_all}"
+            --plotfiles_all {input.plotfiles_all} \
+            --forward_count_condition {input.conditions_forward_count_all} \
+            --reverse_count_condition {input.conditions_reverse_count_all} \
+            --forward_count_control {input.control_forward_count_all} \
+            --reverse_count_control {input.control_reverse_count_all}"
         echo "Executing: $cmd"
         eval $cmd
         """
+
 
 
 rule essentiality_analysis:

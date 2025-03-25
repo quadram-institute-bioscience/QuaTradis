@@ -85,6 +85,11 @@ def ensure_output_dir_exists(output_path, includes_filename=False):
     output_dir = output_path
     if includes_filename:
         output_dir, prefix = os.path.split(output_path)
+        print("includes_filename")
+        print("output_dir",output_dir," output_path",output_path)
     if output_dir and not os.path.exists(output_dir):
+        
+        print("if output_dir and not os.path.exists(output_dir):")
+        print("output_dir",output_dir," output_path",output_path)
         os.makedirs(output_dir, exist_ok=True)
 

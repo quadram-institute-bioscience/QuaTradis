@@ -262,9 +262,34 @@ def figures(args):
 
 
 def add_genereport_options(parser):
+    print("Here Inside add_genereport_options") 
     parser.add_argument(
-        "--conditionfiles",
-        help="Normalized plot files for all conditions (combine.plot.gz).",
+        "--plotfiles_all",
+        help="Normalized plot files for all conditions (original.plot.gz).",
+        nargs='+',  # Accept one or more arguments as a list
+        type=str,
+    )
+    parser.add_argument(
+        "--forward_count_condition",
+        help="Insertion count tsv file for all conditions (forward.count.tsv).",
+        nargs='+',  # Accept one or more arguments as a list
+        type=str,
+    )
+    parser.add_argument(
+        "--reverse_count_condition",
+        help="Insertion count tsv file for all conditions (reverse.count.tsv).",
+        nargs='+',  # Accept one or more arguments as a list
+        type=str,
+    )
+    parser.add_argument(
+        "--forward_count_control",
+        help="Insertion count tsv file for all controls (forward.count.tsv).",
+        nargs='+',  # Accept one or more arguments as a list
+        type=str,
+    )
+    parser.add_argument(
+        "--reverse_count_control",
+        help="Insertion count tsv file for all controls (reverse.count.tsv).",
         nargs='+',  # Accept one or more arguments as a list
         type=str,
     )
@@ -279,6 +304,28 @@ def add_genereport_options(parser):
         "--annotations", "-a", help="EMBL file used for annotations", type=str
     )
     parser.add_argument("--use_annotation", "-ua", help="Flag to use annotation file in place of prepared embl file (default: False)", action='store_true')
+    
+    # Add Gene_Report_Categorization_Params dynamically
+    gene_report_params = {
+        "blue_red_logfc_diff_threshold": ("--blue_red_logfc_diff_threshold", float, 0.4),
+        "distance_threshold": ("--distance_threshold", float, 0.6),
+        "insertion_count_max_threshold": ("--insertion_count_max_threshold", int, 30),
+        "insertion_count_sum_threshold": ("--insertion_count_sum_threshold", int, 75),
+        "insertion_signal_similarity_avg_threshold": ("--insertion_signal_similarity_avg_threshold", float, 0.5),
+        "log_fc_threshold": ("--log_fc_threshold", float, 2.0),
+        "overlap_threshold": ("--overlap_threshold", float, 0.6),
+        "q_val": ("--q_val", float, 0.05),
+        "inactivation_fraction_threshold": ("--inactivation_fraction_threshold", float, 0.2),
+    }
+
+    for param, (arg_name, param_type, default_value) in gene_report_params.items():
+        parser.add_argument(
+            arg_name,
+            help=f"{param.replace('_', ' ').capitalize()} (default: {default_value})",
+            type=param_type,
+            default=default_value,
+        )
+
 
 
 def gene_report(args):
@@ -306,17 +353,50 @@ def gene_report(args):
         args = parser.parse_args()
         gene_report(args)
     """
+    print("All Inputs to Gene Report")
+    print("args.plotfiles_all:", args.plotfiles_all)
+    print("args.forward_count_condition:", args.forward_count_condition)
+    print("args.reverse_count_condition:", args.reverse_count_condition)
+    print("args.forward_count_control:", args.forward_count_control)
+    print("args.reverse_count_control:", args.reverse_count_control)
+    print("args.combined_compare:", args.combined_compare)
+    print("args.forward_compare:", args.forward_compare)
+    print("args.reverse_compare:", args.reverse_compare)
+    print("args.embl:", args.embl)
+    print("args.output_dir:", args.output_dir)
+    print("args.annotations:", args.annotations)
+    print("args.use_annotation:", args.use_annotation)
+
+    dynamic_params_keys = [
+        "blue_red_logfc_diff_threshold",
+        "distance_threshold",
+        "insertion_count_max_threshold",
+        "insertion_count_sum_threshold",
+        "insertion_signal_similarity_avg_threshold",
+        "log_fc_threshold",
+        "overlap_threshold",
+        "q_val",
+        "inactivation_fraction_threshold",
+    ]
+
+    gene_categorization_params_values = {key: getattr(args, key, None) for key in dynamic_params_keys}
+    print("Gene Report Categorization Parameters:", gene_categorization_params_values)
 
     gene_statistics(
-    conditions_all=args.conditionfiles,
-    combined_csv_file=args.combined_compare,
-    forward_csv_file=args.forward_compare,
-    reverse_csv_file=args.reverse_compare,
-    embl_file=args.embl,
-    output_dir=args.output_dir,
-    annotation_file=args.annotations,
-    use_annotation=args.use_annotation,
+        plotfiles_all=args.plotfiles_all,
+        forward_count_condition=args.forward_count_condition,
+        reverse_count_condition=args.reverse_count_condition,
+        forward_count_control=args.forward_count_control,
+        reverse_count_control=args.reverse_count_control,
+        combined_compare_csv=args.combined_compare,
+        forward_compare_csv=args.forward_compare,
+        reverse_compare_csv=args.reverse_compare,
+        embl_file=args.embl,
+        output_dir=args.output_dir,
+        gene_categorization_params_values=gene_categorization_params_values,
     )
+    
+
 
 
 def split_plot_options(parser):
@@ -388,13 +468,13 @@ def prepare_embl_utils_options(parser):
         type=int,
         default=5,
     )
-    parser.add_argument(
-        "--prime_feature_size",
-        "-z",
-        help="Feature size when adding 5/3 prime block when --use_annotation (default: 198)",
-        type=int,
-        default=400,
-    )
+    # parser.add_argument(
+    #     "--prime_feature_size",
+    #     "-z",
+    #     help="Feature size when adding 5/3 prime block when --use_annotation (default: 198)",
+    #     type=int,
+    #     default=400,
+    # )
     parser.add_argument(
         "--window_interval",
         "-l",
@@ -408,17 +488,61 @@ def prepare_embl_utils_options(parser):
     # Modification 2
     parser.add_argument("--dynamic_window", "-dw", help="Dynamic Window for 3,5 Prime_Features (default: True)", action='store_true')
 
+    # Add parameters dynamically based on the YAML config
+    dynamic_window_params = {
+    "drop_ratio_threshold": ("--drop_ratio_threshold", float, 0.5),
+    "gap_threshold": ("--gap_threshold", int, 200),
+    "initial_win": ("--initial_win", int, 400),
+    "initial_win_sum_thres": ("--initial_win_sum_thres", int, 200),
+    "max_window": ("--max_window", int, 2000),
+    "min_window": ("--min_window", int, 200),
+    "moving_average": ("--moving_average", int, 50),
+    "prime_feature_size": ("--prime_feature_size", int, 198),  # ✅ Newly added
+    }
+
+    for param, (arg_name, param_type, default_value) in dynamic_window_params.items():
+        parser.add_argument(
+            arg_name,
+            help=f"{param.replace('_', ' ').capitalize()} (default: {default_value})",
+            type=param_type,
+           default=default_value,
+        )
 
 def prepare_embl(args):
+    print("All Inputs to PrepareEMBLFile")
+    print("args.plotfile:", args.plotfile)
+    print("args.minimum_threshold:", args.minimum_threshold)
+    print("args.window_size:", args.window_size)
+    print("args.window_interval:", args.window_interval)
+    print("args.prime_feature_size:", args.prime_feature_size)
+    print("args.emblfile:", args.emblfile)
+    print("args.dynamic_window:", args.dynamic_window)
+    print("args.output:", args.output)
+
+    dynamic_params_keys = [
+        "drop_ratio_threshold",
+        "gap_threshold",
+        "initial_win",
+        "initial_win_sum_thres",
+        "max_window",
+        "min_window",
+        "moving_average",
+        "prime_feature_size",
+    ]
+
+    dynamic_params_values = {key: getattr(args, key, None) for key in dynamic_params_keys}
+    print("Dynamic Parameters:", dynamic_params_values)
+
+    
     # Modification 3
     pef = PrepareEMBLFile(
         args.plotfile,
         args.minimum_threshold,
         args.window_size,
         args.window_interval,
-        args.prime_feature_size,
         args.emblfile,
-        args.dynamic_window
+        args.dynamic_window,
+        **dynamic_params_values
     )
     pef.create_file(args.output)
 
