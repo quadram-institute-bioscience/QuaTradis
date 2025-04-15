@@ -14,7 +14,7 @@ def write_regulated_gene_report(genes, output_filename):
         for i in regulated_genes:
             bf.write(str(i) + "\n")
 
-def write_gene_report(output_dir,genes_report):
+def write_gene_report_new(output_dir,genes_report):
     """
     Saves the gene report as a CSV file in the specified output directory.
 
@@ -26,15 +26,15 @@ def write_gene_report(output_dir,genes_report):
         None: The function writes the DataFrame to a CSV file and does not return any value.
 
     Example:
-        write_gene_report("results", annotated_genes_df)
+        write_gene_report_new("results", annotated_genes_df)
 
     Notes:
         - The function assumes `genes_report` is a valid pandas DataFrame.
         - If the output directory does not exist, the caller must ensure it is created
           before invoking this function.
     """
-    output_file_path= os.path.join(output_dir, "gene_report.csv")
-    genes_report.reset_index(drop=True).to_csv(output_file_path, index=False)
+    output_file_path = os.path.join(output_dir, "gene_report.tsv")
+    genes_report.reset_index(drop=True).to_csv(output_file_path, sep='\t', index=False)
     return None
 
 def merge_insertion_index(condition1_countfiles,condition2_countfiles):
@@ -106,7 +106,7 @@ def merge_insertion_index(condition1_countfiles,condition2_countfiles):
     reverse_ins_idx_file.to_csv("reverse_ins_idx_file.csv",index=False)
     return combined_ins_idx_file, forward_ins_idx_file, reverse_ins_idx_file
 
-def gene_statistics(plotfiles_all,forward_count_condition,reverse_count_condition,forward_count_control,reverse_count_control,combined_compare_csv, forward_compare_csv, reverse_compare_csv, embl_file, output_dir="output",gene_categorization_params_values=None):
+def gene_statistics_new(old_algorithm,plotfiles_all,forward_count_condition,reverse_count_condition,forward_count_control,reverse_count_control,combined_compare_csv, forward_compare_csv, reverse_compare_csv, embl_file, output_dir="output",gene_categorization_params_values=None):
     
     """
     Generates a gene report by annotating genes based on input data and conditions.
@@ -149,11 +149,57 @@ def gene_statistics(plotfiles_all,forward_count_condition,reverse_count_conditio
     
     ensure_output_dir_exists(output_dir)
     ant_file = embl_file
-    print("Embl/Ant file being used",ant_file)
-    genes_report = GeneAnnotator(ant_file,plotfiles_all,forward_count_condition,reverse_count_condition,forward_count_control,reverse_count_control,combined_compare_csv,forward_compare_csv,reverse_compare_csv,**gene_categorization_params_values).annotate_genes()
-    write_gene_report(output_dir,genes_report)
-    
-    return None
+    # print("Embl/Ant file being used",ant_file)
+    genes_report = GeneAnnotator(old_algorithm,ant_file,None,plotfiles_all,forward_count_condition,reverse_count_condition,forward_count_control,reverse_count_control,combined_compare_csv,forward_compare_csv,reverse_compare_csv,**gene_categorization_params_values).annotate_genes_new()
+    write_gene_report_new(output_dir,genes_report)
+    return genes_report
+
+def gene_statistics_old(old_algorithm,combined_plotfile, forward_plotfile, reverse_plotfile, combined_scorefile, window_size, embl_file, output_dir="output", annotation_file=None):
+    ensure_output_dir_exists(output_dir)
+
+    use_annotation = True if annotation_file else False
+
+    b = BlockIdentifier(combined_plotfile, forward_plotfile, reverse_plotfile, combined_scorefile, window_size)
+    blocks = b.block_generator()
+    ant_file = embl_file
+    # if use_annotation:
+    #     ant_file = annotation_file
+
+    genes = GeneAnnotator(old_algorithm,ant_file, blocks).annotate_genes()
+    intergenic_blocks = [block for block in blocks if block.intergenic]
+
+    if not use_annotation:
+        all_genes = merge_windows(genes)
+    else:
+        all_genes = []
+        for g in genes:
+            all_genes.append(g)
+
+    report_file = os.path.join(output_dir, "gene_report.tsv")
+
+    if len(all_genes) == 0 and len(intergenic_blocks) == 0:
+        print("No significant genes found for chosen parameters.\n")
+
+    write_gene_report(all_genes, intergenic_blocks, report_file, use_annotation)
+    write_regulated_gene_report(all_genes, os.path.join(output_dir, "regulated_gene_report.tsv"))
+
+    # if self.verbose:
+    # self.print_genes_intergenic(genes,intergenic_blocks)
+
+    return genes
+
+def write_gene_report(genes, intergenic_blocks, output_filename, use_annotation):
+
+    with open(output_filename, 'w') as bf:
+        bf.write(str(Gene.header()) + "\n")
+        if not use_annotation:
+            for i in genes:
+                bf.write(i.window_string() + "\n")
+        else:
+            for i in genes:
+                bf.write(str(i) + "\n")
+        for b in intergenic_blocks:
+            bf.write(str(b) + "\n")
 
 
 def merge_windows(windows):
@@ -201,6 +247,7 @@ def merge_windows(windows):
 
     merged_windows.append(start_window)
     return merged_windows
+
 
 def print_genes_intergenic_blocks(genes, intergenic_blocks):
     print(genes[0].header())

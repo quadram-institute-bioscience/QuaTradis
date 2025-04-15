@@ -25,5 +25,6 @@ rm testsmaltref.*
 ./tradis utils index -a minimap2 $MAPPER_DATA_DIR/smallref.fa testminimapref
 rm testminimapref
 echo "ok"
+echo -n "Util testing successfully completed."
 
 

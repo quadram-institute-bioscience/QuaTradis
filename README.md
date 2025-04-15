@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+# QuaTradis-QIB-HM
+Phase 1 Refixing QuaTradis toolkit and its performance.
+=======
 # QuaTraDIS (Quadram TraDIS)
 
 A set of tools to analyse the output from Transposon Directed Insertion Sequencing (TraDIS) experiments.
@@ -360,3 +364,4 @@ QuaTraDIS is built on top of the work done in BioTraDIS and AlbaTraDIS:
 ## Citation
 
 The QuaTraDIS academic paper is currently work in progress. For now please cite the references above.
+>>>>>>> 9d17048 (Initial commit: Transferring public repo content)

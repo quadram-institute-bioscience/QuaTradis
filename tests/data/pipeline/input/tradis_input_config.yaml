@@ -1,0 +1,25 @@
+# TraDIS Configuration File
+# This file contains thresholds and parameters for Dynamic Window and Gene Report Categorization.
+# Modify the values as needed. Descriptions are provided for clarity.
+
+Dynamic_Window_3_5_Prime_Ends_Params:
+  dynamic_window: true  # (True/False) If True, all other parameters except prime_feature_size are ignored.
+  max_window: 2000  # Maximum prime end size that can be created.
+  min_window: 200  # Minimum prime end size that can be created.
+  initial_win: 400  # Initial prime end size within which the insertion density is checked before dynamic window propagation.
+  initial_win_sum_thres: 200  # Threshold for the sum of insertions within the initial window.
+  gap_threshold: 200  # Maximum allowed discontinuity in the prime end.
+  drop_ratio_threshold: 0.5  # Percentage drop in insertions required to be considered a change point.
+  moving_average: 50  # Moving average of indices with a window size of 5.
+    # prime_feature_size: 198  # Default length of the prime end if dynamic_window is False (in base pairs).
+
+Gene_Report_Categorization_Params:
+  q_val: 0.05  # Q-value (modified p-value) significance threshold.
+  inactivation_fraction_threshold: 0.2  # Minimum percentage of transcription required for knockout categorization.
+  log_fc_threshold: 2  # Log fold change (LogFC) threshold for protection, knockout, and up/down regulation.
+  blue_red_logfc_diff_threshold: 0.4  # LogFC difference threshold between forward and reverse strands, used to identify knockouts despite upregulation.
+  overlap_threshold: 0.6  # Minimum overlap between an adjacent gene and the prime end required for knockout/up/down regulation classification.
+  insertion_signal_similarity_avg_threshold: 0.5  # Maximum allowed variation in insertion values across condition replicates.
+  distance_threshold: 0.9  # Shape-based similarity consistency check across conditions.
+  insertion_count_sum_threshold: 75  # Minimum average total insertions across condition replicates required for gene categorization.
+  insertion_count_max_threshold: 30  # Minimum average of maximum of non-zero insertions across replicates required for gene categorization.

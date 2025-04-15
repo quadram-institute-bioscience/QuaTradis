@@ -35,3 +35,5 @@ echo -n "Checking 'tradis utils tags remove' ... "
 ./tradis utils tags remove --tag CAACGTTTT $DATA_DIR/sample.caa.fastq.gz test_temp/output.fastq.gz > /dev/null 2>&1
 rm -r test_temp
 echo "ok"
+
+echo -n "Tags testing successfully completed."

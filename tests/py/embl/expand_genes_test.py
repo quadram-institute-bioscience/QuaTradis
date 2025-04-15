@@ -3,37 +3,39 @@ import os
 import filecmp
 
 from quatradis.embl.expand_genes import EMBLExpandGenes
-
-# from tests.py.embl import DATA_DIR
-
-# data_dir = os.path.join(DATA_DIR, 'expandgenes')
 from quatradis.embl.prepare import PrepareEMBLFile
+from quatradis.util.config_defaults import DYNAMIC_WINDOW_PARAMS
+from tests.py.embl import DATA_DIR
 
-data_dir = os.path.join('data', 'embl', 'expandgenes')
+data_dir = os.path.join(DATA_DIR, 'expandgenes')
 
 class TestEMBLExpandGenes(unittest.TestCase):
     
-	def test_embl_expand_genes(self):
-		pass
+	#expand genes using dynamic window
+	def test_embl_expand_genes_dw(self):
+		dynamic_window_params= {key: value[2] for key, value in DYNAMIC_WINDOW_PARAMS.items()}
+		dynamic_window_params.pop("dynamic_window")
+		output_file = os.path.join(data_dir, 'actual_one_gene')
+		plotfiles= [os.path.join(data_dir, 'valid'),os.path.join(data_dir, 'valid_ctrl')]
+		pef= PrepareEMBLFile(plotfiles, 1, 4, 2, 15, os.path.join(data_dir, 'one_gene'),True,dynamic_window_params)
+		plot_parser_objs = pef.plot_parser()
+		eg = EMBLExpandGenes(os.path.join(data_dir, 'one_gene') , 15,True,dynamic_window_params)
+		eg.construct_file(output_file, plot_parser_objs)
+		self.assertTrue(os.path.exists(output_file))
+		self.assertTrue(filecmp.cmp(os.path.join(data_dir, 'expected_one_gene_dw'), output_file))
+		os.remove(output_file)	
 
-	# def test_embl_expand_genes(self):
-	# 	e = EMBLExpandGenes(os.path.join(data_dir, 'one_gene') , 15)
-	# 	# Check for input of test cases
-	# 	pef = PrepareEMBLFile(
-    #     args.plotfile,
-    #     args.minimum_threshold,
-    #     args.window_size,
-    #     args.window_interval,
-    #     args.prime_feature_size,
-    #     args.emblfile,
-    #     args.dynamic_window
-    # 	)
-	# 	pef.plot_parser_objs = pef.plot_parser()
-		
-	# 	output_file = os.path.join(data_dir, 'actual_one_gene')
-	# 	e.construct_file(output_file,pef.plot_parser_objs)
-	# 	self.assertTrue(os.path.exists(output_file))
-	# 	self.assertTrue(filecmp.cmp(os.path.join(data_dir, 'expected_one_gene'), output_file))
-		
-	# 	os.remove(output_file)	
+	#expand genes without dynamic window
+	def test_embl_expand_genes(self):
+		dynamic_window_params= {key: None for key, value in DYNAMIC_WINDOW_PARAMS.items()}
+		dynamic_window_params.pop("dynamic_window")
+		output_file = os.path.join(data_dir, 'actual_one_gene')
+		plotfiles= [os.path.join(data_dir, 'valid'),os.path.join(data_dir, 'valid_ctrl')]
+		pef= PrepareEMBLFile(plotfiles, 1, 4, 2, 15, os.path.join(data_dir, 'one_gene'),True,dynamic_window_params)
+		plot_parser_objs = pef.plot_parser()
+		e = EMBLExpandGenes(os.path.join(data_dir, 'one_gene') , 15,False,dynamic_window_params)
+		e.construct_file(output_file, plot_parser_objs)
+		self.assertTrue(os.path.exists(output_file))
+		self.assertTrue(filecmp.cmp(os.path.join(data_dir, 'expected_one_gene'), output_file))
+		os.remove(output_file)		
 		

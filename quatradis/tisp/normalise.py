@@ -27,7 +27,7 @@ class NormalisePlots:
             pg = PlotFromValuesGenerator(plot_objs[p].forward, plot_objs[p].reverse, output_filename)
             pg.construct_file()
             output_files.append(output_filename)
-        print("output_files: ",output_files )
+        # print("output_files: ",output_files )
         return output_files, max_plot_reads
 
     def decreased_insertion_reporting(self, max_plot_reads=0):
@@ -84,7 +84,7 @@ class NormalisePlots:
 
     def plot_total_reads(self, plot_objs):
         reads = [plot_objs[p].total_reads for p in plot_objs]
-        print("plot_total_reads",reads)
+        # print("plot_total_reads",reads)
         return reads
 
     def max_reads(self, plot_objs):

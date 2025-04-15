@@ -10,13 +10,14 @@ from quatradis.embl.expand_genes import EMBLExpandGenes
 class PrepareEMBLFile:
     '''Take in the input files, parse them to create new files.'''
     # Modification 4
-    def __init__(self, plotfile, minimum_threshold, window_size, window_interval, emblfile,dynamic_window=False,**kwargs):
+    def __init__(self, plotfile, minimum_threshold, window_size, window_interval,prime_feature_size, emblfile,dynamic_window,kwargs):
         #First two would be condition files and last two would be control files.
         self.plotfiles = plotfile
         print("Plot Files for EMBL Creation",self.plotfiles)
         self.minimum_threshold = minimum_threshold
         self.window_size = window_size
         self.window_interval = window_interval
+        self.prime_feature_size=prime_feature_size
         # Optional: Store kwargs as a dictionary for further reference
         self.dynamic_params = kwargs 
         self.emblfile = emblfile
@@ -63,7 +64,7 @@ class PrepareEMBLFile:
         if not embl_filename:
             fd, embl_filename = mkstemp()
         # Modification 5
-        eg = EMBLExpandGenes(self.emblfile,self.dynamic_window,**self.dynamic_params)
+        eg = EMBLExpandGenes(self.emblfile,self.prime_feature_size,self.dynamic_window,self.dynamic_params)
         eg.construct_file(embl_filename, self.plot_parser_objs)
         return embl_filename
 

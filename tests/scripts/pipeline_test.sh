@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Exit immediately on error
-set -e
+set -xe
 
 # This script assumes it is run from project root dir
 PIPELINE_DATA_DIR=tests/data/pipeline/input
@@ -19,7 +19,15 @@ echo -n "Checking 'tradis pipeline create_plots' ... "
 rm -f $MAPPER_DATA_DIR/smallref.fa.* && rm -r temp_test .snakemake
 echo "ok"
 
-echo -n "Checking 'tradis pipeline compare' ... "
-./tradis pipeline compare --output_dir temp_test --annotations $PIPELINE_DATA_DIR/annotation.embl --condition_files $PIPELINE_DATA_DIR/small_case.insert_site_plot.gz $PIPELINE_DATA_DIR/small_case_2.insert_site_plot.gz --control_files $PIPELINE_DATA_DIR/small_control.insert_site_plot.gz $PIPELINE_DATA_DIR/small_control_high_insertions.insert_site_plot.gz --dynamic_window > /dev/null 2>&1
+echo -n "Checking tradis pipeline compare new-algo ... "
+./tradis pipeline compare --output_dir temp_test --annotations $PIPELINE_DATA_DIR/annotation.embl --condition_files $PIPELINE_DATA_DIR/small_case.insert_site_plot.gz $PIPELINE_DATA_DIR/small_case_2.insert_site_plot.gz --control_files $PIPELINE_DATA_DIR/small_control.insert_site_plot.gz $PIPELINE_DATA_DIR/small_control_high_insertions.insert_site_plot.gz --input_thresholds_config $PIPELINE_DATA_DIR/tradis_input_config.yaml > /dev/null 2>&1
+echo "ran pipeline compare"
 rm -r temp_test .snakemake
 echo "ok"
+
+echo -n "Checking 'tradis pipeline compare old-algo' ... "
+./tradis pipeline compare --output_dir temp_test --annotations $PIPELINE_DATA_DIR/annotation.embl --condition_files $PIPELINE_DATA_DIR/small_case.insert_site_plot.gz $PIPELINE_DATA_DIR/small_case_2.insert_site_plot.gz --control_files $PIPELINE_DATA_DIR/small_control.insert_site_plot.gz $PIPELINE_DATA_DIR/small_control_high_insertions.insert_site_plot.gz --disable_new_algorithm > /dev/null 2>&1
+rm -r temp_test .snakemake
+echo "ok"
+
+echo -n "Pipeline testing successfully completed."

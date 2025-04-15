@@ -10,30 +10,46 @@ import json
 
 
 class GeneAnnotator:
-    def __init__(self, annotation_file,plotfiles_all,forward_count_condition,reverse_count_condition,forward_count_control,reverse_count_control,combined_compare_csv,forward_compare_csv,reverse_compare_csv,**kwargs):
+    def __init__(self,old_algorithm, annotation_file,blocks,plotfiles_all=None,forward_count_condition=None,reverse_count_condition=None,forward_count_control=None,reverse_count_control=None,combined_compare_csv=None,forward_compare_csv=None,reverse_compare_csv=None,**kwargs):
+        
         self.annotation_file = annotation_file
-        self.condition_files, self.control_files = self.get_condition_control_separately(plotfiles_all)
-        self.forward_count_df= self.read_combine_count_files(forward_count_condition)
-        self.reverse_count_df=self.read_combine_count_files(reverse_count_condition)
-        self.forward_count_control_df= self.read_combine_count_files(forward_count_control)
-        self.reverse_count_control_df=self.read_combine_count_files(reverse_count_control)
-        self.combined_compare_csv= combined_compare_csv
-        self.forward_compare_csv= forward_compare_csv
-        self.reverse_compare_csv= reverse_compare_csv
         self.embl_reader = EMBLReader(self.annotation_file)
-        self.features = self.embl_reader.genes_to_features
-        self.merged_forward_reverse_compare_csv=None
-        self.result_df=None
-        self.blue_red_logfc_diff_threshold = kwargs.get("blue_red_logfc_diff_threshold", None)
-        self.distance_threshold = kwargs.get("distance_threshold", None)
-        self.insertion_count_max_threshold = kwargs.get("insertion_count_max_threshold", None)
-        self.insertion_count_sum_threshold = kwargs.get("insertion_count_sum_threshold", None)*len(self.condition_files)
-        self.insertion_signal_similarity_avg_threshold = kwargs.get("insertion_signal_similarity_avg_threshold", None)
-        self.log_fc_threshold = kwargs.get("log_fc_threshold", None)
-        self.overlap_threshold = kwargs.get("overlap_threshold", None)
-        self.q_val_threshold = kwargs.get("q_val",None)
-        self.inactivation_fraction_threshold = kwargs.get("inactivation_fraction_threshold",None)
+        if old_algorithm:
+            self.blocks = self.sort_blocks_by_start_coord(blocks)
+            self.knockout_proportion_start = 0.5
+            self.increased_expression_proportion_end = 0.3
+            self.features = self.embl_reader.features
+        else:
+            self.condition_files, self.control_files = self.get_condition_control_separately(plotfiles_all)
+            self.forward_count_df= self.read_combine_count_files(forward_count_condition)
+            self.reverse_count_df=self.read_combine_count_files(reverse_count_condition)
+            self.forward_count_control_df= self.read_combine_count_files(forward_count_control)
+            self.reverse_count_control_df=self.read_combine_count_files(reverse_count_control)
+            self.combined_compare_csv= combined_compare_csv
+            self.forward_compare_csv= forward_compare_csv
+            self.reverse_compare_csv= reverse_compare_csv
+            self.embl_reader = EMBLReader(self.annotation_file)
+            self.features = self.embl_reader.genes_to_features
+            self.merged_forward_reverse_compare_csv=None
+            self.result_df=None
+            self.blue_red_logfc_diff_threshold = kwargs.get("blue_red_logfc_diff_threshold", None)
+            self.distance_threshold = kwargs.get("distance_threshold", None)
+            self.insertion_count_max_threshold = kwargs.get("insertion_count_max_threshold", None)
+            self.insertion_count_sum_threshold = kwargs.get("insertion_count_sum_threshold", None)*len(self.condition_files)
+            self.insertion_signal_similarity_avg_threshold = kwargs.get("insertion_signal_similarity_avg_threshold", None)
+            self.log_fc_threshold = kwargs.get("log_fc_threshold", None)
+            self.overlap_threshold = kwargs.get("overlap_threshold", None)
+            self.q_val_threshold = kwargs.get("q_val",None)
+            self.inactivation_fraction_threshold = kwargs.get("inactivation_fraction_threshold",None)
+            self.condition_plots= self.read_plot_files(self.condition_files)
+            self.control_plots=self.read_plot_files(self.control_files)
+
        
+    def read_plot_files(self, files):
+        parsed_plots_list=[]
+        for file in files:
+            parsed_plots_list.append(PlotParser(file))
+        return parsed_plots_list
 
     def get_condition_control_separately(self,plotfiles_all):
         condition_plot_files=[]
@@ -216,6 +232,7 @@ class GeneAnnotator:
 
         # Check if all averages are within X% of max_avg
         threshold = self.insertion_signal_similarity_avg_threshold* max_avg
+        # print("averages:",averages)
         return all(avg >= threshold for avg in averages)
 
 
@@ -247,10 +264,11 @@ class GeneAnnotator:
         - This function is used to assess insertion signal consistency before further categorization of gene activity.
         """
         ## Takes time - recode it.
-        condition_plots=[]
-        # if not hasattr(self, "condition_plots"):
-        for file in self.condition_files:
-            condition_plots.append(PlotParser(file))
+        # condition_plots=[]
+        # # if not hasattr(self, "condition_plots"):
+        # for file in self.condition_files:
+        #     condition_plots.append(PlotParser(file))
+        condition_plots= self.condition_plots
         
         mapping = {
         (1, "5prime"): "forward",
@@ -313,14 +331,16 @@ class GeneAnnotator:
                     prime5_overlaps= self.embl_reader.find_overlaps(five_prime_name)
                     if len(prime5_overlaps)>0:
                         for gene , overlap_pct in prime5_overlaps:
-                            if overlap_pct<self.overlap_threshold:
-                                if abs(logfc_same.item()-logfc_opp.item())<self.blue_red_logfc_diff_threshold:
-                                    if five_prime_name=="marA__5prime":
-                                        print("overlap_pct",overlap_pct)
-                                        print("logfc_same.item()-logfc_opp.item():",logfc_same.item()-logfc_opp.item())
-                                    self.result_df.loc[self.result_df['Gene'] == geneName, 'Category2'] = None
+                            
+                            # if overlap_pct<self.overlap_threshold:
+                            #     if abs(logfc_same.item()-logfc_opp.item())<self.blue_red_logfc_diff_threshold:
+                            #         if five_prime_name=="marA__5prime":
+                            #             print("overlap_pct",overlap_pct)
+                            #             print("logfc_same.item()-logfc_opp.item():",logfc_same.item()-logfc_opp.item())
+                            #         self.result_df.loc[self.result_df['Gene'] == geneName, 'Category2'] = None
 
-                            else:
+                            # else:
+                            if overlap_pct>self.overlap_threshold:
                                 gene_knockout= self.result_df[self.result_df["Gene"]==gene]["Category1"].values
                                 if abs(logfc_same.item()-logfc_opp.item()<self.blue_red_logfc_diff_threshold):
                                     new_value=f"upregulated due to knockout of gene {gene}"
@@ -341,8 +361,8 @@ class GeneAnnotator:
                                                 .apply(lambda x: new_value if pd.isna(x) else f"{x} | {new_value}")
                                             )
             else:
-                if five_prime_name=="marA__5prime":
-                    print(five_prime_name,"-",all_similar)
+                # if five_prime_name=="marA__5prime":
+                #     print(five_prime_name,"-",all_similar)
 
                 self.result_df.loc[self.result_df['Gene'] == geneName, 'Category2'] = None
         
@@ -356,10 +376,11 @@ class GeneAnnotator:
                     prime3_overlaps= self.embl_reader.find_overlaps(three_prime_name)
                     if len(prime3_overlaps)>0:
                         for gene , overlap_pct in prime3_overlaps:
-                            if overlap_pct<self.overlap_threshold:
-                                if abs(logfc_same.item()-logfc_opp.item()<self.blue_red_logfc_diff_threshold):
-                                    self.result_df.loc[self.result_df['Gene'] == geneName, 'Category3'] = None
-                            else:
+                            # if overlap_pct<self.overlap_threshold:
+                            #     if abs(logfc_same.item()-logfc_opp.item()<self.blue_red_logfc_diff_threshold):
+                            #         self.result_df.loc[self.result_df['Gene'] == geneName, 'Category3'] = None
+                            # else:
+                            if overlap_pct>self.overlap_threshold:
                                 gene_knockout= self.result_df[self.result_df["Gene"]==gene]["Category1"].values
                                 if abs(logfc_same.item()-logfc_opp.item())<self.blue_red_logfc_diff_threshold:
                                     new_value=f"downregulated due to knockout of gene {gene}"
@@ -478,12 +499,14 @@ class GeneAnnotator:
         control_plots=[]
         
 
-        for file in self.condition_files:
-            condition_plots.append(PlotParser(file))
+        # for file in self.condition_files:
+        #     condition_plots.append(PlotParser(file))
+        condition_plots= self.condition_plots
 
     
-        for file in self.control_files:
-            control_plots.append(PlotParser(file))
+        # for file in self.control_files:
+        #     control_plots.append(PlotParser(file))
+        control_plots= self.control_plots
 
         test_results={}
         for _, row in result_df.iterrows():
@@ -595,8 +618,8 @@ class GeneAnnotator:
         result_df['insertion_index_downregulated'] = insertion_index_downregulated
         result_df['insertion_count_max_upregulated'] = insertion_count_max_upregulated
         result_df['insertion_count_max_downregulated'] = insertion_count_max_downregulated
-        print("test_results")
-        print(test_results)
+        # print("test_results")
+        # print(test_results)
 
         # with open("insert_count_check_data.json", "w") as f:
         #     json.dump(test_results, f, indent=4)
@@ -624,7 +647,7 @@ class GeneAnnotator:
         
         return result_df.reset_index(drop=True)
     
-    def calculate_confidence_score(self, df):
+    def signal_strength_score(self, df):
         """
         Calculate confidence scores for genes based on their regulation status.
 
@@ -726,8 +749,8 @@ class GeneAnnotator:
         # Skip genes with "__3prime" or "__5prime"
         if not re.search(r"^(.+)__([35])prime$", gene_name):
             # Precompute plots only once if they don't change per row
-            if not hasattr(self, "condition_plots"):
-                self.condition_plots = [PlotParser(file) for file in self.condition_files]
+            # if not hasattr(self, "condition_plots"):
+            #     self.condition_plots = [PlotParser(file) for file in self.condition_files]
 
             # Retrieve gene features safely
             gene_features = self.features.get(gene_name)
@@ -740,7 +763,7 @@ class GeneAnnotator:
             # Determine category
             if logfc_gene > self.log_fc_threshold:
                 inactivation_fraction = self.get_inactivation_fraction(gene_features, gene, self.condition_plots)
-                gene_category = "unclassified" if inactivation_fraction <= self.inactivation_fraction_threshold else "knockout"
+                gene_category = "fractional knockout" if inactivation_fraction <= self.inactivation_fraction_threshold else "knockout"
             elif logfc_gene < -self.log_fc_threshold:
                 gene_category = "protection"
             else:
@@ -882,7 +905,7 @@ class GeneAnnotator:
             }
             self.result_df = pd.concat([self.result_df, pd.DataFrame([new_row])], ignore_index=True)
     
-    def annotate_genes(self):
+    def annotate_genes_new(self):
         """
             Annotates genes based on provided data and generates a DataFrame with categorized results.
 
@@ -914,32 +937,48 @@ class GeneAnnotator:
         time_qval_filter= time.time()
         # filter genes based on logfc significance (qval<5%) for combined compare insertions
         self.combined_compare_csv= self.read_and_filter_logfc_qval(self.combined_compare_csv)
-        print("Time to filter Qvals",time.time()-time_qval_filter)
-        # perform activation catgeorization
+        # print("Time to filter Qvals",time.time()-time_qval_filter)
+        # perform gene knockout, protection catgeorization
         time_category1_categorization= time.time()
-        self.result_df= self.combined_compare_csv.apply(self.categorize_knockout_protection, axis=1, result_type='expand')
-        self.result_df.columns = ['Gene', 'Category1','Category2','Category3','Start','End','Strand','LogFC(Gene)','LogFC(5_Prime)','LogFC(3_Prime)','Qval(Gene)','Qval(5_Prime)','Qval(3_Prime)','Log_CPM(Gene)','Log_CPM(5_Prime)','Log_CPM(3_Prime)','Confidence_Score_Upregulation','Confidence_Score_Downregulation']
+        print("Result_DF before knockout-protection",self.result_df)
+        print("combined_compare_csv", self.combined_compare_csv)
+        knockout_protection_result_list=[]
+        for idx, row in self.combined_compare_csv.iterrows():
+            result = self.categorize_knockout_protection(row)
+            knockout_protection_result_list.append(result)
+        # self.result_df= self.combined_compare_csv.apply(self.categorize_knockout_protection, axis=1, result_type='expand')
+      
+        print("Error Here")
+        self.result_df = pd.DataFrame(knockout_protection_result_list, columns=['Gene', 'Category1','Category2','Category3','Start','End','Strand','LogFC(Gene)','LogFC(5_Prime)','LogFC(3_Prime)','Qval(Gene)','Qval(5_Prime)','Qval(3_Prime)','Log_CPM(Gene)','Log_CPM(5_Prime)','Log_CPM(3_Prime)','confidence_score_upregulated','confidence_score_downregulated'])
+        print("Result_DF after knockout-protection",self.result_df.head())
+        # self.result_df.columns = ['Gene', 'Category1','Category2','Category3','Start','End','Strand','LogFC(Gene)','LogFC(5_Prime)','LogFC(3_Prime)','Qval(Gene)','Qval(5_Prime)','Qval(3_Prime)','Log_CPM(Gene)','Log_CPM(5_Prime)','Log_CPM(3_Prime)','confidence_score_upregulated','confidence_score_downregulated']
         self.result_df = self.result_df.dropna(how="all")
-        self.result_df.to_csv("GeneReport_Post_activation_categorization.csv",index=False)
-        
-        print("Time to category1 categorization new",time.time()-time_category1_categorization)
+        self.result_df.to_csv("GeneReport_Post_categorize_knockout_protection.csv",index=False)
+        # print("Time to category1 categorization new",time.time()-time_category1_categorization)
         misc1_time=time.time()
-        # remove genes that are uncategorized
-        # self.result_df = self.result_df.dropna(how="all")
+
+
         # filter genes based on logfc significance (qval<5%) for forward & reverse compare insertions
         self.forward_compare_csv= self.read_and_filter_logfc_qval(self.forward_compare_csv,"prime_ends")
         self.reverse_compare_csv= self.read_and_filter_logfc_qval(self.reverse_compare_csv,"prime_ends")
         self.merged_forward_reverse_compare_csv = pd.merge(self.forward_compare_csv, self.reverse_compare_csv, on='gene_name', how='outer', suffixes=('_forward', '_reverse'))
-        print("Miscellanous activity1 filter forward-reverse, merge etc",time.time()-misc1_time)
+        # print("Miscellanous activity1 filter forward-reverse, merge etc",time.time()-misc1_time)
         get_unique_gene_time= time.time()
         unique_gene_names = self.get_unique_genes_that_have_significant_3_5_prime_logfc()
-        print("Get unique list time",time.time()-get_unique_gene_time)
+        # print("Get unique list time",time.time()-get_unique_gene_time)
         up_down_categorization_time= time.time()
         for gene_name in unique_gene_names:
             #check upregulation and downregualtion of a gene based on 3,5 prime insertions
             self.prime_end_expression_categorization(gene_name)
-        self.result_df.to_csv("GeneReport_Post_modified_regulation_categorization.csv",index=False)
-        print("Time to up-downregulation categorization 1",time.time()-up_down_categorization_time)
+        self.result_df.to_csv("GeneReport_Post_prime_end_expression_categorization.csv",index=False)
+        # print("Time to up-downregulation categorization 1",time.time()-up_down_categorization_time)
+
+
+        time_ins_count_check=time.time()
+        self.result_df= self.insertion_threshold_check(self.result_df)
+        # print("Time to Insertion count filtering",time.time()-time_ins_count_check)
+        self.result_df.to_csv("GeneReport_Post_insertion_threshold_check.csv",index=False)
+
         up_down_regulation_gene_names= self.get_genes_with_up_or_down_regulation()
         self.result_df["Category4"]=None
         cat_exp_time=time.time()
@@ -947,21 +986,95 @@ class GeneAnnotator:
             #check acivity on or because of ajacent gene for upregulated or downregulate gene 
             self.categorize_activitation_explanation(gene)
         self.result_df.to_csv("GeneReport_Post_categorize_activitation_explanation.csv",index=False)
-        print("Time to categorization explanation",time.time()-cat_exp_time)
+        # print("Time to categorization explanation",time.time()-cat_exp_time)
         # Replace NaN, None, and blanks
         self.result_df.replace(r'^\s*$', np.nan, regex=True, inplace=True)  # Replace blanks with NaN
-        time_ins_count_check=time.time()
-        final_result_df= self.insertion_threshold_check(self.result_df)
-        final_result_df.to_csv("GeneReport_Post_insertion_threshold_check.csv",index=False)
-        print("Insertion count filtering time",time.time()-time_ins_count_check)
+        
+        # final_result_df= self.insertion_threshold_check(self.result_df)
+        # final_result_df.to_csv("GeneReport_Post_insertion_threshold_check.csv",index=False)
+        
         cscore_time=time.time()
-        final_result_df= self.calculate_confidence_score(final_result_df)
-        print("Confidence score check",time.time()-cscore_time)
+        self.result_df= self.signal_strength_score(self.result_df)
+        # print("Confidence score check",time.time()-cscore_time)
+        self.result_df.to_csv("GeneReport_Post_signal_strength_score.csv",index=False)
         # Drop rows where Category1, Category2, Category3, and Category4 are all NaN
         # final_result_df.dropna(subset=['Category1', 'Category2', 'Category3', 'Category4'], how='all', inplace=True)
-        final_result_df.fillna("None", inplace=True)
-        return final_result_df
+        self.result_df.fillna("None", inplace=True)
+        cols = ['Category1', 'Category2', 'Category3', 'Category4']
+        self.result_df = self.result_df.loc[~self.result_df[cols].apply(
+            lambda row: all(
+                (x is None) or 
+                (pd.isna(x)) or 
+                (str(x).strip().lower() == 'none') 
+                for x in row
+            ),
+            axis=1
+        ),:]
+        print("self.result_df",self.result_df)
+
+        return self.result_df[['Gene', 'Category1','Category2','Category3','Category4','Start','End','Strand',
+                            'LogFC(Gene)','LogFC(5_Prime)','LogFC(3_Prime)',
+                            'Qval(Gene)','Qval(5_Prime)','Qval(3_Prime)',
+                            'Log_CPM(Gene)','Log_CPM(5_Prime)','Log_CPM(3_Prime)',
+                            'confidence_score_upregulated','confidence_score_downregulated']]
     
+
+    def annotate_genes(self):
+        genes = []
+        for gene_number, f in enumerate(self.features):
+            overlapping_blocks = self.blocks_overlapping_feature(f)
+
+            if len(overlapping_blocks) == 0:
+                # no hits to any blocks so move to next feature
+                continue
+
+            g = Gene(f, overlapping_blocks)
+
+            # only consider block at a time
+            for b in overlapping_blocks:
+                g.upstream.append(self.find_upstream_gene(b, gene_number))
+                if self.is_feature_contained_within_block(b, f):
+                    g.categories.append('knockout')
+                elif self.is_block_near_end_of_feature(b, f):
+                    if b.max_logfc > 0.0:
+                        g.categories.append('increased_mutants_at_end_of_gene')
+                    else:
+                        g.categories.append('decreased_mutants_at_end_of_gene')
+                elif self.is_block_near_start_of_feature(b, f):
+                    if b.max_logfc > 0.0:
+                        g.categories.append('increased_mutants_at_start_of_gene')
+                    else:
+                        g.categories.append('decreased_mutants_at_start_of_gene')
+
+            if len(g.categories) == 0:
+                p = self.proportion_blocks_overlap_with_gene(f, overlapping_blocks)
+                if p > 0.9:
+                    g.categories.append('knockout')
+                elif p > 0.8:
+                    g.categories.append('knockout')
+                elif p > 0.7:
+                    g.categories.append('knockout')
+                elif p > 0.6:
+                    g.categories.append('knockout')
+                elif p > 0.5:
+                    g.categories.append('over_50_perc_inactivation')
+
+            if len(g.categories) == 0:
+                g.categories.append('unclassified')
+
+            g.max_logfc_from_category()
+            genes.append(g)
+
+        # intergenic test
+        intergenic_blocks = [block for block in self.blocks if block.num_genes == 0]
+        for block in intergenic_blocks:
+            block.upstream = self.find_nearest_upstream_gene(block)
+            block.intergenic = True
+
+        reannotate_with_5_3_prime = self.reannotate_5_3_prime(genes)
+
+        return reannotate_with_5_3_prime
+
     def feature_to_gene_name(self, feature):
         gene_name_val = str(feature.location.start) + "_" + str(feature.location.end)
         if "gene" in feature.qualifiers:
@@ -978,6 +1091,13 @@ class GeneAnnotator:
                 if f.location.end < block.start and f.location.strand == -1:
                     return self.feature_to_gene_name(f)
         return "NA"
+    
+    def feature_to_gene_name(self, feature):
+        gene_name_val = str(feature.location.start) + "_" + str(feature.location.end)
+        if "gene" in feature.qualifiers:
+            gene_name_val = feature.qualifiers["gene"][0]
+        return gene_name_val
+
 
     def find_upstream_gene(self, block, gene_number):
         if block.direction == 'reverse':
@@ -1000,7 +1120,7 @@ class GeneAnnotator:
         gene_length = gene.location.end - gene.location.start
         return base_coverage / gene_length
 
-    def blocks_overlapping_feature(self, feature,gene_name=None):
+    def blocks_overlapping_feature(self, feature):
         overlapping_blocks = []
 
         for block in self.blocks:
@@ -1035,4 +1155,80 @@ class GeneAnnotator:
         if block.end < feature.location.end and block.end > feature.location.start and block.start - 1 < feature.location.start:
             return True
         return False
+    
+    def is_block_near_start_of_feature(self, block, feature):
+        # forward
+        if feature.location.strand == 1 and block.direction in ['forward', 'nodirection']:
+            expression_end = feature.location.start + int(self.increased_expression_proportion_end * len(feature))
+            if block.end <= expression_end and block.end > feature.location.start:
+                return True
+        # reverse
+        if feature.location.strand == -1 and block.direction in ['reverse', 'nodirection']:
+            expression_end = feature.location.start + int(self.increased_expression_proportion_end * len(feature))
+            if block.end <= expression_end and block.end > feature.location.start:
+                return True
+
+        return False
+    
+    def is_block_near_end_of_feature(self, block, feature):
+        # forward
+        if feature.location.strand == 1 and block.direction in ['reverse', 'nodirection']:
+            knock_out_start = feature.location.start + int(self.knockout_proportion_start * len(feature))
+            if block.start - 1 >= knock_out_start and block.start - 1 < feature.location.end:
+                return True
+            
+    def reannotate_5_3_prime(self, genes):
+        name_to_genes = {g.gene_name: g for g in genes}
+
+        filtered_names_to_genes = {}
+
+        for name, gene in name_to_genes.items():
+            directions = list(set([b.direction for b in gene.blocks]))
+
+            if 'nodirection' in directions:
+                continue
+            # 5 prime
+            res = re.search("^(.+)__([35])prime$", name)
+            if res:
+                found_gene_name = res.group(1)
+                prime_end = res.group(2)
+                if found_gene_name not in name_to_genes:
+                    filtered_names_to_genes[found_gene_name] = Gene(self.embl_reader.genes_to_features[found_gene_name],
+                                                                    [])
+                    filtered_names_to_genes[found_gene_name].blocks = gene.blocks
+
+                    regulation_category = self.regulation(filtered_names_to_genes[found_gene_name].feature.location.strand,
+                                                          prime_end, directions)
+                    if regulation_category:
+                        filtered_names_to_genes[found_gene_name].categories.append(regulation_category)
+                    else:
+                        del filtered_names_to_genes[found_gene_name]
+
+                else:
+                    filtered_names_to_genes[found_gene_name] = name_to_genes[found_gene_name]
+                    regulation_category = self.regulation(filtered_names_to_genes[found_gene_name].feature.location.strand,
+                                                          prime_end, directions)
+                    if regulation_category:
+                        filtered_names_to_genes[found_gene_name].categories.append(regulation_category)
+
+        # carry over non prime genes
+        for name, gene in name_to_genes.items():
+            res = re.search("^(.+)__[35]prime$", name)
+            if not res:
+                if name not in filtered_names_to_genes:
+                    filtered_names_to_genes[name] = gene
+
+        return [g for g in filtered_names_to_genes.values()]
+    
+    def regulation(self, strand, prime, directions):
+        if prime == '5' and strand == 1 and 'forward' in directions:
+            return 'upregulated'
+        elif prime == '5' and strand == -1 and 'reverse' in directions:
+            return 'upregulated'
+        elif prime == '3' and strand == 1 and 'reverse' in directions:
+            return 'downregulated'
+        elif prime == '3' and strand == -1 and 'forward' in directions:
+            return 'downregulated'
+        else:
+            return None
 

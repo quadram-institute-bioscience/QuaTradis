@@ -11,3 +11,5 @@ echo "ok"
 echo -n "Checking 'tradis_essentiality.R script' help message ... "
 ./quatradis/essentiality/tradis_essentiality.R > /dev/null 2>&1
 echo "ok"
+
+echo -n "R scripts testing successfully completed."

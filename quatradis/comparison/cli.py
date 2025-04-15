@@ -7,7 +7,7 @@ from quatradis.comparison.comparison import (
     run_comparisons,
     insertion_site_comparison,
 )
-from quatradis.comparison.gene_stats import gene_statistics
+from quatradis.comparison.gene_stats import gene_statistics_new, gene_statistics_old
 from quatradis.comparison.plot_logfc import PlotLogOptions
 from quatradis.comparison.split import split_plot as sp
 from quatradis.comparison.essentiality import essentiality as ess
@@ -16,6 +16,8 @@ from quatradis.comparison.essentiality_analysis import (
     essentiality_analysis as ess_an,
     EssentialityInput,
 )
+from quatradis.util.config_defaults import DYNAMIC_WINDOW_PARAMS, GENE_REPORT_PARAMS , DYNAMIC_WINDOW_HELP, GENE_REPORT_HELP
+from quatradis.util.ui import generate_gene_report_ui
 
 
 def add_subparser(subparsers):
@@ -53,7 +55,7 @@ def add_subparser(subparsers):
         compare_subparsers,
         gene_report,
         add_genereport_options,
-        "Generate gene report from comparison analysis data",
+        "Generates gene report from comparison analysis data.",
         usage="tradis compare gene_report [options] <comparison_dir> <EMBL_file>",
     )
     create_parser(
@@ -88,6 +90,53 @@ def add_subparser(subparsers):
         "Compares essentiality across condition and control samples",
         usage="tradis compare essentiality_analysis [options] --controls <control_gene_files> --conditions <condition_gene_files> --ess_controls <control_essential_gene_files> --ess_conditions <condition_essential_gene_files>",
     )
+    create_parser(
+        "gene_report_ui",
+        compare_subparsers,
+        gene_report_ui,
+        gene_report_ui_options,
+        "Compares essentiality across condition and control samples, combines with gene report and gives a consolidated report for visualization onto UI.",
+        usage="tradis compare gene_report_ui [options] --combined_count_tsv <combined_count_tsv for condition replicate> --forward_count_tsv <forward_count_tsv for condition replicate> --reverse_count_tsv <reverse_count_tsv for condition replicate> --combined_compare <combined_compare> --forward_compare <forward_compare> --reverse_compare <reverse_compare> --gene_report <gene_report>",
+    )
+def gene_report_ui_options(parser):
+    parser.add_argument("--condition_combined_count", help="Combined count tsv of condition replicate.", type=str)
+    parser.add_argument("--condition_forward_count", help="Forward count tsv of condition replicate.", type=str)
+    parser.add_argument("--condition_reverse_count", help="Reverse count tsv of condition replicate.", type=str)
+    parser.add_argument("--condition_combined_changepts_json", help="Changepoint json of condition replicate.", type=str)
+    parser.add_argument("--combined_compare_csv", help="Combined compare csv in comparison folder.", type=str)
+    parser.add_argument("--forward_compare_csv", help="Forward compare csv in comparison folder.", type=str)
+    parser.add_argument("--reverse_compare_csv", help="Reverse compare csv in comparison folder.", type=str)
+    parser.add_argument("--gene_report", help="Gene report for categorization (output of gene_stats rule).", type=str)
+    parser.add_argument("--controls_combined_count_all", help="Combined count tsvs for all control replicates(Only first one will be utilized)", type=str,nargs="+")
+    parser.add_argument("--controls_combined_changepts_json_all", help="Changepoint json for all one control replicates(Only first one will be utilized).", type=str,nargs="+")
+    parser.add_argument("--output", "-o", help="Output file", type=str, required=True)
+
+def gene_report_ui(args):
+    # print("Arguments passed to generate_gene_report_ui:")
+    # print(f"condition_combined_count: {args.condition_combined_count}")
+    # print(f"condition_forward_count: {args.condition_forward_count}")
+    # print(f"condition_reverse_count: {args.condition_reverse_count}")
+    # print(f"condition_combined_changepts_json: {args.condition_combined_changepts_json}")
+    # print(f"combined_compare_csv: {args.combined_compare_csv}")
+    # print(f"forward_compare_csv: {args.forward_compare_csv}")
+    # print(f"reverse_compare_csv: {args.reverse_compare_csv}")
+    # print(f"gene_report: {args.gene_report}")
+    # print(f"controls_combined_count_all: {args.controls_combined_count_all}")
+    # print(f"controls_combined_changepts_json_all: {args.controls_combined_changepts_json_all}")
+    # print(f"output: {args.output}")
+
+    generate_gene_report_ui(condition_combined_count_tsv=args.condition_combined_count,
+                            condition_forward_count_tsv=args.condition_forward_count,
+                            condition_reverse_count_tsv=args.condition_reverse_count,
+                            condition_combined_changepts_json=args.condition_combined_changepts_json,
+                            combined_compare_csv=args.combined_compare_csv,
+                            forward_compare_csv=args.forward_compare_csv,
+                            reverse_compare_csv=args.reverse_compare_csv,
+                            gene_report=args.gene_report,
+                            control_combined_count_tsv=args.controls_combined_count_all,
+                            control_combined_changepts_json=args.controls_combined_changepts_json_all,
+                            output=args.output)
+
 
 
 def add_insertion_site_comparison_options(parser):
@@ -262,13 +311,24 @@ def figures(args):
 
 
 def add_genereport_options(parser):
-    print("Here Inside add_genereport_options") 
+    # Old Algo Params
+    parser.add_argument("--combined", help="Combined plotfile", type=str)
+    parser.add_argument("--forward", help="Forward plotfile", type=str)
+    parser.add_argument("--reverse", help="Reverse plotfile", type=str)
+    parser.add_argument("--scores", help="Combined scores", type=str)
+    parser.add_argument("--window_size", "-w", help="Window size", type=int, default=50)
     parser.add_argument(
         "--plotfiles_all",
         help="Normalized plot files for all conditions (original.plot.gz).",
         nargs='+',  # Accept one or more arguments as a list
         type=str,
     )
+
+    # New Algo Params
+    parser.add_argument("--disable_new_algorithm", "-disable_newalgo", 
+                    help="Disables new categorization and dynamic window for 3,5 prime end generation (default: False)", 
+                    action='store_true')
+    
     parser.add_argument(
         "--forward_count_condition",
         help="Insertion count tsv file for all conditions (forward.count.tsv).",
@@ -294,9 +354,9 @@ def add_genereport_options(parser):
         type=str,
     )
     parser.add_argument("--embl", help="Prepared EMBL file used for analysis", type=str)
-    parser.add_argument("--combined_compare", help="Combined compare csv with logfc, p and q values.", type=str)
-    parser.add_argument("--forward_compare", help="Forward compare csv with logfc, p and q values.", type=str)
-    parser.add_argument("--reverse_compare", help="Reverse compare csv with logfc, p and q values.", type=str)
+    parser.add_argument("--combined_compare", help="Combined compare csvs from comparison folder with logfc, p and q values.", type=str)
+    parser.add_argument("--forward_compare", help="Forward compare csv from comparison folder with logfc, p and q values.", type=str)
+    parser.add_argument("--reverse_compare", help="Reverse compare csv from comparison folder with logfc, p and q values.", type=str)
     parser.add_argument(
         "--output_dir", "-o", help="Output filename prefix", type=str, default="."
     )
@@ -306,24 +366,20 @@ def add_genereport_options(parser):
     parser.add_argument("--use_annotation", "-ua", help="Flag to use annotation file in place of prepared embl file (default: False)", action='store_true')
     
     # Add Gene_Report_Categorization_Params dynamically
-    gene_report_params = {
-        "blue_red_logfc_diff_threshold": ("--blue_red_logfc_diff_threshold", float, 0.4),
-        "distance_threshold": ("--distance_threshold", float, 0.6),
-        "insertion_count_max_threshold": ("--insertion_count_max_threshold", int, 30),
-        "insertion_count_sum_threshold": ("--insertion_count_sum_threshold", int, 75),
-        "insertion_signal_similarity_avg_threshold": ("--insertion_signal_similarity_avg_threshold", float, 0.5),
-        "log_fc_threshold": ("--log_fc_threshold", float, 2.0),
-        "overlap_threshold": ("--overlap_threshold", float, 0.6),
-        "q_val": ("--q_val", float, 0.05),
-        "inactivation_fraction_threshold": ("--inactivation_fraction_threshold", float, 0.2),
-    }
+    # for param, (arg_name, param_type, default_value) in GENE_REPORT_PARAMS.items():
+    #     parser.add_argument(
+    #         arg_name,
+    #         help=f"{param.replace('_', ' ').capitalize()} (default: {default_value})",
+    #         type=param_type
+    #     )
 
-    for param, (arg_name, param_type, default_value) in gene_report_params.items():
+    for param, (arg_name, param_type, default_value) in GENE_REPORT_PARAMS.items():
+        description = GENE_REPORT_HELP.get(param, param.replace('_', ' ').capitalize())
         parser.add_argument(
             arg_name,
-            help=f"{param.replace('_', ' ').capitalize()} (default: {default_value})",
             type=param_type,
             default=default_value,
+            help=f"{description} (default: {default_value})"
         )
 
 
@@ -353,48 +409,63 @@ def gene_report(args):
         args = parser.parse_args()
         gene_report(args)
     """
-    print("All Inputs to Gene Report")
-    print("args.plotfiles_all:", args.plotfiles_all)
-    print("args.forward_count_condition:", args.forward_count_condition)
-    print("args.reverse_count_condition:", args.reverse_count_condition)
-    print("args.forward_count_control:", args.forward_count_control)
-    print("args.reverse_count_control:", args.reverse_count_control)
-    print("args.combined_compare:", args.combined_compare)
-    print("args.forward_compare:", args.forward_compare)
-    print("args.reverse_compare:", args.reverse_compare)
-    print("args.embl:", args.embl)
-    print("args.output_dir:", args.output_dir)
-    print("args.annotations:", args.annotations)
-    print("args.use_annotation:", args.use_annotation)
+    
 
-    dynamic_params_keys = [
-        "blue_red_logfc_diff_threshold",
-        "distance_threshold",
-        "insertion_count_max_threshold",
-        "insertion_count_sum_threshold",
-        "insertion_signal_similarity_avg_threshold",
-        "log_fc_threshold",
-        "overlap_threshold",
-        "q_val",
-        "inactivation_fraction_threshold",
-    ]
+    if args.disable_new_algorithm:
+        gene_statistics_old(
+            args.disable_new_algorithm,
+            combined_plotfile=args.combined,
+            forward_plotfile=args.forward,
+            reverse_plotfile=args.reverse,
+            combined_scorefile=args.scores,
+            window_size=args.window_size,
+            embl_file=args.embl,
+            output_dir=args.output_dir,
+            annotation_file=args.annotations,
+        )
+    else:
 
-    gene_categorization_params_values = {key: getattr(args, key, None) for key in dynamic_params_keys}
-    print("Gene Report Categorization Parameters:", gene_categorization_params_values)
+        # print("All Inputs to New Gene Report")
+        # print("args.plotfiles_all:", args.plotfiles_all)
+        # print("args.forward_count_condition:", args.forward_count_condition)
+        # print("args.reverse_count_condition:", args.reverse_count_condition)
+        # print("args.forward_count_control:", args.forward_count_control)
+        # print("args.reverse_count_control:", args.reverse_count_control)
+        # print("args.combined_compare:", args.combined_compare)
+        # print("args.forward_compare:", args.forward_compare)
+        # print("args.reverse_compare:", args.reverse_compare)
+        # print("args.embl:", args.embl)
+        # print("args.output_dir:", args.output_dir)
+        # print("args.annotations:", args.annotations)
+        # print("args.use_annotation:", args.use_annotation)
 
-    gene_statistics(
-        plotfiles_all=args.plotfiles_all,
-        forward_count_condition=args.forward_count_condition,
-        reverse_count_condition=args.reverse_count_condition,
-        forward_count_control=args.forward_count_control,
-        reverse_count_control=args.reverse_count_control,
-        combined_compare_csv=args.combined_compare,
-        forward_compare_csv=args.forward_compare,
-        reverse_compare_csv=args.reverse_compare,
-        embl_file=args.embl,
-        output_dir=args.output_dir,
-        gene_categorization_params_values=gene_categorization_params_values,
-    )
+        gene_params_keys = [
+            "blue_red_logfc_diff_threshold",
+            "distance_threshold",
+            "insertion_count_max_threshold",
+            "insertion_count_sum_threshold",
+            "insertion_signal_similarity_avg_threshold",
+            "log_fc_threshold",
+            "overlap_threshold",
+            "q_val",
+            "inactivation_fraction_threshold",
+        ]
+        gene_categorization_params_values = {key: getattr(args, key) for key in gene_params_keys}
+        print("Gene Report Categorization Parameters:", gene_categorization_params_values)
+        gene_statistics_new(
+            args.disable_new_algorithm,
+            plotfiles_all=args.plotfiles_all,
+            forward_count_condition=args.forward_count_condition,
+            reverse_count_condition=args.reverse_count_condition,
+            forward_count_control=args.forward_count_control,
+            reverse_count_control=args.reverse_count_control,
+            combined_compare_csv=args.combined_compare,
+            forward_compare_csv=args.forward_compare,
+            reverse_compare_csv=args.reverse_compare,
+            embl_file=args.embl,
+            output_dir=args.output_dir,
+            gene_categorization_params_values=gene_categorization_params_values,
+        )
     
 
 
@@ -443,7 +514,7 @@ def essentiality(args):
 def prepare_embl_utils_options(parser):
     parser.add_argument(
         "--plotfile",
-        help="Transposon insertion site plot files to be used (accepts multiple paths)",
+        help="Normalized plot files of both condition and control replicates(original.plot.gz).",
         nargs='+',  # Accept one or more arguments as a list
         type=str,
     )
@@ -468,13 +539,13 @@ def prepare_embl_utils_options(parser):
         type=int,
         default=5,
     )
-    # parser.add_argument(
-    #     "--prime_feature_size",
-    #     "-z",
-    #     help="Feature size when adding 5/3 prime block when --use_annotation (default: 198)",
-    #     type=int,
-    #     default=400,
-    # )
+    parser.add_argument(
+        "--prime_feature_size",
+        "-z",
+        help="Feature size when adding 5/3 prime block when --use_annotation (default: 198)",
+        type=int,
+        default=198,
+    )
     parser.add_argument(
         "--window_interval",
         "-l",
@@ -486,38 +557,35 @@ def prepare_embl_utils_options(parser):
         "--window_size", "-w", help="Window size (default: 100)", type=int, default=100
     )
     # Modification 2
-    parser.add_argument("--dynamic_window", "-dw", help="Dynamic Window for 3,5 Prime_Features (default: True)", action='store_true')
+    parser.add_argument("--dynamic_window", "-dw", help="Flag to utilize dynamic window algorithm to generate 3,5 Prime_Features (default: True)", action='store_true')
 
-    # Add parameters dynamically based on the YAML config
-    dynamic_window_params = {
-    "drop_ratio_threshold": ("--drop_ratio_threshold", float, 0.5),
-    "gap_threshold": ("--gap_threshold", int, 200),
-    "initial_win": ("--initial_win", int, 400),
-    "initial_win_sum_thres": ("--initial_win_sum_thres", int, 200),
-    "max_window": ("--max_window", int, 2000),
-    "min_window": ("--min_window", int, 200),
-    "moving_average": ("--moving_average", int, 50),
-    "prime_feature_size": ("--prime_feature_size", int, 198),  # ✅ Newly added
-    }
-
-    for param, (arg_name, param_type, default_value) in dynamic_window_params.items():
-        parser.add_argument(
-            arg_name,
-            help=f"{param.replace('_', ' ').capitalize()} (default: {default_value})",
-            type=param_type,
-           default=default_value,
-        )
+    # for param, (arg_name, param_type, default_value) in DYNAMIC_WINDOW_PARAMS.items():
+    #     if param!="dynamic_window":
+    #         parser.add_argument(
+    #             arg_name,
+    #             help=f"{param.replace('_', ' ').capitalize()} (default: {default_value})",
+    #             type=param_type
+    #         )
+    for param, (arg_name, param_type, default_value) in DYNAMIC_WINDOW_PARAMS.items():
+        if param != "dynamic_window":
+            description = DYNAMIC_WINDOW_HELP.get(param, param.replace('_', ' ').capitalize())
+            parser.add_argument(
+                arg_name,
+                type=param_type,
+                default=default_value,
+                help=f"{description} (default: {default_value})"
+            )
 
 def prepare_embl(args):
-    print("All Inputs to PrepareEMBLFile")
-    print("args.plotfile:", args.plotfile)
-    print("args.minimum_threshold:", args.minimum_threshold)
-    print("args.window_size:", args.window_size)
-    print("args.window_interval:", args.window_interval)
-    print("args.prime_feature_size:", args.prime_feature_size)
-    print("args.emblfile:", args.emblfile)
-    print("args.dynamic_window:", args.dynamic_window)
-    print("args.output:", args.output)
+    # print("All Inputs to PrepareEMBLFile")
+    # print("args.plotfile:", args.plotfile)
+    # print("args.minimum_threshold:", args.minimum_threshold)
+    # print("args.window_size:", args.window_size)
+    # print("args.window_interval:", args.window_interval)
+    # print("args.prime_feature_size:", args.prime_feature_size)
+    # print("args.emblfile:", args.emblfile)
+    # print("args.dynamic_window:", args.dynamic_window)
+    # print("args.output:", args.output)
 
     dynamic_params_keys = [
         "drop_ratio_threshold",
@@ -527,11 +595,11 @@ def prepare_embl(args):
         "max_window",
         "min_window",
         "moving_average",
-        "prime_feature_size",
+        # "prime_feature_size",
     ]
 
     dynamic_params_values = {key: getattr(args, key, None) for key in dynamic_params_keys}
-    print("Dynamic Parameters:", dynamic_params_values)
+    # print("Dynamic Parameters:", dynamic_params_values)
 
     
     # Modification 3
@@ -540,9 +608,10 @@ def prepare_embl(args):
         args.minimum_threshold,
         args.window_size,
         args.window_interval,
+        args.prime_feature_size,
         args.emblfile,
         args.dynamic_window,
-        **dynamic_params_values
+        dynamic_params_values
     )
     pef.create_file(args.output)
 

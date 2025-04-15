@@ -7,6 +7,7 @@ from quatradis.util.parser import create_parser
 import quatradis.util.file_handle_helpers as fhh
 import yaml
 from quatradis.util.read_threshold_config import load_thresholds
+from quatradis.util.config_defaults import DYNAMIC_WINDOW_PARAMS, GENE_REPORT_PARAMS
 import warnings
 warnings.filterwarnings("ignore") 
 
@@ -206,7 +207,7 @@ def compare_options(parser):
         "-z",
         help="Feature size when adding 5/3 prime block when --use_annotation (default: 198)",
         type=int,
-        default=400,
+        default=198,
     )
     parser.add_argument(
         "--window_interval",
@@ -266,8 +267,10 @@ def compare_options(parser):
         type=str,
         help='If provided, pass this directory onto snakemake.  Assumes there is a file called "config.yaml" in that directory.',
     )
-    # Modification 1.0
-    # parser.add_argument("--dynamic_window", "-dw", help="Dynamic Window for 3,5 Prime_Features (default: True)", action='store_true')
+    #Modification 1.0
+    parser.add_argument("--disable_new_algorithm", "-disable_newalgo", 
+                    help="Disables new categorization and dynamic window for 3,5 prime end generation (default: False)", 
+                    action='store_true')
     parser.add_argument(
         "--input_thresholds_config",
         type=str,
@@ -276,70 +279,70 @@ def compare_options(parser):
 
 def compare_pipeline(args):
     """
-    Use snakemake to process multiple fastqs in parallel
+    Use Snakemake to process multiple FASTQ files in parallel.
     """
-    print("args.control_files",args.control_files)
-    print("args.condition_files",args.condition_files)
+    # print("args.control_files", args.control_files)
+    # print("args.condition_files", args.condition_files)
+
     if len(args.control_files) != len(args.condition_files):
         raise ValueError("Must have equal number of control and condition files")
 
     if len(args.control_files) <= 1:
-        raise ValueError(
-            "Must have 2 or more replicates of control and condition files"
-        )
+        raise ValueError("Must have 2 or more replicates of control and condition files")
 
-    fhh.ensure_output_dir_exists(args.output_dir)
-    tradis_input_data= load_thresholds(args.input_thresholds_config)
+    os.makedirs(args.output_dir, exist_ok=True)  # Ensures output directory exists
 
     snakemake_config = os.path.join(args.output_dir, "analysis_config.yaml")
     with open(snakemake_config, "w") as ofql:
         ofql.write(create_yaml_option("output_dir", args.output_dir))
         ofql.write("condition_files:\n")
         for x in args.condition_files:
-            ofql.write("- " + x + "\n")
+            ofql.write(f"- {x}\n")
         ofql.write("control_files:\n")
         for x in args.control_files:
-            ofql.write("- " + x + "\n")
-        ofql.write(
-            create_yaml_option("normalise", not args.disable_normalisation, bool=True)
-        )
+            ofql.write(f"- {x}\n")
+
+        # Writing individual configuration parameters
+        ofql.write(create_yaml_option("normalise", not args.disable_normalisation, bool=True))
         ofql.write(create_yaml_option("input_thresholds_config", args.input_thresholds_config))
-        # Modification 1.1
         ofql.write(create_yaml_option("annotations", args.annotations))
         ofql.write(create_yaml_option("minimum_threshold", args.minimum_threshold))
         ofql.write(create_yaml_option("prime_feature_size", args.prime_feature_size))
         ofql.write(create_yaml_option("window_interval", args.window_interval))
         ofql.write(create_yaml_option("window_size", args.window_size))
-        # ofql.write(create_yaml_option("dynamic_window", args.dynamic_window))
         ofql.write(create_yaml_option("minimum_block", args.minimum_block))
         ofql.write(create_yaml_option("minimum_logfc", args.minimum_logfc))
         ofql.write(create_yaml_option("minimum_logcpm", args.minimum_logcpm))
         ofql.write(create_yaml_option("p_value", args.pvalue))
         ofql.write(create_yaml_option("q_value", args.qvalue))
         ofql.write(create_yaml_option("span_gaps", args.span_gaps))
-        ofql.write(
-            create_yaml_option(
-                "minimum_proportion_insertions", args.minimum_proportion_insertions
-            )
-        )
-        yaml.dump(tradis_input_data, ofql, default_flow_style=False)
-        
+        ofql.write(create_yaml_option("minimum_proportion_insertions", args.minimum_proportion_insertions))
+        ofql.write(create_yaml_option("disable_new_algorithm", args.disable_new_algorithm, bool=True))
+
+        # print("args.disable_new_algorithm",args.disable_new_algorithm)
+        # print("args.input_thresholds_config",args.input_thresholds_config)
+        if not args.disable_new_algorithm:
+            if args.input_thresholds_config:
+                tradis_input_data = load_thresholds(args.input_thresholds_config)
+                yaml.dump(tradis_input_data, ofql, default_flow_style=False)
+            else:
+                dynamic_window_params= {key: value[2] for key, value in DYNAMIC_WINDOW_PARAMS.items()}
+                gene_report_params= {key: value[2] for key, value in GENE_REPORT_PARAMS.items()}
+                write_dict_as_yaml(ofql, "Dynamic_Window_3_5_Prime_Ends_Params", dynamic_window_params)
+                write_dict_as_yaml(ofql, "Gene_Report_Params", gene_report_params)
+        else:
+            dynamic_window_params= {"dynamic_window": False}
+            write_dict_as_yaml(ofql, "Dynamic_Window_3_5_Prime_Ends_Params", dynamic_window_params)
 
     pipeline = find_pipeline_file("compare.smk")
 
     start_snakemake(
         pipeline,
         snakemake_config,
-        cores=(
-            # For backward compatibility
-            args.cores
-            if args.cores > args.threads
-            else args.threads
-        ),
+        cores=max(args.cores, args.threads),  # Ensuring backward compatibility
         snakemake_profile=args.snakemake_profile,
         verbose=args.verbose,
     )
-
 
 def start_snakemake(
     snakefile, snakemake_config, cores=1, snakemake_profile=None, verbose=False
@@ -362,7 +365,7 @@ def start_snakemake(
         cmd_list.append("--verbose")
 
     cmd = " ".join(cmd_list)
-    print("Snakemake command:", cmd)
+    # print("Snakemake command:", cmd)
     if verbose:
         print("Snakemake command:", cmd)
 
@@ -407,3 +410,15 @@ def create_yaml_option(option, value, num=False, bool=False):
         opt += '"' + str(value) + '"'
     opt += "\n"
     return opt
+
+def write_dict_as_yaml(file, key, params):
+    """
+    Writes a nested dictionary to YAML with proper indentation.
+    """
+    file.write(f"{key}:\n")
+    for param, value in params.items():
+        if isinstance(value, bool):
+            file.write(f"  {param}: {'true' if value else 'false'}\n")
+        else:
+            file.write(f"  {param}: {value}\n")
+    file.write("\n")  # Add spacing between sections

@@ -55,14 +55,16 @@ fi
 rm $ESS_DATA_DIR/combined.count.tsv.*
 echo "ok"
 
-echo -n "Checking 'tradis compare prepare_embl' under comparison_test.sh ... "
+echo -n "Checking 'tradis compare prepare_embl with-dw' under comparison_test.sh ... "
 EMBL_DATA_DIR=$DATA_DIR/embl
 ./tradis compare prepare_embl --output valid_prepared.embl --minimum_threshold=1 --window_size=4 --window_interval=2 \
-  --plotfile $PIPELINE_DATA_DIR/small_case.insert_site_plot.gz $PIPELINE_DATA_DIR/small_case_2.insert_site_plot.gz $PIPELINE_DATA_DIR/small_control.insert_site_plot.gz $PIPELINE_DATA_DIR/small_control_high_insertions.insert_site_plot.gz --prime_feature_size=100 --emblfile=$EMBL_DATA_DIR/expandgenes/one_gene --dynamic_window
+  --plotfile $PIPELINE_DATA_DIR/small_case.insert_site_plot.gz $PIPELINE_DATA_DIR/small_case_2.insert_site_plot.gz $PIPELINE_DATA_DIR/small_control.insert_site_plot.gz $PIPELINE_DATA_DIR/small_control_high_insertions.insert_site_plot.gz --prime_feature_size=100 --emblfile=$EMBL_DATA_DIR/expandgenes/one_gene --dynamic_window --drop_ratio_threshold=0.5 --gap_threshold=200 --initial_win=400 --initial_win_sum_thres=200 --max_window=2000 --min_window=200 --moving_average=50
 echo "ok prepare embl dynamic window tested successfully"
+
 rm valid_prepared.embl
 ./tradis compare prepare_embl --output valid_prepared.embl --minimum_threshold=1 --window_size=4 --window_interval=2 \
   --plotfile $PIPELINE_DATA_DIR/small_case.insert_site_plot.gz $PIPELINE_DATA_DIR/small_case_2.insert_site_plot.gz $PIPELINE_DATA_DIR/small_control.insert_site_plot.gz $PIPELINE_DATA_DIR/small_control_high_insertions.insert_site_plot.gz --prime_feature_size=100 --emblfile=$EMBL_DATA_DIR/expandgenes/one_gene
 echo "ok prepare embl without dynamic_window tested successfully"
 rm valid_prepared.embl
 echo "ok-final"
+echo -n "Comparison scripts testing successfully completed."

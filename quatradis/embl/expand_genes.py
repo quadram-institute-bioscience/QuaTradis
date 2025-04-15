@@ -19,7 +19,7 @@ class FeatureProperties:
 
 
 class   EMBLExpandGenes:
-    def __init__(self, embl_file,dynamic_window=False,**kwargs):
+    def __init__(self, embl_file,prime_feature_size,dynamic_window,kwargs):
         # Modification 6
         self.embl_file = embl_file
         self.dynamic_window=dynamic_window
@@ -31,7 +31,10 @@ class   EMBLExpandGenes:
         self.max_window = kwargs.get("max_window", None)
         self.min_window = kwargs.get("min_window", None)
         self.moving_average = kwargs.get("moving_average", None)
-        self.feature_size = kwargs.get("prime_feature_size",None)
+        # if self.dynamic_window:
+        #     self.feature_size = kwargs.get("prime_feature_size",None)
+        # else:
+        self.feature_size=prime_feature_size
 
         self.er = EMBLReader(self.embl_file)
         self.features = self.er.features

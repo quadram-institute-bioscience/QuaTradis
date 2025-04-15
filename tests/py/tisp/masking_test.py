@@ -4,9 +4,8 @@ import filecmp
 
 from quatradis.tisp.masking import PlotMasking
 from tests.py.tisp import DATA_DIR
-
+ 
 data_dir = os.path.join(DATA_DIR, 'masking')
-
 
 class TestPlotMasking(unittest.TestCase):
 	

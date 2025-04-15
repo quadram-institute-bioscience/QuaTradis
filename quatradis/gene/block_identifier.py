@@ -125,17 +125,11 @@ class BlockIdentifier:
             else:
                 # its negative
                 masking_plot_combined[i] = peak_value_abs * -1
-        print("Genome Length",genome_length)
-        print("Mask plot len:",len(masking_plot_combined))
-        print("Mask plot Uniques:",numpy.unique(masking_plot_combined))
+
         return masking_plot_combined
 
     def block_generator(self):
         combined_plot = PlotParser(self.combined_mask_file)
-        print("combined_mask_file",self.combined_mask_file)
-        print("forward_mask_file",self.forward_mask_file)
-        print("reverse_mask_file",self.reverse_mask_file)
-        print("combined_score_file",self.combined_score_file)
         forward_masking_plot = PlotParser(self.forward_mask_file)
         reverse_masking_plot = PlotParser(self.reverse_mask_file)
         score_plot = ScoreParser(self.combined_score_file)
@@ -144,10 +138,9 @@ class BlockIdentifier:
                                                                 reverse_masking_plot)
         blocks = self.increased_insertions_blocks(masking_plot, score_plot) + self.decreased_insertions_blocks(
             masking_plot, score_plot)
-        print("Len of blocks list",len(blocks))
+
         '''Filter out blocks which are less than the window size'''
         filtered_blocks = [b for b in blocks if b.block_length >= self.window_size]
-        print("Total number of blocks > window size-",self.window_size,": ",len(filtered_blocks))
 
         for b in filtered_blocks:
             b.direction = self.direction_for_block(b, forward_masking_plot, reverse_masking_plot)

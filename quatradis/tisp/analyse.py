@@ -22,11 +22,11 @@ def get_cds_locations(embl_file):
 
 
 def get_insert_sites_from_plots(plot_files, joined_output):
-    print("get_insert_sites_from_plots- plot_files: ",plot_files)
+    # print("get_insert_sites_from_plots- plot_files: ",plot_files)
     insert_sites = []
     for f in plot_files:
         insert_sites.append(np.array(read_in_plot_file(f)))
-    print("get_insert_sites_from_plots- np_insert_sites: ",insert_sites)
+    # print("get_insert_sites_from_plots- np_insert_sites: ",insert_sites)
     np_insert_sites = np.array(insert_sites)
 
     if joined_output:

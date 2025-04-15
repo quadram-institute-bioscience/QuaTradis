@@ -40,3 +40,5 @@ echo -n "Checking 'tradis plot normalise' ... "
 ./tradis plot normalise --output_dir temp_test $DATA_DIR/normalise/fewinsertions $DATA_DIR/normalise/manyinsertions > /dev/null 2>&1
 rm -r temp_test
 echo "ok"
+
+echo -n "Plot scripts testing successfully completed."
