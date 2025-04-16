@@ -6,7 +6,7 @@ from quatradis.gene.gene import Gene
 from quatradis.embl.reader import EMBLReader
 from quatradis.tisp.parser import PlotParser
 import time
-import json
+import math
 
 
 class GeneAnnotator:
@@ -35,7 +35,6 @@ class GeneAnnotator:
             self.blue_red_logfc_diff_threshold = kwargs.get("blue_red_logfc_diff_threshold", None)
             self.distance_threshold = kwargs.get("distance_threshold", None)
             self.insertion_count_max_threshold = kwargs.get("insertion_count_max_threshold", None)
-            self.insertion_count_sum_threshold = kwargs.get("insertion_count_sum_threshold", None)*len(self.condition_files)
             self.insertion_signal_similarity_avg_threshold = kwargs.get("insertion_signal_similarity_avg_threshold", None)
             self.log_fc_threshold = kwargs.get("log_fc_threshold", None)
             self.overlap_threshold = kwargs.get("overlap_threshold", None)
@@ -43,7 +42,13 @@ class GeneAnnotator:
             self.inactivation_fraction_threshold = kwargs.get("inactivation_fraction_threshold",None)
             self.condition_plots= self.read_plot_files(self.condition_files)
             self.control_plots=self.read_plot_files(self.control_files)
-
+            total_read_condition_plots= [plot.total_reads for plot in self.condition_plots]
+            print("total_read_condition_plots",total_read_condition_plots)
+            average_total_condition_reads= sum(total_read_condition_plots)/len(total_read_condition_plots)
+            print("average_total_condition_reads",average_total_condition_reads)
+            reference_total_reads= 33346524.0
+            self.insertion_count_sum_threshold = math.ceil(kwargs.get("insertion_count_sum_threshold", None)*len(self.condition_files) * (average_total_condition_reads/reference_total_reads))
+            print("self.insertion_count_sum_threshold",self.insertion_count_sum_threshold)
        
     def read_plot_files(self, files):
         parsed_plots_list=[]

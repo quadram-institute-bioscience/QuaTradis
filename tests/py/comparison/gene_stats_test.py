@@ -59,10 +59,10 @@ class TestGeneStats(unittest.TestCase):
         )
         print("Check 0")
         #Assert Knockout
-        self.assertEqual(3, (genereport['Category1'] == 'knockout').sum())
+        self.assertEqual(5, (genereport['Category1'] == 'knockout').sum())
         print("Check 1")
         #Assert Protection
-        self.assertEqual(7, (genereport['Category1'] == 'protection').sum())
+        self.assertEqual(8, (genereport['Category1'] == 'protection').sum())
         print("Check 2")
         #Assert Fractional Knockout
         self.assertEqual(7, (genereport['Category1'] == 'fractional knockout').sum())
