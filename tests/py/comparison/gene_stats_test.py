@@ -21,6 +21,9 @@ class TestGeneStats(unittest.TestCase):
         plotfiles_all = cndtn_files + ctrl_files
 
         # Get absolute paths for all relevant files
+        combined_count_condition = [os.path.join(data_dir, 'forward_count_condition_tsv', f) 
+                                for f in os.listdir(os.path.join(data_dir, 'forward_count_condition_tsv'))]
+
         forward_count_condition = [os.path.join(data_dir, 'forward_count_condition_tsv', f) 
                                 for f in os.listdir(os.path.join(data_dir, 'forward_count_condition_tsv'))]
         
@@ -48,6 +51,7 @@ class TestGeneStats(unittest.TestCase):
             plotfiles_all=plotfiles_all,
             forward_count_condition=forward_count_condition,
             reverse_count_condition=reverse_count_condition,
+            combined_count_condition=combined_count_condition,
             forward_count_control=forward_count_control,
             reverse_count_control=reverse_count_control,
             combined_compare_csv=combined_compare,

@@ -106,7 +106,7 @@ def merge_insertion_index(condition1_countfiles,condition2_countfiles):
     reverse_ins_idx_file.to_csv("reverse_ins_idx_file.csv",index=False)
     return combined_ins_idx_file, forward_ins_idx_file, reverse_ins_idx_file
 
-def gene_statistics_new(old_algorithm,plotfiles_all,forward_count_condition,reverse_count_condition,forward_count_control,reverse_count_control,combined_compare_csv, forward_compare_csv, reverse_compare_csv, embl_file, output_dir="output",gene_categorization_params_values=None):
+def gene_statistics_new(old_algorithm,plotfiles_all,forward_count_condition,reverse_count_condition,combined_count_condition,forward_count_control,reverse_count_control,combined_compare_csv, forward_compare_csv, reverse_compare_csv, embl_file, output_dir="output",gene_categorization_params_values=None):
     
     """
     Generates a gene report by annotating genes based on input data and conditions.
@@ -150,7 +150,7 @@ def gene_statistics_new(old_algorithm,plotfiles_all,forward_count_condition,reve
     ensure_output_dir_exists(output_dir)
     ant_file = embl_file
     # print("Embl/Ant file being used",ant_file)
-    genes_report = GeneAnnotator(old_algorithm,ant_file,None,plotfiles_all,forward_count_condition,reverse_count_condition,forward_count_control,reverse_count_control,combined_compare_csv,forward_compare_csv,reverse_compare_csv,**gene_categorization_params_values).annotate_genes_new()
+    genes_report = GeneAnnotator(old_algorithm,ant_file,None,plotfiles_all,forward_count_condition,reverse_count_condition,combined_count_condition,forward_count_control,reverse_count_control,combined_compare_csv,forward_compare_csv,reverse_compare_csv,**gene_categorization_params_values).annotate_genes_new()
     write_gene_report_new(output_dir,genes_report)
     return genes_report
 

@@ -9,8 +9,12 @@ def read_tsv_csv(file,file_type=None):
     else:
         return pd.read_csv(file, sep='\t')
     
-
 def get_essentiality_changepoint(file_path, fallback=None):
+    if not os.path.exists(file_path):
+        return fallback
+
+    print(f"File found: {file_path} (exists)")
+
     with open(file_path, 'r') as f:
         file_content = f.read()
 
@@ -34,6 +38,31 @@ def get_essentiality_changepoint(file_path, fallback=None):
         return float(value)
     except (TypeError, ValueError):
         return fallback
+    
+# def get_essentiality_changepoint(file_path, fallback=None):
+#     with open(file_path, 'r') as f:
+#         file_content = f.read()
+
+#         if not file_content.strip():
+#             raise ValueError(f"JSON file at {file_path} is empty.")
+
+#         # Replace invalid JSON values
+#         file_content = re.sub(r':\s*([-+]?)Inf', r': "\1Inf"', file_content)  # handle Inf, -Inf
+#         file_content = file_content.replace('NaN', '"NaN"')
+
+#         try:
+#             data = json.loads(file_content)
+#         except json.JSONDecodeError as e:
+#             raise ValueError(f"Invalid JSON in {file_path}: {str(e)}")
+
+#     value = data.get("essential_changepoint")
+
+#     try:
+#         if isinstance(value, str) and value.lower() in ['inf', '-inf', 'nan']:
+#             return fallback
+#         return float(value)
+#     except (TypeError, ValueError):
+#         return fallback
 
 
 def add_essentiality_col(df, changepoint):

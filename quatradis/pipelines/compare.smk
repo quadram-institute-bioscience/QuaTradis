@@ -280,6 +280,9 @@ rule gene_stats:
             os.path.join(config["output_dir"], "analysis", "{control}", "reverse.count.tsv"),
             control=controlnames
         ),
+        conditions_combined_count_all=lambda wildcards: expand(
+            os.path.join(config["output_dir"], "analysis", "{condition}", "combined.count.tsv"),
+            condition=conditionnames),
         
     output:
         os.path.join(config["output_dir"], "gene_report.tsv")
@@ -309,7 +312,8 @@ rule gene_stats:
             --forward_count_condition {input.conditions_forward_count_all} \
             --reverse_count_condition {input.conditions_reverse_count_all} \
             --forward_count_control {input.control_forward_count_all} \
-            --reverse_count_control {input.control_reverse_count_all}
+            --reverse_count_control {input.control_reverse_count_all} \
+            --combined_count_condition {input.conditions_combined_count_all}
         """
 
 
@@ -346,16 +350,17 @@ rule gene_report_ui:
             os.path.join(config["output_dir"], "analysis", "{control}", "combined.count.tsv"),
             control=controlnames
         ),
+        ess=os.path.join(config["output_dir"], "analysis", "{condition_name}", "combined.count.tsv.essen.csv"),
         
     output:
         os.path.join(config["output_dir"], "analysis", "{condition_name}", "gene_report_ui.csv")
     params:
-        output_file = lambda wildcards: "--output=" + os.path.join(config["output_dir"], "analysis", wildcards.condition_name, "gene_report_ui.csv"),
         condition_combined_changepts_json= os.path.join(config["output_dir"], "analysis", "{condition_name}", "combined.count.tsv.changepoints.json"),
         controls_combined_changepts_json_all = lambda wildcards: expand(
             os.path.join(config["output_dir"], "analysis", "{control}", "combined.count.tsv.changepoints.json"),
             control=controlnames
-        )
+        ),
+        output_file = lambda wildcards: "--output=" + os.path.join(config["output_dir"], "analysis", wildcards.condition_name, "gene_report_ui.csv"),
     message:
         "Generating UI-friendly gene report for condition"
     shell:

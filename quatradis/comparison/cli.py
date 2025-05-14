@@ -353,6 +353,12 @@ def add_genereport_options(parser):
         nargs='+',  # Accept one or more arguments as a list
         type=str,
     )
+    parser.add_argument(
+        "--combined_count_condition",
+        help="Insertion count tsv file for all controls (combined.count.tsv).",
+        nargs='+',  # Accept one or more arguments as a list
+        type=str,
+    )
     parser.add_argument("--embl", help="Prepared EMBL file used for analysis", type=str)
     parser.add_argument("--combined_compare", help="Combined compare csvs from comparison folder with logfc, p and q values.", type=str)
     parser.add_argument("--forward_compare", help="Forward compare csv from comparison folder with logfc, p and q values.", type=str)
@@ -457,6 +463,7 @@ def gene_report(args):
             plotfiles_all=args.plotfiles_all,
             forward_count_condition=args.forward_count_condition,
             reverse_count_condition=args.reverse_count_condition,
+            combined_count_condition=args.combined_count_condition,
             forward_count_control=args.forward_count_control,
             reverse_count_control=args.reverse_count_control,
             combined_compare_csv=args.combined_compare,
