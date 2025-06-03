@@ -3,6 +3,10 @@
 # when building and testing quatradis.
 FROM debian:bookworm-slim
 
+# Used for miniconda version.  Defaults to x86_64.  For building an image that works for macos
+# use value aarch64.
+ARG TARGETARCH=x86_64
+
 # Install the system dependencies
 RUN apt-get update -qq
 
@@ -53,7 +57,7 @@ ENV LC_ALL   en_GB.UTF-8
 ENV SHELL /bin/bash
 ENV PATH /opt/conda/bin:${PATH}
 
-RUN /bin/bash -c "curl -L https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh > miniconda.sh && \
+RUN /bin/bash -c "curl -L https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-${TARGETARCH}.sh > miniconda.sh && \
     bash miniconda.sh -b -p /opt/conda && \
     rm miniconda.sh"
 RUN /bin/bash -c "conda install -y -c conda-forge mamba && \

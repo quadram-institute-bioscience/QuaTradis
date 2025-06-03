@@ -39,6 +39,10 @@ docker-base:
 	docker build -t ${DOCKER_PATH}-base:latest -f Dockerfile.base .
 	docker push ${DOCKER_PATH}-base:latest
 
+docker-base-arm64:
+	docker build -t ${DOCKER_PATH}-base:latest -f Dockerfile.base --build-arg=TARGETARCH=aarch64 .
+	docker push ${DOCKER_PATH}-base:latest
+
 
 update_master_branch:
 	git fetch origin
