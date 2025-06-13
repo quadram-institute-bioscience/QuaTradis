@@ -60,8 +60,8 @@ class Gene:
         #     return "/".join(list(set(self.categories)))
 
         #Modified Code
-        if len(list(set(self.categories)))>1:
-            return "/".join(list(set(self.categories)))
+        # if len(list(set(self.categories)))>1:
+        #     return "/".join(list(set(self.categories)))
         if 'knockout' in self.categories:
             return 'knockout'
         elif 'upregulated' in self.categories:

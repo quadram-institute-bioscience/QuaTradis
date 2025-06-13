@@ -10,10 +10,9 @@ from quatradis.embl.expand_genes import EMBLExpandGenes
 class PrepareEMBLFile:
     '''Take in the input files, parse them to create new files.'''
     # Modification 4
-    def __init__(self, plotfile, minimum_threshold, window_size, window_interval,prime_feature_size, emblfile,dynamic_window,kwargs):
+    def __init__(self, plotfile, minimum_threshold, window_size, window_interval,prime_feature_size, emblfile,dynamic_window,disable_new_algorithm,kwargs):
         #First two would be condition files and last two would be control files.
         self.plotfiles = plotfile
-        print("Plot Files for EMBL Creation",self.plotfiles)
         self.minimum_threshold = minimum_threshold
         self.window_size = window_size
         self.window_interval = window_interval
@@ -22,13 +21,14 @@ class PrepareEMBLFile:
         self.dynamic_params = kwargs 
         self.emblfile = emblfile
         self.dynamic_window= dynamic_window
+        self.disable_new_algorithm=disable_new_algorithm
         self.forward_plot_filename = ""
         self.reverse_plot_filename = ""
         self.combined_plot_filename = ""
         self.embl_filename = ""
 
     def genome_length(self):
-        return self.plot_parser_objs["Condition1"].genome_length
+        return self.plot_parser_objs["Control1"].genome_length
 
     def plot_parser(self):
         plot_parsers = {}
@@ -42,18 +42,18 @@ class PrepareEMBLFile:
         for i in range(half_index):
             condition_file = self.plotfiles[i]
             control_file = self.plotfiles[i + half_index]
-            plot_parsers[f"Condition{i+1}"] = PlotParser(condition_file)
-            plot_parsers[f"Control{i+1}"] = PlotParser(control_file)
+            plot_parsers[f"Condition{i+1}"] = PlotParser(condition_file,self.minimum_threshold)
+            plot_parsers[f"Control{i+1}"] = PlotParser(control_file,self.minimum_threshold)
 
         return plot_parsers
 
     def windows(self):
-        w = WindowGenerator(self.plot_parser_objs["Condition1"].genome_length, self.window_size, self.window_interval)
+        w = WindowGenerator(self.plot_parser_objs["Control1"].genome_length, self.window_size, self.window_interval)
         return w.create_windows()
 
     def create_embl_file(self, embl_filename):
         print("Genome Length (EMBL File Creation)",)
-        e = EMBLGenerator(self.windows(), self.plot_parser_objs["Condition1"].genome_length)
+        e = EMBLGenerator(self.windows(), self.plot_parser_objs["Control1"].genome_length)
 
         if not embl_filename:
             fd, embl_filename = mkstemp()
@@ -64,7 +64,7 @@ class PrepareEMBLFile:
         if not embl_filename:
             fd, embl_filename = mkstemp()
         # Modification 5
-        eg = EMBLExpandGenes(self.emblfile,self.prime_feature_size,self.dynamic_window,self.dynamic_params)
+        eg = EMBLExpandGenes(self.emblfile,self.prime_feature_size,self.dynamic_window,self.disable_new_algorithm,self.dynamic_params)
         eg.construct_file(embl_filename, self.plot_parser_objs)
         return embl_filename
 

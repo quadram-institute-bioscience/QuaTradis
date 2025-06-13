@@ -1,3 +1,20 @@
+"""
+This module defines default threshold and configuration parameters used in the QuaTraDIS 
+pipeline for dynamic window generation 
+and gene report generation.
+
+It includes:
+- `DYNAMIC_WINDOW_PARAMS`: Default values and CLI mappings for parameters used during 
+  dynamic window segmentation of insertion profiles.
+- `GENE_REPORT_PARAMS`: Default values and CLI mappings for parameters used during 
+  gene essentiality report generation.
+- `DYNAMIC_WINDOW_HELP`: Descriptions for each dynamic window parameter, used for 
+  documentation or UI hints.
+- `GENE_REPORT_HELP`: Descriptions for each gene report parameter, used for documentation 
+  or UI hints.
+"""
+
+
 DYNAMIC_WINDOW_PARAMS= {
     "dynamic_window": ("--dynamic_window", bool,True),
     "drop_ratio_threshold": ("--drop_ratio_threshold", float, 0.5),

@@ -17,9 +17,9 @@ class TestEMBLExpandGenes(unittest.TestCase):
 		dynamic_window_params.pop("dynamic_window")
 		output_file = os.path.join(data_dir, 'actual_one_gene')
 		plotfiles= [os.path.join(data_dir, 'valid'),os.path.join(data_dir, 'valid_ctrl')]
-		pef= PrepareEMBLFile(plotfiles, 1, 4, 2, 15, os.path.join(data_dir, 'one_gene'),True,dynamic_window_params)
+		pef= PrepareEMBLFile(plotfiles, 1, 4, 2, 15, os.path.join(data_dir, 'one_gene'),True,False,dynamic_window_params)
 		plot_parser_objs = pef.plot_parser()
-		eg = EMBLExpandGenes(os.path.join(data_dir, 'one_gene') , 15,True,dynamic_window_params)
+		eg = EMBLExpandGenes(os.path.join(data_dir, 'one_gene') , 15,True,False,dynamic_window_params)
 		eg.construct_file(output_file, plot_parser_objs)
 		self.assertTrue(os.path.exists(output_file))
 		self.assertTrue(filecmp.cmp(os.path.join(data_dir, 'expected_one_gene_dw'), output_file))
@@ -31,9 +31,9 @@ class TestEMBLExpandGenes(unittest.TestCase):
 		dynamic_window_params.pop("dynamic_window")
 		output_file = os.path.join(data_dir, 'actual_one_gene')
 		plotfiles= [os.path.join(data_dir, 'valid'),os.path.join(data_dir, 'valid_ctrl')]
-		pef= PrepareEMBLFile(plotfiles, 1, 4, 2, 15, os.path.join(data_dir, 'one_gene'),True,dynamic_window_params)
+		pef= PrepareEMBLFile(plotfiles, 1, 4, 2, 15, os.path.join(data_dir, 'one_gene'),False,True,dynamic_window_params)
 		plot_parser_objs = pef.plot_parser()
-		e = EMBLExpandGenes(os.path.join(data_dir, 'one_gene') , 15,False,dynamic_window_params)
+		e = EMBLExpandGenes(os.path.join(data_dir, 'one_gene') , 15,False,True,dynamic_window_params)
 		e.construct_file(output_file, plot_parser_objs)
 		self.assertTrue(os.path.exists(output_file))
 		self.assertTrue(filecmp.cmp(os.path.join(data_dir, 'expected_one_gene'), output_file))

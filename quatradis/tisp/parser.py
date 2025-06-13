@@ -145,23 +145,19 @@ class PlotParser:
         return int(file_length)
 
     def read(self):
-        # print("File Name:",self.filename)
         handle = PlotParser.create_file_handle(self.filename)
         self.insert_site_array = pandas.read_csv(handle, sep='\s+', dtype=float, engine='c',
                                             header=None)
+        insert_site_array= self.insert_site_array.values
         
         handle.close()
         
-        #Modification N
-        insert_site_array= self.insert_site_array.values
+        
 
         self.genome_length = len(insert_site_array)
-        # print("insert_site_array",insert_site_array)
 
         self.forward = insert_site_array[:, 0]
         self.reverse = insert_site_array[:, 1]
-        # print("Unique Forward",numpy.unique(self.forward))
-        # print("Unique Reverse",numpy.unique(self.reverse))
 
         if self.minimum_threshold != 0:
             self.forward = self.filter_column(self.forward, self.genome_length)

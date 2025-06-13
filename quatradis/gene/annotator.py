@@ -30,7 +30,7 @@ class GeneAnnotator:
             self.forward_compare_csv= forward_compare_csv
             self.reverse_compare_csv= reverse_compare_csv
             self.embl_reader = EMBLReader(self.annotation_file)
-            self.features = self.embl_reader.genes_to_features
+            self.features = self.embl_reader.gene_to_features_deduplicated
             self.merged_forward_reverse_compare_csv=None
             self.result_df=None
             self.blue_red_logfc_diff_threshold = kwargs.get("blue_red_logfc_diff_threshold", None)
@@ -44,12 +44,9 @@ class GeneAnnotator:
             self.condition_plots= self.read_plot_files(self.condition_files)
             self.control_plots=self.read_plot_files(self.control_files)
             total_read_condition_plots= [plot.total_reads for plot in self.condition_plots]
-            print("total_read_condition_plots",total_read_condition_plots)
             average_total_condition_reads= sum(total_read_condition_plots)/len(total_read_condition_plots)
-            print("average_total_condition_reads",average_total_condition_reads)
             reference_total_reads= 33346524.0
             self.insertion_count_sum_threshold = math.ceil(kwargs.get("insertion_count_sum_threshold", None)*len(self.condition_files) * (average_total_condition_reads/reference_total_reads))
-            print("self.insertion_count_sum_threshold",self.insertion_count_sum_threshold)
        
     def read_plot_files(self, files):
         parsed_plots_list=[]
@@ -82,71 +79,81 @@ class GeneAnnotator:
     def sort_blocks_by_start_coord(self, blocks):
         sorted_blocks = sorted((b for b in blocks), key=lambda x: x.start)
         return sorted_blocks
-        
-    def get_inactivation_fraction(self, start,end,strand, condition_plots):
-        """
-        Computes the inactivation fraction for a gene based on the insertions in both the forward and reverse 
-        strands across different conditions, normalized by the gene length.
+    
 
-        The inactivation fraction is calculated by determining the first index in the gene's region 
-        where all values across conditions are positive (for both strands). If no such index exists, 
-        it returns the first positive value across all conditions. The result is then normalized by the gene's length.
+    def extract_clean_position(self, value: str, column: str = "start") -> int:
+        """
+        Cleans up special characters and extracts integer from start/end column.
 
         Args:
-        - f (object): A feature object for the gene (not directly used in the current method but could 
-                    be useful for future extension).
-        - gene (Gene): A gene object that contains `start` and `end` attributes representing the 
-                    genomic coordinates of the gene.
-        - condition_plots (list): A list of objects (e.g., PlotParser) representing the data for different 
-                                conditions, each with `forward` and `reverse` attributes, which store 
-                                insertion data for the forward and reverse strands.
+            value (str): Raw string from start or end column in CSV.
+            column (str): 'start' or 'end' — determines which number to prioritize.
 
         Returns:
-        - float: The inactivation fraction for the gene, normalized by its length. The result is a value 
-                between 0 and 1, where a result of -1 indicates that no valid index was found.
-
-        Example:
-        - gene = Gene(start=100, end=200)
-        condition_plots = [PlotParser(file1), PlotParser(file2), ...]
-        inactivation_fraction = get_inactivation_fraction(f, gene, condition_plots)
-        This will compute and return the inactivation fraction based on the gene's insertions across conditions.
+            int: Cleaned integer value.
         """
-        gene_length = end - start
+        if pd.isnull(value):
+            return None
 
-        # Slice the arrays for both forward and reverse strands
-        forward_gene_inserts_array = [arr.forward[start:end] for arr in condition_plots]
-        reverse_gene_inserts_array = [arr.reverse[start:end] for arr in condition_plots]
+        # Find all integer numbers in the string
+        numbers = re.findall(r'\d+', str(value))
 
-        if strand == -1:
-            forward_gene_inserts_array = [arr[::-1] for arr in forward_gene_inserts_array]
-            reverse_gene_inserts_array = [arr[::-1] for arr in reverse_gene_inserts_array]
-  
-        # Combine into matrices
-        forward_sliced_matrix = np.vstack(forward_gene_inserts_array)
-        reverse_sliced_matrix = np.vstack(reverse_gene_inserts_array)
+        if not numbers:
+            raise ValueError(f"No integer found in value: '{value}'")
 
-        # Helper function to calculate the result index for a given matrix
-        def find_result_index(sliced_matrix):
-            # Find the first positive value index across all arrays
-            first_positive_indices = [
-                np.where(arr > 5)[0][0] if np.any(arr > 5) else float("inf") for arr in sliced_matrix
-            ]
-            return min(first_positive_indices)
+        # If multiple numbers (like in 123..456), choose based on column type
+        if column == "start":
+            return int(numbers[0])
+        elif column == "end":
+            return int(numbers[-1])
+        else:
+            raise ValueError("Column must be 'start' or 'end'")
 
-        # Find result indices for both forward and reverse strands
-        forward_result_index = find_result_index(forward_sliced_matrix)
-        reverse_result_index = find_result_index(reverse_sliced_matrix)
 
-        # Get the minimum of the two result indices
-        result_index = min(forward_result_index, reverse_result_index)
-            # If the result is infinity, return -1
-        # if result_index == float("inf"):
-        #     result_index = -1
+    def get_inactivation_fraction(self, start, end, strand, condition_plots):
+        """
+        Computes the inactivation fraction for a gene based on insertion profiles across multiple conditions.
+        """
 
-        # Normalize the result by gene length
-        return 1 - (result_index) / gene_length
+        # Safety check: valid coordinates
+        if end < start:
+            raise ValueError(f"Invalid gene coordinates: start ({start}) must be less than end ({end})")
 
-      
+        gene_length = end - start +1
+
+        try:
+            # Slice the arrays for both forward and reverse strands
+            # the indices in plot and embl are 1 based, the array is 0 based.
+            forward_gene_inserts_array = [arr.forward[start-1:end] for arr in condition_plots]
+            reverse_gene_inserts_array = [arr.reverse[start-1:end] for arr in condition_plots]
+
+            if strand == -1:
+                forward_gene_inserts_array = [arr[::-1] for arr in forward_gene_inserts_array]
+                reverse_gene_inserts_array = [arr[::-1] for arr in reverse_gene_inserts_array]
+
+            # Combine into matrices
+            forward_sliced_matrix = np.vstack(forward_gene_inserts_array)
+            reverse_sliced_matrix = np.vstack(reverse_gene_inserts_array)
+
+            def find_result_index(sliced_matrix):
+                first_positive_indices = [
+                    np.where(arr > 5)[0][0] if np.any(arr > 5) else float("inf") for arr in sliced_matrix
+                ]
+                return min(first_positive_indices)
+
+            forward_result_index = find_result_index(forward_sliced_matrix)
+            reverse_result_index = find_result_index(reverse_sliced_matrix)
+            result_index = min(forward_result_index, reverse_result_index)
+
+            if result_index == float("inf") or gene_length == 0:
+                return 1.0  # No significant insertion or division by zero would occur
+
+            return 1 - (result_index / gene_length)
+
+        except Exception as e:
+            print(f"Error while computing inactivation fraction: {e}")
+            return 1.0  # Conservative default when something goes wrong
+
     
     def get_genes_with_up_or_down_regulation(self):
         """
@@ -187,7 +194,6 @@ class GeneAnnotator:
         for i, signal in enumerate(signals):
             signal = np.array(signal)
             if len(signal) < 2:
-                print(f"Signal {i+1} is invalid (too short). Skipping.")
                 processed_signals.append(None)
                 continue
 
@@ -195,7 +201,6 @@ class GeneAnnotator:
             norm = np.linalg.norm(diff_signal)
 
             if norm == 0:  # Handle zero-variance signal
-                print(f"Signal {i+1} is invalid (zero variance). Skipping.")
                 processed_signals.append(None)
             else:
                 processed_signals.append(diff_signal / norm)
@@ -218,7 +223,6 @@ class GeneAnnotator:
                 # Compute Shape-Based Distance (SBD)
                 dist = np.linalg.norm(signal1 - signal2)
                 distances[key] = dist
-                print(f"SBD between Signal {i+1} and Signal {j+1}: {dist:.4f}")
 
         # Check if all valid pairwise distances are below the threshold
         all_similar = all(dist is not None and dist <= distance_threshold for dist in distances.values())
@@ -227,6 +231,19 @@ class GeneAnnotator:
 
 
     def check_average_threshold(self,lists):
+        """
+        Checks if the non-zero average of each list is within a defined threshold of the maximum average.
+
+        For each list, it computes the average of non-zero values. Then it checks whether all these averages
+        are greater than or equal to (threshold * max_average), where the threshold is defined by 
+        self.insertion_signal_similarity_avg_threshold.
+
+        Args:
+            lists (list of lists): A list of numeric lists.
+
+        Returns:
+            bool: True if all averages meet the threshold condition, False otherwise.
+        """
         averages = []
         max_avg = 0
 
@@ -241,7 +258,6 @@ class GeneAnnotator:
 
         # Check if all averages are within X% of max_avg
         threshold = self.insertion_signal_similarity_avg_threshold* max_avg
-        # print("averages:",averages)
         return all(avg >= threshold for avg in averages)
 
 
@@ -272,14 +288,9 @@ class GeneAnnotator:
         Note:
         - This function is used to assess insertion signal consistency before further categorization of gene activity.
         """
-        ## Takes time - recode it.
-        # condition_plots=[]
-        # # if not hasattr(self, "condition_plots"):
-        # for file in self.condition_files:
-        #     condition_plots.append(PlotParser(file))
         condition_plots= self.condition_plots
-        start = int(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == geneName, "start"].iloc[0])
-        end = int(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == geneName, "end"].iloc[0])
+        start = self.extract_clean_position(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == geneName, "start"].iloc[0],"start")
+        end = self.extract_clean_position(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == geneName, "end"].iloc[0],"end")
         strand = int(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == geneName, "strand"].iloc[0])
         mapping = {
         (1, "5prime"): "forward",
@@ -292,7 +303,7 @@ class GeneAnnotator:
         array_type = mapping.get((strand, check))
         if array_type:
             gene_inserts_array = [
-                getattr(arr, array_type)[start:end] for arr in condition_plots
+                getattr(arr, array_type)[start-1:end] for arr in condition_plots
             ]
         else:
             raise ValueError("Invalid combination of strand and check")
@@ -301,23 +312,10 @@ class GeneAnnotator:
         all_similar_distances, pairwise_distances= self.check_insertion_signal_pattern_shape(gene_inserts_array,self.distance_threshold)
         all_similar_averages= self.check_average_threshold(gene_inserts_array)
         all_similar= all_similar_distances and all_similar_averages
-        # if geneName=="marA__5prime":
-        #     print(geneName)
-        #     print("pairwise_correlations",pairwise_correlations)
-        #     print("all_similar_averages",all_similar_averages)
-        #     print("all_similar",all_similar)
-        #     print("****************")
-        print(geneName)
-        print("pairwise_distances",pairwise_distances)
-        print("all_similar_distances",all_similar_distances)
-        print("all_similar_averages",all_similar_averages)
-        print("all_similar",all_similar)
-        print("****************")
         return all_similar
     
     
     def categorize_activitation_explanation(self,geneName):
-        # f = self.features[geneName]
         strand = int(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == geneName, "strand"].iloc[0])
         five_prime_name = f"{geneName}__5prime"
         three_prime_name = f"{geneName}__3prime"
@@ -342,15 +340,6 @@ class GeneAnnotator:
                     prime5_overlaps= self.embl_reader.find_overlaps(five_prime_name)
                     if len(prime5_overlaps)>0:
                         for gene , overlap_pct in prime5_overlaps:
-                            
-                            # if overlap_pct<self.overlap_threshold:
-                            #     if abs(logfc_same.item()-logfc_opp.item())<self.blue_red_logfc_diff_threshold:
-                            #         if five_prime_name=="marA__5prime":
-                            #             print("overlap_pct",overlap_pct)
-                            #             print("logfc_same.item()-logfc_opp.item():",logfc_same.item()-logfc_opp.item())
-                            #         self.result_df.loc[self.result_df['Gene'] == geneName, 'Category2'] = None
-
-                            # else:
                             if overlap_pct>self.overlap_threshold:
                                 gene_knockout= self.result_df[self.result_df["Gene"]==gene]["Category1"].values
                                 if abs(logfc_same.item()-logfc_opp.item()<self.blue_red_logfc_diff_threshold):
@@ -372,9 +361,6 @@ class GeneAnnotator:
                                                 .apply(lambda x: new_value if pd.isna(x) else f"{x} | {new_value}")
                                             )
             else:
-                # if five_prime_name=="marA__5prime":
-                #     print(five_prime_name,"-",all_similar)
-
                 self.result_df.loc[self.result_df['Gene'] == geneName, 'Category2'] = None
         
         if not prime_3.empty:
@@ -387,15 +373,10 @@ class GeneAnnotator:
                     prime3_overlaps= self.embl_reader.find_overlaps(three_prime_name)
                     if len(prime3_overlaps)>0:
                         for gene , overlap_pct in prime3_overlaps:
-                            # if overlap_pct<self.overlap_threshold:
-                            #     if abs(logfc_same.item()-logfc_opp.item()<self.blue_red_logfc_diff_threshold):
-                            #         self.result_df.loc[self.result_df['Gene'] == geneName, 'Category3'] = None
-                            # else:
                             if overlap_pct>self.overlap_threshold:
                                 gene_knockout= self.result_df[self.result_df["Gene"]==gene]["Category1"].values
                                 if abs(logfc_same.item()-logfc_opp.item())<self.blue_red_logfc_diff_threshold:
                                     new_value=f"downregulated due to knockout of gene {gene}"
-                                    # if not pd.isna(gene_knockout):
                                     if gene_knockout.size > 0 and gene_knockout[0] is not None:
                                         # if gene_knockout.item()=="knockout":
                                         if gene_knockout[0] == "knockout":
@@ -540,10 +521,10 @@ class GeneAnnotator:
                 if strand == 1:
                     cat2_count_flag = forward_count_dict.get(gene_5prime, 0) < self.insertion_count_sum_threshold
                     # f = self.features[gene_5prime]
-                    start = int(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene_5prime, "start"].iloc[0])
-                    end = int(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene_5prime, "end"].iloc[0])
+                    start = self.extract_clean_position(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene_5prime, "start"].iloc[0],"start")
+                    end = self.extract_clean_position(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene_5prime, "end"].iloc[0],"end")
                     # strand = int(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene_5prime, "strand"].iloc[0])
-                    gene_inserts_array = [getattr(arr, "forward")[start:end] for arr in condition_plots]
+                    gene_inserts_array = [getattr(arr, "forward")[start-1:end] for arr in condition_plots]
                     cat2_count_mean= np.mean([np.max(np.array(arr))  for arr in gene_inserts_array]) 
                     cat2_max_flag= cat2_count_mean < self.insertion_count_max_threshold
                     cat2_flag= cat2_count_flag or cat2_max_flag
@@ -555,10 +536,10 @@ class GeneAnnotator:
                 elif strand == -1:
                     cat2_count_flag = reverse_count_dict.get(gene_5prime, 0) < self.insertion_count_sum_threshold
                     # f = self.features[gene_5prime]
-                    start = int(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene_5prime, "start"].iloc[0])
-                    end = int(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene_5prime, "end"].iloc[0])
+                    start = self.extract_clean_position(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene_5prime, "start"].iloc[0],"start")
+                    end = self.extract_clean_position(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene_5prime, "end"].iloc[0],"end")
 
-                    gene_inserts_array = [getattr(arr, "reverse")[start:end] for arr in condition_plots]
+                    gene_inserts_array = [getattr(arr, "reverse")[start-1:end] for arr in condition_plots]
                     cat2_count_mean= np.mean([np.max(np.array(arr))  for arr in gene_inserts_array]) 
                     cat2_max_flag= cat2_count_mean < self.insertion_count_max_threshold
                     cat2_flag= cat2_count_flag or cat2_max_flag
@@ -575,9 +556,9 @@ class GeneAnnotator:
                 if strand == 1:
                     cat3_count_flag = reverse_count_dict.get(gene_3prime, 0) < self.insertion_count_sum_threshold
                     # f = self.features[gene_3prime]
-                    start = int(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene_3prime, "start"].iloc[0])
-                    end = int(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene_3prime, "end"].iloc[0])
-                    gene_inserts_array = [getattr(arr, "reverse")[start:end] for arr in condition_plots]
+                    start = self.extract_clean_position(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene_3prime, "start"].iloc[0],"start")
+                    end = self.extract_clean_position(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene_3prime, "end"].iloc[0],"end")
+                    gene_inserts_array = [getattr(arr, "reverse")[start-1:end] for arr in condition_plots]
                     cat3_count_mean= np.mean([np.max(np.array(arr)) for arr in gene_inserts_array]) 
                     cat3_max_flag= cat3_count_mean < self.insertion_count_max_threshold
                     cat3_flag= cat3_count_flag or cat3_max_flag
@@ -588,9 +569,9 @@ class GeneAnnotator:
                 elif strand == -1:
                     cat3_count_flag = forward_count_dict.get(gene_3prime, 0) < self.insertion_count_sum_threshold
                     # f = self.features[gene_3prime]
-                    start = int(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene_3prime, "start"].iloc[0])
-                    end = int(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene_3prime, "end"].iloc[0])
-                    gene_inserts_array = [getattr(arr, "forward")[start:end] for arr in condition_plots]
+                    start = self.extract_clean_position(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene_3prime, "start"].iloc[0],"start")
+                    end = self.extract_clean_position(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene_3prime, "end"].iloc[0],"end")
+                    gene_inserts_array = [getattr(arr, "forward")[start-1:end] for arr in condition_plots]
                     cat3_count_mean= np.mean([np.max(np.array(arr)) for arr in gene_inserts_array]) 
                     cat3_max_flag= cat3_count_mean < self.insertion_count_max_threshold
                     cat3_flag= cat3_count_flag or cat3_max_flag
@@ -605,22 +586,22 @@ class GeneAnnotator:
 
             if category1_knockout:
                 total_count = forward_count_dict.get(gene, 0) + reverse_count_dict.get(gene, 0)
-                remove_knockout_sum_flag = total_count < 1.25*self.insertion_count_sum_threshold
+                remove_knockout_sum_flag = total_count < self.insertion_count_sum_threshold
                 # f = self.features[gene]
-                start = int(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene, "start"].iloc[0])
-                end = int(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene, "end"].iloc[0])
-                gene_inserts_array = [getattr(arr, "combined")[start:end] for arr in condition_plots]
+                start = self.extract_clean_position(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene, "start"].iloc[0],"start")
+                end = self.extract_clean_position(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene, "end"].iloc[0],"end")
+                gene_inserts_array = [getattr(arr, "combined")[start-1:end] for arr in condition_plots]
                 cat1_count_mean= np.mean([np.max(np.array(arr)) for arr in gene_inserts_array]) 
                 remove_knockout_max_flag= cat1_count_mean < self.insertion_count_max_threshold
                 remove_knockout_flag= remove_knockout_sum_flag or remove_knockout_max_flag
                 test_results[gene]=remove_knockout_flag
             if category1_protection:
                 total_count = forward_count_control_dict.get(gene, 0) + reverse_count_control_dict.get(gene, 0)
-                remove_protection_sum_flag = total_count < 1.25*self.insertion_count_sum_threshold
+                remove_protection_sum_flag = total_count < self.insertion_count_sum_threshold
                 # f= self.features[gene]
-                start = int(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene, "start"].iloc[0])
-                end = int(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene, "end"].iloc[0])
-                gene_inserts_array = [getattr(arr, "combined")[start:end] for arr in control_plots]
+                start = self.extract_clean_position(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene, "start"].iloc[0],"start")
+                end = self.extract_clean_position(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene, "end"].iloc[0],"end")
+                gene_inserts_array = [getattr(arr, "combined")[start-1:end] for arr in control_plots]
                 cat1_count_mean= np.mean([np.max(np.array(arr)) for arr in gene_inserts_array])
                 remove_protection_max_flag= cat1_count_mean < self.insertion_count_max_threshold
                 remove_protection_flag= remove_protection_sum_flag or remove_protection_max_flag
@@ -643,11 +624,6 @@ class GeneAnnotator:
         result_df['insertion_index_downregulated'] = insertion_index_downregulated
         result_df['insertion_count_max_upregulated'] = insertion_count_max_upregulated
         result_df['insertion_count_max_downregulated'] = insertion_count_max_downregulated
-        # print("test_results")
-        # print(test_results)
-
-        # with open("insert_count_check_data.json", "w") as f:
-        #     json.dump(test_results, f, indent=4)
         
         # Drop rows where all flags are True
         result_df = result_df[~(result_df['flag_cat2'] & result_df['flag_cat3'] & result_df['flag_remove_knockout'] & result_df['flag_remove_protection'])]
@@ -777,8 +753,8 @@ class GeneAnnotator:
             # if not hasattr(self, "condition_plots"):
             #     self.condition_plots = [PlotParser(file) for file in self.condition_files]
 
-            start = int(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene_name, "start"].iloc[0])
-            end = int(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene_name, "end"].iloc[0])
+            start = self.extract_clean_position(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene_name, "start"].iloc[0],"start")
+            end = self.extract_clean_position(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene_name, "end"].iloc[0],"end")
             strand = int(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == gene_name, "strand"].iloc[0])
             logfc_gene = gene_combined_csv["logFC"]
             qval_gene = gene_combined_csv["q.value"]
@@ -859,8 +835,8 @@ class GeneAnnotator:
         After calling `prime_end_expression_categorization("GeneA")`, the function will update the 
         regulation categories (up/downregulated) and log fold changes in `result_df` for "GeneA".
         """
-        start = int(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == geneName, "start"].iloc[0])
-        end = int(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == geneName, "end"].iloc[0])
+        start = self.extract_clean_position(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == geneName, "start"].iloc[0],"start")
+        end = self.extract_clean_position(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == geneName, "end"].iloc[0],"end")
         strand = int(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == geneName, "strand"].iloc[0])
         # f = self.features[geneName]
         # strand = f.strand
@@ -961,71 +937,36 @@ class GeneAnnotator:
             Example:
                 result_df = gene_annotator.annotate_genes()
         """
-        time_qval_filter= time.time()
         # filter genes based on logfc significance (qval<5%) for combined compare insertions
         self.combined_compare_csv= self.read_and_filter_logfc_qval(self.combined_compare_csv)
-        # print("Time to filter Qvals",time.time()-time_qval_filter)
         # perform gene knockout, protection catgeorization
-        time_category1_categorization= time.time()
-        print("Result_DF before knockout-protection",self.result_df)
-        print("combined_compare_csv", self.combined_compare_csv)
         knockout_protection_result_list=[]
         for idx, row in self.combined_compare_csv.iterrows():
             result = self.categorize_knockout_protection(row)
             knockout_protection_result_list.append(result)
-        # self.result_df= self.combined_compare_csv.apply(self.categorize_knockout_protection, axis=1, result_type='expand')
-      
-        print("Error Here")
         self.result_df = pd.DataFrame(knockout_protection_result_list, columns=['Gene', 'Category1','Category2','Category3','Start','End','Strand','LogFC(Gene)','LogFC(5_Prime)','LogFC(3_Prime)','Qval(Gene)','Qval(5_Prime)','Qval(3_Prime)','Log_CPM(Gene)','Log_CPM(5_Prime)','Log_CPM(3_Prime)','confidence_score_upregulated','confidence_score_downregulated'])
-        print("Result_DF after knockout-protection",self.result_df.head())
-        # self.result_df.columns = ['Gene', 'Category1','Category2','Category3','Start','End','Strand','LogFC(Gene)','LogFC(5_Prime)','LogFC(3_Prime)','Qval(Gene)','Qval(5_Prime)','Qval(3_Prime)','Log_CPM(Gene)','Log_CPM(5_Prime)','Log_CPM(3_Prime)','confidence_score_upregulated','confidence_score_downregulated']
         self.result_df = self.result_df.dropna(how="all")
-        self.result_df.to_csv("GeneReport_Post_categorize_knockout_protection.csv",index=False)
-        # print("Time to category1 categorization new",time.time()-time_category1_categorization)
-        misc1_time=time.time()
-
-
         # filter genes based on logfc significance (qval<5%) for forward & reverse compare insertions
         self.forward_compare_csv= self.read_and_filter_logfc_qval(self.forward_compare_csv,"prime_ends")
         self.reverse_compare_csv= self.read_and_filter_logfc_qval(self.reverse_compare_csv,"prime_ends")
         self.merged_forward_reverse_compare_csv = pd.merge(self.forward_compare_csv, self.reverse_compare_csv, on='gene_name', how='outer', suffixes=('_forward', '_reverse'))
-        # print("Miscellanous activity1 filter forward-reverse, merge etc",time.time()-misc1_time)
-        get_unique_gene_time= time.time()
         unique_gene_names = self.get_unique_genes_that_have_significant_3_5_prime_logfc()
-        # print("Get unique list time",time.time()-get_unique_gene_time)
-        up_down_categorization_time= time.time()
+        
         for gene_name in unique_gene_names:
             #check upregulation and downregualtion of a gene based on 3,5 prime insertions
             self.prime_end_expression_categorization(gene_name)
-        self.result_df.to_csv("GeneReport_Post_prime_end_expression_categorization.csv",index=False)
-        # print("Time to up-downregulation categorization 1",time.time()-up_down_categorization_time)
 
-
-        time_ins_count_check=time.time()
         self.result_df= self.insertion_threshold_check(self.result_df)
-        # print("Time to Insertion count filtering",time.time()-time_ins_count_check)
-        self.result_df.to_csv("GeneReport_Post_insertion_threshold_check.csv",index=False)
 
         up_down_regulation_gene_names= self.get_genes_with_up_or_down_regulation()
         self.result_df["Category4"]=None
-        cat_exp_time=time.time()
         for gene in up_down_regulation_gene_names:
             #check acivity on or because of ajacent gene for upregulated or downregulate gene 
             self.categorize_activitation_explanation(gene)
-        self.result_df.to_csv("GeneReport_Post_categorize_activitation_explanation.csv",index=False)
-        # print("Time to categorization explanation",time.time()-cat_exp_time)
         # Replace NaN, None, and blanks
         self.result_df.replace(r'^\s*$', np.nan, regex=True, inplace=True)  # Replace blanks with NaN
-        
-        # final_result_df= self.insertion_threshold_check(self.result_df)
-        # final_result_df.to_csv("GeneReport_Post_insertion_threshold_check.csv",index=False)
-        
-        cscore_time=time.time()
         self.result_df= self.signal_strength_score(self.result_df)
-        # print("Confidence score check",time.time()-cscore_time)
-        self.result_df.to_csv("GeneReport_Post_signal_strength_score.csv",index=False)
         # Drop rows where Category1, Category2, Category3, and Category4 are all NaN
-        # final_result_df.dropna(subset=['Category1', 'Category2', 'Category3', 'Category4'], how='all', inplace=True)
         self.result_df.fillna("None", inplace=True)
         cols = ['Category1', 'Category2', 'Category3', 'Category4']
         self.result_df = self.result_df.loc[~self.result_df[cols].apply(
@@ -1037,7 +978,6 @@ class GeneAnnotator:
             ),
             axis=1
         ),:]
-        print("self.result_df",self.result_df)
 
         return self.result_df[['Gene', 'Category1','Category2','Category3','Category4','Start','End','Strand',
                             'LogFC(Gene)','LogFC(5_Prime)','LogFC(3_Prime)',
@@ -1118,13 +1058,6 @@ class GeneAnnotator:
                 if f.location.end < block.start and f.location.strand == -1:
                     return self.feature_to_gene_name(f)
         return "NA"
-    
-    def feature_to_gene_name(self, feature):
-        gene_name_val = str(feature.location.start) + "_" + str(feature.location.end)
-        if "gene" in feature.qualifiers:
-            gene_name_val = feature.qualifiers["gene"][0]
-        return gene_name_val
-
 
     def find_upstream_gene(self, block, gene_number):
         if block.direction == 'reverse':
@@ -1203,6 +1136,13 @@ class GeneAnnotator:
             knock_out_start = feature.location.start + int(self.knockout_proportion_start * len(feature))
             if block.start - 1 >= knock_out_start and block.start - 1 < feature.location.end:
                 return True
+        # reverse
+        if feature.location.strand == -1 and block.direction in ['forward', 'nodirection']:
+            knock_out_end = feature.location.end - int(self.knockout_proportion_start * len(feature))
+            if block.end <= knock_out_end and block.end > feature.location.start:
+                return True
+
+        return False
             
     def reannotate_5_3_prime(self, genes):
         name_to_genes = {g.gene_name: g for g in genes}
@@ -1219,6 +1159,7 @@ class GeneAnnotator:
             if res:
                 found_gene_name = res.group(1)
                 prime_end = res.group(2)
+                
                 if found_gene_name not in name_to_genes:
                     filtered_names_to_genes[found_gene_name] = Gene(self.embl_reader.genes_to_features[found_gene_name],
                                                                     [])
@@ -1226,6 +1167,7 @@ class GeneAnnotator:
 
                     regulation_category = self.regulation(filtered_names_to_genes[found_gene_name].feature.location.strand,
                                                           prime_end, directions)
+            
                     if regulation_category:
                         filtered_names_to_genes[found_gene_name].categories.append(regulation_category)
                     else:
@@ -1235,6 +1177,7 @@ class GeneAnnotator:
                     filtered_names_to_genes[found_gene_name] = name_to_genes[found_gene_name]
                     regulation_category = self.regulation(filtered_names_to_genes[found_gene_name].feature.location.strand,
                                                           prime_end, directions)
+                   
                     if regulation_category:
                         filtered_names_to_genes[found_gene_name].categories.append(regulation_category)
 

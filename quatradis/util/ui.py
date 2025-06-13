@@ -4,16 +4,35 @@ import json
 import re
 
 def read_tsv_csv(file,file_type=None):
+    """
+    Reads a file and returns a pandas DataFrame. Supports TSV and CSV formats.
+
+    Args:
+        file (str): Path to the file.
+        file_type (str, optional): Specify 'csv' for CSV files. Defaults to TSV.
+
+    Returns:
+        pd.DataFrame: Loaded DataFrame.
+    """
     if file_type =="csv":
         return pd.read_csv(file)
     else:
         return pd.read_csv(file, sep='\t')
     
 def get_essentiality_changepoint(file_path, fallback=None):
-    if not os.path.exists(file_path):
-        return fallback
+    """
+    Parses a JSON file to extract the 'essential_changepoint' value. Handles invalid JSON values like Inf, -Inf, NaN.
 
-    print(f"File found: {file_path} (exists)")
+    Args:
+        file_path (str): Path to the JSON file.
+        fallback (float, optional): Value to return if changepoint is invalid or missing. Defaults to None.
+
+    Returns:
+        float or fallback: Parsed changepoint value or fallback.
+    """
+    if not os.path.exists(file_path):
+        print(f"File not found: {file_path} (does not exists)")
+        return fallback
 
     with open(file_path, 'r') as f:
         file_content = f.read()
@@ -66,6 +85,16 @@ def get_essentiality_changepoint(file_path, fallback=None):
 
 
 def add_essentiality_col(df, changepoint):
+    """
+    Adds a column 'essentiality' to the DataFrame based on the insertion index and changepoint value.
+
+    Args:
+        df (pd.DataFrame): DataFrame with 'ins_index' column.
+        changepoint (float): Threshold to determine essentiality.
+
+    Returns:
+        pd.DataFrame: Modified DataFrame with 'essentiality' column.
+    """
     if changepoint is None:
         df['essentiality'] = 'NA'
     else:
@@ -75,6 +104,15 @@ def add_essentiality_col(df, changepoint):
     return df
 
 def unique_gene_name(df):
+    """
+    Extracts a list of unique gene names after removing '__5prime' or '__3prime' suffixes.
+
+    Args:
+        df (pd.DataFrame): DataFrame with 'gene_name' column.
+
+    Returns:
+        List[str]: List of unique cleaned gene names.
+    """
     df['gene_name_clean'] = df['gene_name'].str.replace(r'__(5prime|3prime)$', '', regex=True)
     unique_genes = df['gene_name_clean'].unique().tolist()
     return unique_genes
@@ -82,6 +120,20 @@ def unique_gene_name(df):
 def get_complete_report(gene_names, gene_report_df, condition_combined_count_df, 
                         merged_forward_reverse_count_df, combined_compare_df, 
                         merged_forward_reverse_compare_df):
+    """
+    Constructs a complete report DataFrame combining counts, statistical metrics, and annotations for each gene.
+
+    Args:
+        gene_names (List[str]): List of gene names.
+        gene_report_df (pd.DataFrame): DataFrame with gene category and confidence scores.
+        condition_combined_count_df (pd.DataFrame): DataFrame with counts and strand info for each gene.
+        merged_forward_reverse_count_df (pd.DataFrame): Forward and reverse count info for each gene.
+        combined_compare_df (pd.DataFrame): LogFC, q-values, and logCPM for genes.
+        merged_forward_reverse_compare_df (pd.DataFrame): Strand-specific statistical metrics.
+
+    Returns:
+        pd.DataFrame: Complete report DataFrame with combined information.
+    """
     
     columns = ['Gene', 'Category1', 'Category2', 'Category3','Category4' ,'Start', 'End', 
                'Strand', 'LogFC(Gene)', 'LogFC(3_Prime)', 'LogFC(5_Prime)',
@@ -171,6 +223,16 @@ def get_complete_report(gene_names, gene_report_df, condition_combined_count_df,
 
 
 def categorize_condition_based_essentiality(result_df, control_combined_count_df):
+    """
+    Updates the 'Essentiality' column in result_df based on control values to identify conditionally essential genes.
+
+    Args:
+        result_df (pd.DataFrame): Gene report DataFrame for experimental condition.
+        control_combined_count_df (pd.DataFrame): Gene report DataFrame for control condition.
+
+    Returns:
+        pd.DataFrame: Updated result_df with 'Essentiality' category refined based on control comparison.
+    """
     control_ess_map = control_combined_count_df.set_index('gene_name')['essentiality'].to_dict()
 
     for idx, row in result_df.iterrows():
@@ -203,6 +265,26 @@ def categorize_condition_based_essentiality(result_df, control_combined_count_df
 def generate_gene_report_ui(condition_combined_count_tsv,condition_forward_count_tsv,condition_reverse_count_tsv,
                             condition_combined_changepts_json,combined_compare_csv,forward_compare_csv,reverse_compare_csv,
                             gene_report,control_combined_count_tsv,control_combined_changepts_json,output):
+    """
+    Generates a comprehensive gene report by loading input data, calculating essentiality,
+    comparing with control data, and writing the final report to the output path.
+
+    Args:
+        condition_combined_count_tsv (str): File path to condition combined count TSV.
+        condition_forward_count_tsv (str): File path to condition forward count TSV.
+        condition_reverse_count_tsv (str): File path to condition reverse count TSV.
+        condition_combined_changepts_json (str): JSON path for condition changepoint.
+        combined_compare_csv (str): Path to condition comparison summary CSV.
+        forward_compare_csv (str): Path to forward strand comparison CSV.
+        reverse_compare_csv (str): Path to reverse strand comparison CSV.
+        gene_report (str): Path to annotation file with gene categories and confidence scores.
+        control_combined_count_tsv (str): Path to control combined count TSV.
+        control_combined_changepts_json (str): JSON path for control changepoint.
+        output (str): Path to save the final report CSV.
+
+    Returns:
+        None
+    """
     
     condition_combined_count_df = read_tsv_csv(condition_combined_count_tsv)
     condition_forward_count_df = read_tsv_csv(condition_forward_count_tsv)

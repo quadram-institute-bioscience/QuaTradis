@@ -10,6 +10,7 @@ class EMBLReader:
         self.genome_length = 0
         self.features = self.read_annotation_features()
         self.genes_to_features = self.gene_names_to_features()
+        self.gene_to_features_deduplicated= self.gene_names_to_features_deduplicated()
 
     def read_annotation_features(self):
         self.record = SeqIO.read(self.filename, "embl")
@@ -17,12 +18,14 @@ class EMBLReader:
 
         return [f for f in self.record.features if f.type not in self.features_to_ignore]
 
-    def gene_names_to_features(self):
+    def gene_names_to_features_deduplicated(self):
         genes_to_features = {}
         gene_count = defaultdict(int)
         gene_suffix = defaultdict(int)
         for f in self.features:
             gene_name = self.feature_to_gene_name(f)
+            # Replace any non-word character
+            gene_name = "".join([c for c in gene_name if c.isalnum() or c == '_'])
             gene_count[gene_name] += 1
             suffix = gene_suffix[gene_name]
 
@@ -34,6 +37,13 @@ class EMBLReader:
 
             genes_to_features[processed_gene_name] = f
 
+        return genes_to_features
+    
+    def gene_names_to_features(self):
+        genes_to_features = {}
+        for f in self.features:
+            gene_name = self.feature_to_gene_name(f)
+            genes_to_features[gene_name] = f
         return genes_to_features
 
     def feature_to_gene_name(self, feature):
@@ -60,17 +70,17 @@ class EMBLReader:
         Find genes overlapping with the given gene and their overlap percentages.
         Skip genes with __3prime or __5prime in their names.
         """
-        if gene_name not in self.genes_to_features:
+        if gene_name not in self.gene_to_features_deduplicated:
             raise ValueError(f"Gene {gene_name} not found in the EMBL file.")
 
-        target_feature = self.genes_to_features[gene_name]
+        target_feature = self.gene_to_features_deduplicated[gene_name]
         target_start = target_feature.location.start
         target_end = target_feature.location.end
 
         overlaps = []
         res_given_gene=re.search("^(.+)__([35])prime$", gene_name)
 
-        for other_gene_name, other_feature in self.genes_to_features.items():
+        for other_gene_name, other_feature in self.gene_to_features_deduplicated.items():
             if other_gene_name == gene_name:
                 continue  # Skip the same gene
 

@@ -99,6 +99,27 @@ def add_subparser(subparsers):
         usage="tradis compare gene_report_ui [options] --combined_count_tsv <combined_count_tsv for condition replicate> --forward_count_tsv <forward_count_tsv for condition replicate> --reverse_count_tsv <reverse_count_tsv for condition replicate> --combined_compare <combined_compare> --forward_compare <forward_compare> --reverse_compare <reverse_compare> --gene_report <gene_report>",
     )
 def gene_report_ui_options(parser):
+    """
+    Defines CLI arguments for the `gene_report_ui` command used in the TraDIS comparison pipeline.
+
+    This command compares essentiality across a condition and control using insertion data 
+    (combined, forward, reverse counts), changepoint data, and a gene report. It generates 
+    a consolidated output report suitable for visualization in a UI.
+
+    Arguments added to the parser:
+    - --condition_combined_count: Combined count TSV of the condition replicate.
+    - --condition_forward_count: Forward count TSV of the condition replicate.
+    - --condition_reverse_count: Reverse count TSV of the condition replicate.
+    - --condition_combined_changepts_json: Changepoint JSON of the condition replicate.
+    - --combined_compare_csv: Combined compare CSV from the comparison folder.
+    - --forward_compare_csv: Forward compare CSV from the comparison folder.
+    - --reverse_compare_csv: Reverse compare CSV from the comparison folder.
+    - --gene_report: Gene report generated from gene_stats rule.
+    - --controls_combined_count_all: Combined count TSVs for all control replicates (only first is used).
+    - --controls_combined_changepts_json_all: Changepoint JSONs for all control replicates (only first is used).
+    - --output / -o: Output file path for the generated UI-compatible report.
+    """
+
     parser.add_argument("--condition_combined_count", help="Combined count tsv of condition replicate.", type=str)
     parser.add_argument("--condition_forward_count", help="Forward count tsv of condition replicate.", type=str)
     parser.add_argument("--condition_reverse_count", help="Reverse count tsv of condition replicate.", type=str)
@@ -112,18 +133,13 @@ def gene_report_ui_options(parser):
     parser.add_argument("--output", "-o", help="Output file", type=str, required=True)
 
 def gene_report_ui(args):
-    # print("Arguments passed to generate_gene_report_ui:")
-    # print(f"condition_combined_count: {args.condition_combined_count}")
-    # print(f"condition_forward_count: {args.condition_forward_count}")
-    # print(f"condition_reverse_count: {args.condition_reverse_count}")
-    # print(f"condition_combined_changepts_json: {args.condition_combined_changepts_json}")
-    # print(f"combined_compare_csv: {args.combined_compare_csv}")
-    # print(f"forward_compare_csv: {args.forward_compare_csv}")
-    # print(f"reverse_compare_csv: {args.reverse_compare_csv}")
-    # print(f"gene_report: {args.gene_report}")
-    # print(f"controls_combined_count_all: {args.controls_combined_count_all}")
-    # print(f"controls_combined_changepts_json_all: {args.controls_combined_changepts_json_all}")
-    # print(f"output: {args.output}")
+    """
+    Executes the `gene_report_ui` comparison step using parsed CLI arguments.
+
+    Calls `generate_gene_report_ui()` with provided condition and control datasets,
+    changepoint data, comparison results, and gene report to produce a consolidated
+    output for UI visualization.
+    """
 
     generate_gene_report_ui(condition_combined_count_tsv=args.condition_combined_count,
                             condition_forward_count_tsv=args.condition_forward_count,
@@ -320,7 +336,7 @@ def add_genereport_options(parser):
     parser.add_argument(
         "--plotfiles_all",
         help="Normalized plot files for all conditions (original.plot.gz).",
-        nargs='+',  # Accept one or more arguments as a list
+        nargs='+',
         type=str,
     )
 
@@ -392,28 +408,52 @@ def add_genereport_options(parser):
 
 def gene_report(args):
     """
-    Wrapper function to generate a gene report by passing command-line arguments 
-    to the `gene_statistics` function.
+    Wrapper function to generate a gene essentiality report by calling either the legacy
+    or the new version of the `gene_statistics` function based on the `disable_new_algorithm` flag.
+
+    This function integrates normalized insertion count data, comparison statistics,
+    gene annotations, and EMBL sequence information to categorize genes based on 
+    essentiality, change points, and insertion metrics.
 
     Args:
-        args (argparse.Namespace): Parsed command-line arguments containing the following:
-            - conditionfiles (list of str): Normalized plot files for all conditions (e.g., combine.plot.gz).
-            - combined_compare (str): Path to the combined compare CSV file with logFC, p-values, and q-values.
-            - forward_compare (str): Path to the forward compare CSV file with logFC, p-values, and q-values.
-            - reverse_compare (str): Path to the reverse compare CSV file with logFC, p-values, and q-values.
-            - embl (str): Path to the prepared EMBL file used for analysis.
-            - output_dir (str): Output filename prefix for saving the report.
-            - annotations (str, optional): Path to the EMBL file used for annotations.
-            - use_annotation (bool, optional): Flag to use the annotation file instead of the EMBL file.
+        args (argparse.Namespace): Parsed command-line arguments with the following attributes:
+
+            Common:
+            - disable_new_algorithm (bool): If True, use the old gene statistics algorithm.
+            - embl (str): Path to the prepared EMBL file for gene annotations.
+            - output_dir (str): Path to the output directory for saving the gene report.
+            - annotations (str, optional): Optional annotation file to override EMBL.
+            - use_annotation (bool, optional): If True, use the annotation file instead of the EMBL file.
+
+            Old algorithm only:
+            - combined (str): Combined strand plot file.
+            - forward (str): Forward strand plot file.
+            - reverse (str): Reverse strand plot file.
+            - scores (str): Logfc score file, combined.pqvals.plot .
+            - window_size (int): Window size used for changepoint detection.
+
+            New algorithm only:
+            - plotfiles_all (list of str): List of normalized insertion count plot files for all conditions.
+            - forward_count_condition (str): Forward insertion count TSV for the condition.
+            - reverse_count_condition (str): Reverse insertion count TSV for the condition.
+            - combined_count_condition (str): Combined insertion count TSV for the condition.
+            - forward_count_control (str): Forward insertion count TSV for the control.
+            - reverse_count_control (str): Reverse insertion count TSV for the control.
+            - combined_compare (str): Combined comparison CSV with statistical metrics.
+            - forward_compare (str): Forward comparison CSV with statistical metrics.
+            - reverse_compare (str): Reverse comparison CSV with statistical metrics.
+            - blue_red_logfc_diff_threshold (float): Threshold for logFC difference in blue vs red region.
+            - distance_threshold (int): Minimum base-pair distance for changepoint selection.
+            - insertion_count_max_threshold (int): Max insertion count threshold.
+            - insertion_count_sum_threshold (int): Sum insertion count threshold.
+            - insertion_signal_similarity_avg_threshold (float): Average similarity threshold for insertion signal.
+            - log_fc_threshold (float): Log fold change threshold.
+            - overlap_threshold (float): Overlap threshold for feature regions.
+            - q_val (float): Q-value cutoff for significance.
+            - inactivation_fraction_threshold (float): Fraction threshold for inactivation determination.
 
     Returns:
-        None: The function calls `gene_statistics` and does not return a value.
-
-    Example:
-        parser = argparse.ArgumentParser()
-        # Add arguments to parser as described above
-        args = parser.parse_args()
-        gene_report(args)
+        None. The function writes a gene report to the specified output directory.
     """
     
 
@@ -431,20 +471,6 @@ def gene_report(args):
         )
     else:
 
-        # print("All Inputs to New Gene Report")
-        # print("args.plotfiles_all:", args.plotfiles_all)
-        # print("args.forward_count_condition:", args.forward_count_condition)
-        # print("args.reverse_count_condition:", args.reverse_count_condition)
-        # print("args.forward_count_control:", args.forward_count_control)
-        # print("args.reverse_count_control:", args.reverse_count_control)
-        # print("args.combined_compare:", args.combined_compare)
-        # print("args.forward_compare:", args.forward_compare)
-        # print("args.reverse_compare:", args.reverse_compare)
-        # print("args.embl:", args.embl)
-        # print("args.output_dir:", args.output_dir)
-        # print("args.annotations:", args.annotations)
-        # print("args.use_annotation:", args.use_annotation)
-
         gene_params_keys = [
             "blue_red_logfc_diff_threshold",
             "distance_threshold",
@@ -457,7 +483,6 @@ def gene_report(args):
             "inactivation_fraction_threshold",
         ]
         gene_categorization_params_values = {key: getattr(args, key) for key in gene_params_keys}
-        print("Gene Report Categorization Parameters:", gene_categorization_params_values)
         gene_statistics_new(
             args.disable_new_algorithm,
             plotfiles_all=args.plotfiles_all,
@@ -560,6 +585,10 @@ def prepare_embl_utils_options(parser):
         type=int,
         default=25,
     )
+     # New Algo Params
+    parser.add_argument("--disable_new_algorithm", "-disable_newalgo", 
+                    help="Disables new categorization and dynamic window for 3,5 prime end generation (default: False)", 
+                    action='store_true')
     parser.add_argument(
         "--window_size", "-w", help="Window size (default: 100)", type=int, default=100
     )
@@ -584,15 +613,6 @@ def prepare_embl_utils_options(parser):
             )
 
 def prepare_embl(args):
-    # print("All Inputs to PrepareEMBLFile")
-    # print("args.plotfile:", args.plotfile)
-    # print("args.minimum_threshold:", args.minimum_threshold)
-    # print("args.window_size:", args.window_size)
-    # print("args.window_interval:", args.window_interval)
-    # print("args.prime_feature_size:", args.prime_feature_size)
-    # print("args.emblfile:", args.emblfile)
-    # print("args.dynamic_window:", args.dynamic_window)
-    # print("args.output:", args.output)
 
     dynamic_params_keys = [
         "drop_ratio_threshold",
@@ -606,10 +626,7 @@ def prepare_embl(args):
     ]
 
     dynamic_params_values = {key: getattr(args, key, None) for key in dynamic_params_keys}
-    # print("Dynamic Parameters:", dynamic_params_values)
 
-    
-    # Modification 3
     pef = PrepareEMBLFile(
         args.plotfile,
         args.minimum_threshold,
@@ -618,6 +635,7 @@ def prepare_embl(args):
         args.prime_feature_size,
         args.emblfile,
         args.dynamic_window,
+        args.disable_new_algorithm,
         dynamic_params_values
     )
     pef.create_file(args.output)

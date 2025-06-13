@@ -281,8 +281,6 @@ def compare_pipeline(args):
     """
     Use Snakemake to process multiple FASTQ files in parallel.
     """
-    # print("args.control_files", args.control_files)
-    # print("args.condition_files", args.condition_files)
 
     if len(args.control_files) != len(args.condition_files):
         raise ValueError("Must have equal number of control and condition files")
@@ -319,8 +317,6 @@ def compare_pipeline(args):
         ofql.write(create_yaml_option("minimum_proportion_insertions", args.minimum_proportion_insertions))
         ofql.write(create_yaml_option("disable_new_algorithm", args.disable_new_algorithm, bool=True))
 
-        # print("args.disable_new_algorithm",args.disable_new_algorithm)
-        # print("args.input_thresholds_config",args.input_thresholds_config)
         if not args.disable_new_algorithm:
             if args.input_thresholds_config:
                 tradis_input_data = load_thresholds(args.input_thresholds_config)
@@ -365,7 +361,7 @@ def start_snakemake(
         cmd_list.append("--verbose")
 
     cmd = " ".join(cmd_list)
-    # print("Snakemake command:", cmd)
+
     if verbose:
         print("Snakemake command:", cmd)
 

@@ -19,10 +19,11 @@ class FeatureProperties:
 
 
 class   EMBLExpandGenes:
-    def __init__(self, embl_file,prime_feature_size,dynamic_window,kwargs):
+    def __init__(self, embl_file,prime_feature_size,dynamic_window,disable_new_algorithm,kwargs):
         # Modification 6
         self.embl_file = embl_file
         self.dynamic_window=dynamic_window
+        self.disable_new_algorithm=disable_new_algorithm
         # Initialize dynamic parameters here
         self.drop_ratio_threshold = kwargs.get("drop_ratio_threshold", None)
         self.gap_threshold = kwargs.get("gap_threshold", None)
@@ -38,13 +39,13 @@ class   EMBLExpandGenes:
 
         self.er = EMBLReader(self.embl_file)
         self.features = self.er.features
-        self.genes_to_features= self.er.genes_to_features
+        self.gene_to_features_deduplicated= self.er.gene_to_features_deduplicated
         self.genome_length = self.er.genome_length
         
 
-    def create_3_5_prime_features(self):
+    def create_3_5_prime_features_new(self):
         new_features = []
-        for gene, feature in self.genes_to_features.items():
+        for gene, feature in self.gene_to_features_deduplicated.items():
             gene_name= gene
             locus_tag = self.feature_to_locus_tag(feature)
             product = self.feature_to_product(feature)
@@ -86,6 +87,52 @@ class   EMBLExpandGenes:
                 )
 
         return new_features
+    
+    def create_3_5_prime_features(self):
+        new_features = []
+        for feature in self.features:
+            gene_name = self.feature_to_gene_name(feature)
+            locus_tag = self.feature_to_locus_tag(feature)
+            product = self.feature_to_product(feature)
+
+            # The gene itself
+            new_features.append(
+                FeatureProperties(
+                    feature.location.start,
+                    feature.location.end,
+                    feature.location.strand,
+                    gene_name,
+                    locus_tag,
+                    product,
+                )
+            )
+
+            # forward direction
+            if feature.location.strand == 1:
+                new_features.append(
+                    self.construct_start_feature(
+                        feature, gene_name, "__5prime", locus_tag, product
+                    )
+                )
+                new_features.append(
+                    self.construct_end_feature(
+                        feature, gene_name, "__3prime", locus_tag, product
+                    )
+                )
+            else:
+                new_features.append(
+                    self.construct_end_feature(
+                        feature, gene_name, "__5prime", locus_tag, product
+                    )
+                )
+                new_features.append(
+                    self.construct_start_feature(
+                        feature, gene_name, "__3prime", locus_tag, product
+                    )
+                )
+
+        return new_features
+    
     
 
     def get_windows(self,prime_type, data, start, end, max_window, min_window):
@@ -132,11 +179,7 @@ class   EMBLExpandGenes:
         potential_shifts = drop_ratio[(drop_ratio < self.drop_ratio_threshold) & (moving_average > self.moving_average)].index.tolist()
         return pd.Series(potential_shifts)
         
-
-    # Modification 9
     def construct_end_feature(self, feature, gene_name, suffix, locus_tag, product):
-        # density_check= self.check_prime_feature_density("end",feature.location.end)
-        # if density_check and self.dynamic_window:
         if self.dynamic_window:
             end_index_list=[]
             for key, parser in self.plot_file_objs.items():
@@ -191,18 +234,27 @@ class   EMBLExpandGenes:
             locus_tag + suffix,
             product,
         )
-    # Modification 11
+
     def construct_file(self, filename,plot_file_objs):
         with open(filename, "w") as emblfile:
             emblfile.write(self.header())
             self.plot_file_objs= plot_file_objs
-            for f in self.create_3_5_prime_features():
-                if f == None:
-                    continue
-                if f.direction == 1:
-                    emblfile.write(self.construct_feature_forward(f))
-                else:
-                    emblfile.write(self.construct_feature_reverse(f))
+            if not self.dynamic_window and self.disable_new_algorithm:
+                for f in self.create_3_5_prime_features():
+                    if f == None:
+                        continue
+                    if f.direction == 1:
+                        emblfile.write(self.construct_feature_forward(f))
+                    else:
+                        emblfile.write(self.construct_feature_reverse(f))
+            else:
+                for f in self.create_3_5_prime_features_new():
+                    if f == None:
+                        continue
+                    if f.direction == 1:
+                        emblfile.write(self.construct_feature_forward(f))
+                    else:
+                        emblfile.write(self.construct_feature_reverse(f))
 
             emblfile.write(EMBLSequence(str(self.er.record.seq)).format())
         return self
