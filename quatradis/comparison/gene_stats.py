@@ -17,8 +17,8 @@ def gene_statistics(combined_plotfile, forward_plotfile, reverse_plotfile, combi
     b = BlockIdentifier(combined_plotfile, forward_plotfile, reverse_plotfile, combined_scorefile, window_size)
     blocks = b.block_generator()
     ant_file = embl_file
-    if use_annotation:
-        ant_file = annotation_file
+    # if use_annotation:
+    #     ant_file = annotation_file
 
     genes = GeneAnnotator(ant_file, blocks).annotate_genes()
     intergenic_blocks = [block for block in blocks if block.intergenic]
