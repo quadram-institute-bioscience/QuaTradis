@@ -64,15 +64,15 @@ rule finish:
 rule prepare_embl:
     input:
         plot=config["control_files"][0],
-        embl=config["annotations"]
     output: os.path.join(config["output_dir"], "prepared.embl")
     message: "Preparing embl annotations file"
     params:
         minimum_threshold="--minimum_threshold=" + config["minimum_threshold"] if config["minimum_threshold"] else "",
         window_size="--window_size=" + config["window_size"] if config["window_size"] else "",
         window_interval="--window_interval=" + config["window_interval"] if config["window_interval"] else "",
-        prime_feature_size="--prime_feature_size=" + config["prime_feature_size"] if config["prime_feature_size"] else ""
-    shell: "tradis compare prepare_embl --output={output} {params.minimum_threshold} {params.window_size} {params.window_interval} {params.prime_feature_size} --emblfile {input.embl} {input.plot}"
+        prime_feature_size="--prime_feature_size=" + config["prime_feature_size"] if config["prime_feature_size"] else "",
+        embl="--emblfile=" + config["annotations"] if "annotations" in config else ""
+    shell: "tradis compare prepare_embl --output={output} {params.minimum_threshold} {params.window_size} {params.window_interval} {params.prime_feature_size} {params.embl} {input.plot}"
 
 rule normalise:
     input:
@@ -175,7 +175,7 @@ rule gene_stats:
         input_dir=os.path.join(config["output_dir"], "comparison"),
         output_dir="--output_dir=" + config["output_dir"],
         window_size="--window_size=" + config["window_size"],
-        annotations="--annotations=" + config["annotations"] if not config["annotations"]=="None" else "",
+        annotations="--use_annotations" if "annotations" in config else "",
         scores="--scores=" + os.path.join(config["output_dir"],"comparison","combined","combined.pqvals.plot")
     message: "Creating gene report"
     shell: "tradis compare gene_report --combined={input.combined} --forward={input.forward} --reverse={input.rev} {params.scores} {params.window_size} {params.output_dir} {params.annotations} {input.embl}"

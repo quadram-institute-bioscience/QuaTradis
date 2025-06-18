@@ -8,34 +8,29 @@ from quatradis.gene.gene import Gene
 from quatradis.util.file_handle_helpers import ensure_output_dir_exists
 
 
-def gene_statistics(combined_plotfile, forward_plotfile, reverse_plotfile, combined_scorefile, window_size, embl_file, output_dir="output", annotation_file=None):
+def gene_statistics(combined_plotfile, forward_plotfile, reverse_plotfile, combined_scorefile, window_size, embl_file, output_dir="output", use_annotations=False):
 
     ensure_output_dir_exists(output_dir)
 
-    use_annotation = True if annotation_file else False
-
     b = BlockIdentifier(combined_plotfile, forward_plotfile, reverse_plotfile, combined_scorefile, window_size)
     blocks = b.block_generator()
-    ant_file = embl_file
-    if use_annotation:
-        ant_file = annotation_file
 
-    genes = GeneAnnotator(ant_file, blocks).annotate_genes()
+    genes = GeneAnnotator(embl_file, blocks).annotate_genes()
     intergenic_blocks = [block for block in blocks if block.intergenic]
 
-    if not use_annotation:
-        all_genes = merge_windows(genes)
-    else:
+    if use_annotations:
         all_genes = []
         for g in genes:
             all_genes.append(g)
+    else:
+        all_genes = merge_windows(genes)
 
     report_file = os.path.join(output_dir, "gene_report.tsv")
 
     if len(all_genes) == 0 and len(intergenic_blocks) == 0:
         print("No significant genes found for chosen parameters.\n")
 
-    write_gene_report(all_genes, intergenic_blocks, report_file, use_annotation)
+    write_gene_report(all_genes, intergenic_blocks, report_file, use_annotations)
     write_regulated_gene_report(all_genes, os.path.join(output_dir, "regulated_gene_report.tsv"))
 
     # if self.verbose:
