@@ -185,9 +185,8 @@ def compare_options(parser):
     parser.add_argument(
         "--annotations",
         "-a",
-        help="If provided genes in this EMBL annotations file will expanded based on data in the plotfile.",
+        help="If provided genes in this EMBL annotations file will expanded based on data in the plotfile.  Otherwise create a new EMBL from the plotfiles.",
         type=str,
-        default=None,
     )
     parser.add_argument(
         "--minimum_threshold",
@@ -303,7 +302,8 @@ def compare_pipeline(args):
         # Writing individual configuration parameters
         ofql.write(create_yaml_option("normalise", not args.disable_normalisation, bool=True))
         ofql.write(create_yaml_option("input_thresholds_config", args.input_thresholds_config))
-        ofql.write(create_yaml_option("annotations", args.annotations))
+        if args.annotations:
+            ofql.write(create_yaml_option("annotations", args.annotations))
         ofql.write(create_yaml_option("minimum_threshold", args.minimum_threshold))
         ofql.write(create_yaml_option("prime_feature_size", args.prime_feature_size))
         ofql.write(create_yaml_option("window_interval", args.window_interval))

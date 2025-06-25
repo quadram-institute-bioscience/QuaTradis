@@ -79,7 +79,6 @@ rule finish:
 rule prepare_embl:
     input:
         plot=norm_files,
-        embl=config["annotations"]
     output:
         os.path.join(config["output_dir"], "prepared.embl")
     message:
@@ -90,6 +89,7 @@ rule prepare_embl:
             f"--window_size={config['window_size']}" if config.get("window_size") else "",
             f"--window_interval={config['window_interval']}" if config.get("window_interval") else "",
             f"--prime_feature_size={config['prime_feature_size']}" if config.get("prime_feature_size") else "",
+            f"--emblfile={config["annotations"]}" if config.get("annotations") else "",
             "--dynamic_window" if config.get("Dynamic_Window_3_5_Prime_Ends_Params", {}).get("dynamic_window", False) else ""
         ]).strip(),
         disable_new_algorithm="--disable_new_algorithm" if config["disable_new_algorithm"] else "",
@@ -101,7 +101,7 @@ rule prepare_embl:
         )
     
     shell:
-        """tradis compare prepare_embl --output={output} {params.all_input_params} {params.dynamic_params} {params.disable_new_algorithm} --emblfile {input.embl} --plotfile {input.plot}
+        """tradis compare prepare_embl --output={output} {params.all_input_params} {params.dynamic_params} {params.disable_new_algorithm} --plotfile {input.plot}
         """
 
 
@@ -236,7 +236,7 @@ rule gene_stats:
     params:
         scores="--scores=" + os.path.join(config["output_dir"],"comparison","combined","combined.pqvals.plot"),
         output_dir="--output_dir=" + config["output_dir"],
-        annotations="--annotations=" + config["annotations"] if config["annotations"] != "None" else "",
+        annotations="--use_annotations" if "annotations" in config else "",
         use_annotation="--use_annotation" if config.get("use_annotation", False) else "",
         gene_report_params=" ".join(
             f"--{key}={value}" for key, value in config.get("Gene_Report_Params", {}).items() if value

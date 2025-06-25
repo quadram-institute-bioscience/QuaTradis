@@ -383,7 +383,7 @@ def add_genereport_options(parser):
         "--output_dir", "-o", help="Output filename prefix", type=str, default="."
     )
     parser.add_argument(
-        "--annotations", "-a", help="EMBL file used for annotations", type=str
+        "--use_annotations", "-a", help="EMBL file is a real EMBL file with annotations (not a set of windows)", action="store_true", default=False
     )
     parser.add_argument("--use_annotation", "-ua", help="Flag to use annotation file in place of prepared embl file (default: False)", action='store_true')
     
@@ -467,7 +467,7 @@ def gene_report(args):
             window_size=args.window_size,
             embl_file=args.embl,
             output_dir=args.output_dir,
-            annotation_file=args.annotations,
+            use_annotations=args.use_annotations,
         )
     else:
 
