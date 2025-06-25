@@ -165,7 +165,7 @@ class GeneAnnotator:
         - Extracts the unique gene names from the filtered dataframe.
 
         Returns:
-        - unique_gene_names: A list of unique gene names that are upregulated or downregulated based on 
+        - unique_gene_names: A list of unique gene names that are Inducer-Enriched or Repressor-Enriched based on 
         the conditions set in the 'Category2' and 'Category3' columns.
         """
         filtered_df = self.result_df[self.result_df['Category2'].notnull()| self.result_df['Category3'].notnull() ]
@@ -343,18 +343,18 @@ class GeneAnnotator:
                             if overlap_pct>self.overlap_threshold:
                                 gene_knockout= self.result_df[self.result_df["Gene"]==gene]["Category1"].values
                                 if abs(logfc_same.item()-logfc_opp.item()<self.blue_red_logfc_diff_threshold):
-                                    new_value=f"upregulated due to knockout of gene {gene}"
+                                    new_value=f"Inducer-Enriched due to knockout-enrichment of gene {gene}"
                                     if gene_knockout.size > 0 and gene_knockout[0] is not None:
-                                        if gene_knockout[0]=="knockout":
+                                        if gene_knockout[0]=="Knockout-Enriched":
                                             self.result_df.loc[self.result_df['Gene'] == geneName, 'Category4'] = (
                                                 self.result_df.loc[self.result_df['Gene'] == geneName, 'Category4']
                                                 .apply(lambda x: new_value if pd.isna(x) else f"{x} | {new_value}")
                                             )
                                 elif logfc_same.item()> logfc_opp.item()+ self.blue_red_logfc_diff_threshold:
-                                    new_value=f"Knockout due to upregulation of gene {geneName}"
+                                    new_value=f"Knockout-Enriched due to upregulation of gene {geneName}"
                                     # if not pd.isna(gene_knockout):
                                     if gene_knockout.size > 0 and gene_knockout[0] is not None:
-                                        if gene_knockout[0]=="knockout":
+                                        if gene_knockout[0]=="Knockout-Enriched":
                                         # if gene_knockout.item()=="knockout":
                                             self.result_df.loc[self.result_df['Gene'] == gene, 'Category4'] = (
                                                 self.result_df.loc[self.result_df['Gene'] == gene, 'Category4']
@@ -376,18 +376,18 @@ class GeneAnnotator:
                             if overlap_pct>self.overlap_threshold:
                                 gene_knockout= self.result_df[self.result_df["Gene"]==gene]["Category1"].values
                                 if abs(logfc_same.item()-logfc_opp.item())<self.blue_red_logfc_diff_threshold:
-                                    new_value=f"downregulated due to knockout of gene {gene}"
+                                    new_value=f"Repressor-Enriched due to knockout-enrichment of gene {gene}"
                                     if gene_knockout.size > 0 and gene_knockout[0] is not None:
                                         # if gene_knockout.item()=="knockout":
-                                        if gene_knockout[0] == "knockout":
+                                        if gene_knockout[0] == "Knockout-Enriched":
                                             self.result_df.loc[self.result_df['Gene'] == geneName, 'Category4'] = (
                                                 self.result_df.loc[self.result_df['Gene'] == geneName, 'Category4']
                                                 .apply(lambda x: new_value if pd.isna(x) else f"{x} | {new_value}")
                                         )
                                 elif logfc_same.item()> logfc_opp.item() + self.blue_red_logfc_diff_threshold:
-                                    new_value=f"Knockout due to downregulation of gene {geneName}"
+                                    new_value=f"Knockout-Enriched due to downregulation of gene {geneName}"
                                     if gene_knockout.size > 0 and gene_knockout[0] is not None:
-                                        if gene_knockout[0] == "knockout":
+                                        if gene_knockout[0] == "Knockout-Enriched":
                                             self.result_df.loc[self.result_df['Gene'] == gene, 'Category4'] = (
                                                 self.result_df.loc[self.result_df['Gene'] == gene, 'Category4']
                                                 .apply(lambda x: new_value if pd.isna(x) else f"{x} | {new_value}")
@@ -434,10 +434,10 @@ class GeneAnnotator:
 
         1. Merges forward and reverse read count data to obtain insertion counts.
         2. Determines whether genes meet the insertion count threshold based on their strand 
-        and regulatory category (upregulated/downregulated).
+        and regulatory category (Inducer-Enriched/Repressor-Enriched).
         3. Flags rows where insertion counts fall below the threshold.
         4. Updates or removes flagged rows:
-        - If a row is flagged for both upregulated (Category2) and downregulated (Category3), it is removed.
+        - If a row is flagged for both Inducer-Enriched (Category2) and Repressor-Enriched (Category3), it is removed.
         - If only Category2 is flagged, its value along with 'LogFC(5_Prime)' is set to NaN.
         - If only Category3 is flagged, its value along with 'LogFC(3_Prime)' is set to NaN.
 
@@ -504,10 +504,10 @@ class GeneAnnotator:
         for _, row in result_df.iterrows():
             gene = row['Gene']
             strand = row['Strand']
-            category1_knockout = row['Category1'] == 'knockout'
-            category1_protection = row['Category1'] == 'protection'
-            category2_up = row['Category2'] == 'upregulated'
-            category3_down = row['Category3'] == 'downregulated'
+            category1_knockout = row['Category1'] == 'Knockout-Enriched'
+            category1_protection = row['Category1'] == 'Knockout-Depleted'
+            category2_up = row['Category2'] == 'Inducer-Enriched'
+            category3_down = row['Category3'] == 'Repressor-Enriched'
             
             gene_5prime = f"{gene}__5prime"
             gene_3prime = f"{gene}__3prime"
@@ -653,18 +653,18 @@ class GeneAnnotator:
         Calculate confidence scores for genes based on their regulation status.
 
         This function computes two confidence scores:
-        1. `confidence_score_upregulated` for rows where 'Category2' is 'upregulated'.
-        2. `confidence_score_downregulated` for rows where 'Category3' is 'downregulated'.
+        1. `confidence_score_inducer-enriched` for rows where 'Category2' is 'Inducer-Enriched'.
+        2. `confidence_score_repressor-enriched` for rows where 'Category3' is 'Repressor-Enriched'.
 
         The confidence score is calculated using the following formulas:
 
-        - If 'Category2' == 'upregulated':
-        confidence_score_upregulated = (LogFC(5_Prime) ** 0.5) * 
+        - If 'Category2' == 'Inducer-Enriched':
+        confidence_score_inducer-enriched = (LogFC(5_Prime) ** 0.5) * 
                                         ((insertion_index_upregulated / number_replicates) ** 0.1) * 
                                         ((insertion_count_upregulated / number_replicates) ** 0.5)
 
-        - If 'Category3' == 'downregulated':
-        confidence_score_downregulated = (LogFC(3_Prime) ** 0.5) * 
+        - If 'Category3' == 'Repressor-Enriched':
+        confidence_score_repressor-enriched = (LogFC(3_Prime) ** 0.5) * 
                                         ((insertion_index_downregulated / number_replicates) ** 0.1) * 
                                         ((insertion_count_downregulated / number_replicates) ** 0.5)
 
@@ -682,29 +682,29 @@ class GeneAnnotator:
         --------
         pd.DataFrame
             The DataFrame with two new columns:
-            - 'confidence_score_upregulated': Computed confidence score for upregulated genes.
-            - 'confidence_score_downregulated': Computed confidence score for downregulated genes.
+            - 'confidence_score_inducer-enriched': Computed confidence score for Inducer-Enriched genes.
+            - 'confidence_score_repressor-enriched': Computed confidence score for Repressor-Enriched genes.
 
         Notes:
         ------
         - The variable `number_replicates` is determined by the length of `self.condition_files`.
-        - Rows that do not satisfy the conditions ('upregulated' for Category2 or 'downregulated' for Category3) 
+        - Rows that do not satisfy the conditions ('Inducer-Enriched' for Category2 or 'Repressor-Enriched' for Category3) 
         will have NaN values in the corresponding confidence score column.
         """
 
         number_replicates= len(self.condition_files)
 
         # Apply the formula only for 'upregulated' rows, otherwise set NaN
-        df["confidence_score_upregulated"] = np.where(
-            df["Category2"] == "upregulated",
+        df["confidence_score_inducer-enriched"] = np.where(
+            df["Category2"] == "Inducer-Enriched",
             (df["LogFC(5_Prime)"] ** 0.1) *
             ((df["insertion_index_upregulated"] / number_replicates) ** 0.1) *
             ((df["insertion_count_upregulated"] / number_replicates) ** 0.5),
             np.nan  # Assign NaN for non-'upregulated' rows
         )
 
-        df["confidence_score_downregulated"] = np.where(
-            df["Category3"] == "downregulated",
+        df["confidence_score_repressor-enriched"] = np.where(
+            df["Category3"] == "Repressor-Enriched",
             (df["LogFC(3_Prime)"] ** 0.5) *
             ((df["insertion_index_downregulated"] / number_replicates) ** 0.1) *
             ((df["insertion_count_downregulated"] / number_replicates) ** 0.5),
@@ -718,7 +718,7 @@ class GeneAnnotator:
         Categorizes genes based on their log fold change (logFC) and other criteria.
 
         This function processes gene-level data from the combined CSV and determines 
-        a gene's category (e.g., "knockout," "protection," or "unclassified") based 
+        a gene's category (e.g., "Knockout-Enriched," "Knockout-Depleted," or "unclassified") based 
         on logFC thresholds and transcription fraction criteria. It also extracts 
         relevant gene features and metrics.
 
@@ -740,8 +740,8 @@ class GeneAnnotator:
             - This function is under development and aims to support confidence score generation 
             for gene categorizations.
             - Categories are determined based on logFC thresholds:
-                - Positive logFC above a thershold and with inactivation percentage below the threshold: "knockout"
-                - Negative logFC: "protection"
+                - Positive logFC above a thershold and with inactivation percentage below the threshold: "Knockout-Enriched"
+                - Negative logFC: "Knockout-Depleted"
                 - Otherwise: "unclassified"
             - Placeholder values are returned if the gene name matches a specific format.
         """
@@ -763,9 +763,9 @@ class GeneAnnotator:
             # Determine category
             if logfc_gene > self.log_fc_threshold:
                 inactivation_fraction = self.get_inactivation_fraction(start,end,strand, self.condition_plots)
-                gene_category = "fractional knockout" if inactivation_fraction <= self.inactivation_fraction_threshold else "knockout"
+                gene_category = "Partial-Knockout-Enriched" if inactivation_fraction <= self.inactivation_fraction_threshold else "Knockout-Enriched"
             elif logfc_gene < -self.log_fc_threshold:
-                gene_category = "protection"
+                gene_category = "Knockout-Depleted"
             else:
                 gene_category = "unclassified"
 
@@ -809,13 +809,13 @@ class GeneAnnotator:
     def prime_end_expression_categorization(self, geneName):
         """
         Modifies the regulation categorization of a given gene by analyzing its 3' and 5' prime regions 
-        and calculating log fold changes (logFC) to categorize the gene as upregulated or downregulated 
+        and calculating log fold changes (logFC) to categorize the gene as Inducer-Enriched or Repressor-Enriched 
         based on specific thresholds.
 
         The function performs the following steps:
         - Determines the strand direction (forward or reverse) for the gene.
         - Fetches the log fold change values for the 3' and 5' prime regions of the gene.
-        - Categorizes the gene as upregulated or downregulated based on the log fold change values and a predefined threshold.
+        - Categorizes the gene as Inducer-Enriched or Repressor-Enriched based on the log fold change values and a predefined threshold.
         - Updates the `result_df` DataFrame with the regulation categories and log fold changes for the gene.
 
         Args:
@@ -833,7 +833,7 @@ class GeneAnnotator:
         Example:
         - geneName = "GeneA"
         After calling `prime_end_expression_categorization("GeneA")`, the function will update the 
-        regulation categories (up/downregulated) and log fold changes in `result_df` for "GeneA".
+        regulation categories (Inducer-Enriched/Repressor-Enriched) and log fold changes in `result_df` for "GeneA".
         """
         start = self.extract_clean_position(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == geneName, "start"].iloc[0],"start")
         end = self.extract_clean_position(self.combined_count_condition_df_rep1.loc[self.combined_count_condition_df_rep1["gene_name"] == geneName, "end"].iloc[0],"end")
@@ -847,7 +847,7 @@ class GeneAnnotator:
             if not prime_3.empty:
                 prime3_logfc = prime_3[logfc_key_3].values
                 if not pd.isna(prime3_logfc) and prime3_logfc > self.log_fc_threshold:
-                    down_regulation_category = "downregulated"
+                    down_regulation_category = "Repressor-Enriched"
                     logfc_3_prime = prime3_logfc.item()
                     qval_3_prime= prime_3[qval_key_3].values.item()
                     logCPM_3_prime= prime_3[logCPM_key_3].values.item()
@@ -855,7 +855,7 @@ class GeneAnnotator:
             if not prime_5.empty:
                 prime5_logfc = prime_5[logfc_key_5].values
                 if not pd.isna(prime5_logfc) and prime5_logfc > self.log_fc_threshold:
-                    up_regulation_category = "upregulated"
+                    up_regulation_category = "Inducer-Enriched"
                     logfc_5_prime = prime5_logfc.item()
                     qval_5_prime= prime_5[qval_key_5].values.item()
                     logCPM_5_prime= prime_5[logCPM_key_5].values.item()
@@ -923,28 +923,28 @@ class GeneAnnotator:
             Returns:
                 pandas.DataFrame: A DataFrame containing annotated genes with the following columns:
                     - 'Gene'
-                    - 'Category1'       (Knockout | Protected | Unclassified categorization of gene)
-                    - 'Category2'       (Upregulated | None categorization of gene)
-                    - 'Category3'       (Downregulated | None categorization of gene)
+                    - 'Category1'       (Knockout-Enriched | Protected | Unclassified categorization of gene)
+                    - 'Category2'       (Inducer-Enriched | None categorization of gene)
+                    - 'Category3'       (Repressor-Enriched | None categorization of gene)
                     - 'Start'           (Starting index of gene)
                     - 'End'             (Ending index of gene)
                     - 'Strand'          (Location/Position of gene)
-                    - 'LogFC(Gene)'     (LogFC of gene with qval<5% if gene is categorized as knockout or protected else None)
+                    - 'LogFC(Gene)'     (LogFC of gene with qval<5% if gene is categorized as Knockout-Enriched or protected else None)
                     - 'LogFC(3_Prime)'  (LogFC of 3 prime with qval<5% if gene is categorized as downregualted else None)
                     - 'LogFC(5_Prime)'  (LogFC of 5 prime with qval<5% if gene is categorized as downregualted else None)
-                    - 'Category4' (added during processing explaining if the upregualtion is due to knockout of adjacent gene or vice versa.)
+                    - 'Category4' (added during processing explaining if the upregualtion is due to knockout-enrichment of adjacent gene or vice versa.)
 
             Example:
                 result_df = gene_annotator.annotate_genes()
         """
         # filter genes based on logfc significance (qval<5%) for combined compare insertions
         self.combined_compare_csv= self.read_and_filter_logfc_qval(self.combined_compare_csv)
-        # perform gene knockout, protection catgeorization
+        # perform gene Knockout-Enriched, Knockout-Depleted catgeorization
         knockout_protection_result_list=[]
         for idx, row in self.combined_compare_csv.iterrows():
             result = self.categorize_knockout_protection(row)
             knockout_protection_result_list.append(result)
-        self.result_df = pd.DataFrame(knockout_protection_result_list, columns=['Gene', 'Category1','Category2','Category3','Start','End','Strand','LogFC(Gene)','LogFC(5_Prime)','LogFC(3_Prime)','Qval(Gene)','Qval(5_Prime)','Qval(3_Prime)','Log_CPM(Gene)','Log_CPM(5_Prime)','Log_CPM(3_Prime)','confidence_score_upregulated','confidence_score_downregulated'])
+        self.result_df = pd.DataFrame(knockout_protection_result_list, columns=['Gene', 'Category1','Category2','Category3','Start','End','Strand','LogFC(Gene)','LogFC(5_Prime)','LogFC(3_Prime)','Qval(Gene)','Qval(5_Prime)','Qval(3_Prime)','Log_CPM(Gene)','Log_CPM(5_Prime)','Log_CPM(3_Prime)','confidence_score_inducer-enriched','confidence_score_repressor-enriched'])
         self.result_df = self.result_df.dropna(how="all")
         # filter genes based on logfc significance (qval<5%) for forward & reverse compare insertions
         self.forward_compare_csv= self.read_and_filter_logfc_qval(self.forward_compare_csv,"prime_ends")
@@ -961,7 +961,7 @@ class GeneAnnotator:
         up_down_regulation_gene_names= self.get_genes_with_up_or_down_regulation()
         self.result_df["Category4"]=None
         for gene in up_down_regulation_gene_names:
-            #check acivity on or because of ajacent gene for upregulated or downregulate gene 
+            #check acivity on or because of ajacent gene for upregulated or downregulated gene 
             self.categorize_activitation_explanation(gene)
         # Replace NaN, None, and blanks
         self.result_df.replace(r'^\s*$', np.nan, regex=True, inplace=True)  # Replace blanks with NaN
@@ -983,7 +983,7 @@ class GeneAnnotator:
                             'LogFC(Gene)','LogFC(5_Prime)','LogFC(3_Prime)',
                             'Qval(Gene)','Qval(5_Prime)','Qval(3_Prime)',
                             'Log_CPM(Gene)','Log_CPM(5_Prime)','Log_CPM(3_Prime)',
-                            'confidence_score_upregulated','confidence_score_downregulated']]
+                            'confidence_score_inducer-enriched','confidence_score_repressor-enriched']]
     
 
     def annotate_genes(self):

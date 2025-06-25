@@ -141,7 +141,7 @@ def get_complete_report(gene_names, gene_report_df, condition_combined_count_df,
                'Log_CPM(Gene)', 'Log_CPM(5_Prime)', 'Log_CPM(3_Prime)',
                'Read_Count(Gene)', 'Read_Count(3_Prime)', 'Read_Count(5_Prime)',
                'Ins_Index(Gene)', 'Ins_Index(3_Prime)', 'Ins_Index(5_Prime)',
-               'confidence_score_upregulated','confidence_score_downregulated', 'Essentiality']
+               'confidence_score_inducer-enriched','confidence_score_repressor-enriched', 'Essentiality']
     
     rows = []
 
@@ -170,8 +170,8 @@ def get_complete_report(gene_names, gene_report_df, condition_combined_count_df,
                 new_row['Category2'] = gene_report_row.get('Category2')
                 new_row['Category3'] = gene_report_row.get('Category3')
                 new_row['Category4'] = gene_report_row.get('Category4')
-                new_row['confidence_score_upregulated'] = gene_report_row.get('confidence_score_upregulated')
-                new_row['confidence_score_downregulated'] = gene_report_row.get('confidence_score_downregulated')
+                new_row['confidence_score_inducer-enriched'] = gene_report_row.get('confidence_score_inducer-enriched')
+                new_row['confidence_score_repressor-enriched'] = gene_report_row.get('confidence_score_repressor-enriched')
 
             # Determine 5' and 3' keys based on strand
             if strand == 1:

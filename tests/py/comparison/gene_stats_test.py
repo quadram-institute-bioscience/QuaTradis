@@ -64,18 +64,18 @@ class TestGeneStats(unittest.TestCase):
         print("Check 0")
         print(genereport.head(20))
         #Assert Knockout
-        self.assertEqual(6, (genereport['Category1'] == 'knockout').sum())
+        self.assertEqual(6, (genereport['Category1'] == 'Knockout-Enriched').sum())
         print("Check 1")
         #Assert Protection
-        self.assertEqual(9, (genereport['Category1'] == 'protection').sum())
+        self.assertEqual(9, (genereport['Category1'] == 'Knockout-Depleted').sum())
         print("Check 2")
         #Assert Fractional Knockout
-        self.assertEqual(7, (genereport['Category1'] == 'fractional knockout').sum())
+        self.assertEqual(7, (genereport['Category1'] == 'Partial-Knockout-Enriched').sum())
         print("Check 3")
         #Assert Upregulation
-        self.assertEqual(6, (genereport['Category2'] == 'upregulated').sum())
+        self.assertEqual(6, (genereport['Category2'] == 'Inducer-Enriched').sum())
         print("Check 4")
         #Assert Downregulation
-        self.assertEqual(2, (genereport['Category3'] == 'downregulated').sum())
+        self.assertEqual(2, (genereport['Category3'] == 'Repressor-Enriched').sum())
         print("Check 5")
 
