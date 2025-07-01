@@ -162,6 +162,7 @@ def gene_statistics_old(old_algorithm,combined_plotfile, forward_plotfile, rever
     blocks = b.block_generator()
 
     genes = GeneAnnotator(old_algorithm,embl_file, blocks).annotate_genes()
+    print("genes",genes)
     intergenic_blocks = [block for block in blocks if block.intergenic]
 
     if use_annotations:

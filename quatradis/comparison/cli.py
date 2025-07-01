@@ -385,7 +385,7 @@ def add_genereport_options(parser):
     parser.add_argument(
         "--use_annotations", "-a", help="EMBL file is a real EMBL file with annotations (not a set of windows)", action="store_true", default=False
     )
-    parser.add_argument("--use_annotation", "-ua", help="Flag to use annotation file in place of prepared embl file (default: False)", action='store_true')
+
     
     # Add Gene_Report_Categorization_Params dynamically
     # for param, (arg_name, param_type, default_value) in GENE_REPORT_PARAMS.items():
@@ -423,7 +423,7 @@ def gene_report(args):
             - embl (str): Path to the prepared EMBL file for gene annotations.
             - output_dir (str): Path to the output directory for saving the gene report.
             - annotations (str, optional): Optional annotation file to override EMBL.
-            - use_annotation (bool, optional): If True, use the annotation file instead of the EMBL file.
+            - use_annotations (bool, optional): If True, use the annotation file instead of the EMBL file.
 
             Old algorithm only:
             - combined (str): Combined strand plot file.

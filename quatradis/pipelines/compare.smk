@@ -89,7 +89,7 @@ rule prepare_embl:
             f"--window_size={config['window_size']}" if config.get("window_size") else "",
             f"--window_interval={config['window_interval']}" if config.get("window_interval") else "",
             f"--prime_feature_size={config['prime_feature_size']}" if config.get("prime_feature_size") else "",
-            f"--emblfile={config["annotations"]}" if config.get("annotations") else "",
+            f"--emblfile={config['annotations']}" if config.get("annotations") else "",
             "--dynamic_window" if config.get("Dynamic_Window_3_5_Prime_Ends_Params", {}).get("dynamic_window", False) else ""
         ]).strip(),
         disable_new_algorithm="--disable_new_algorithm" if config["disable_new_algorithm"] else "",
@@ -237,7 +237,6 @@ rule gene_stats:
         scores="--scores=" + os.path.join(config["output_dir"],"comparison","combined","combined.pqvals.plot"),
         output_dir="--output_dir=" + config["output_dir"],
         annotations="--use_annotations" if "annotations" in config else "",
-        use_annotation="--use_annotation" if config.get("use_annotation", False) else "",
         gene_report_params=" ".join(
             f"--{key}={value}" for key, value in config.get("Gene_Report_Params", {}).items() if value
         ),
@@ -253,7 +252,7 @@ rule gene_stats:
             --combined_compare {input.combined_compare_csv} \
             --forward_compare {input.forward_compare_csv} \
             --reverse_compare {input.reverse_compare_csv} \
-            {params.output_dir} {params.annotations} {params.use_annotation} {params.gene_report_params} \
+            {params.output_dir} {params.annotations} {params.gene_report_params} \
             --embl={input.embl} \
             --plotfiles_all {input.plotfiles_all} \
             --forward_count_condition {input.conditions_forward_count_all} \
