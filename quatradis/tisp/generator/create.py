@@ -9,7 +9,7 @@ from quatradis.util.mapper import calc_read_length, index_reference, map_reads, 
 from quatradis.util import file_handle_helpers
 
 
-def run_tradis(fastq, reference, output_prefix, alignments="", tag="", mapper="bwa", index=True, threads=1, mismatch=0, mapping_score=30, verbose=False):
+def run_tradis(fastq, reference, output_prefix, alignments="", tag="", mapper="bwa", index=True, threads=1, mismatch=0, mapping_score=0, verbose=False):
     """
     The main program logic for running tradis.  Tradis takes in a fastq file and a reference as input and generates
     transposon insertion site plot files for each reference sequence, along with stats related to this.

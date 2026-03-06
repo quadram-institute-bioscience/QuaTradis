@@ -3,3 +3,4 @@ zip_comb_list.stats
 temp/
 .coverage
 coverage.xml
+.DS_Store

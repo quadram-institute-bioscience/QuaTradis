@@ -145,7 +145,7 @@ def count_read_starts(mapped_reads, cutoff_score, plot_out_prefix):
     return read_starts, nb_mapped, nb_mapped_and_good
 
 
-def create_plot_files(mapped_reads, plot_out_prefix="tradis.plot", cutoff_score=30):
+def create_plot_files(mapped_reads, plot_out_prefix="tradis.plot", cutoff_score=0):
 
     uis_map = {}
     is_plotters, nb_mapped, nb_mapped_and_good = count_read_starts(mapped_reads, cutoff_score, plot_out_prefix)
@@ -230,7 +230,7 @@ def create_stats_file_header(sequence_names):
     return fields
 
 
-def plot(mapped_reads, fastq="", plot_out_prefix="tradis.plot", cutoff_score=30, nb_reads=0, nb_tagged_reads=0):
+def plot(mapped_reads, fastq="", plot_out_prefix="tradis.plot", cutoff_score=0, nb_reads=0, nb_tagged_reads=0):
     """
     Generate insertion plots from a mapped fastq file and calculate stats
     :param mapped_reads: mapped and sorted BAM file
@@ -238,7 +238,7 @@ def plot(mapped_reads, fastq="", plot_out_prefix="tradis.plot", cutoff_score=30,
     :param plot_out_prefix: base name to assign to the resulting insertion site plot. Default = tradis.plot
     :param nb_reads: the original number of reads in the fastq file.  If set to 0, we will run through the fastq to count them.  Default=0
     :param nb_tagged_reads: the number of reads are tags are identified and clipped.  If set to 0 we assume it is the same as nb_reads.  Default 0.
-    :param cutoff_score: cutoff value for mapping score. Default = 30
+    :param cutoff_score: cutoff value for mapping score. Default = 0
     :return:
     """
 

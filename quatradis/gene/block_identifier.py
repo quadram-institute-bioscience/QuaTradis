@@ -1,5 +1,6 @@
 import numpy
 
+
 from quatradis.tisp.parser import PlotParser, ScoreParser
 
 from quatradis.gene.block import Block

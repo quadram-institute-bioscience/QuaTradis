@@ -110,7 +110,7 @@ def get_product_value(feature):
     return '"{0}"'.format(product) if len(product) > 0 else ""
 
 
-def trim_read(feature, trim5=0, trim3=0):
+def trim_read(feature, trim5=False, trim3=False):
     """
     Trim insertion sites from start or end of gene
     Number of bases trimmed are -trim5 or -trim3 parameters multiplied by gene length.
@@ -119,12 +119,15 @@ def trim_read(feature, trim5=0, trim3=0):
     :param trim3: Multiple of gene length to trim from 3' end of feature
     """
 
+    trim5Pct = 0.1 if trim5 else 0.0
+    trim3Pct = 0.1 if trim3 else 0.0
+
     if feature.location.strand == 1:
-        read_start = feature.location.start + (trim5 * int(feature.location.end - feature.location.start + 1))
-        read_end = feature.location.end - (trim3 * int(feature.location.end - feature.location.start + 1))
+        read_start = feature.location.start + int(trim5Pct * float(feature.location.end - feature.location.start + 1))
+        read_end = feature.location.end - int(trim3Pct * float(feature.location.end - feature.location.start + 1))
     else:
-        read_start = feature.location.start + (trim3 * int(feature.location.end - feature.location.start + 1))
-        read_end = feature.location.end - (trim5 * int(feature.location.end - feature.location.start + 1))
+        read_start = feature.location.start + int(trim3Pct * float(feature.location.end - feature.location.start + 1))
+        read_end = feature.location.end - int(trim5Pct * float(feature.location.end - feature.location.start + 1))
 
     return read_start, read_end
 
