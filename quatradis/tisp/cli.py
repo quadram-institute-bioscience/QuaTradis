@@ -48,8 +48,8 @@ def create_plot_options(parser):
                         help='mapping tool to use (bwa, smalt, minimap2, minimap2_long) (default: bwa)')
     parser.add_argument('-ni', '--no_ref_index', dest='no_ref_index', action='store_true',
                         help='If reference is alredy indexed used this flag to skip the indexing process.')
-    parser.add_argument('-m', '--mapping_score', type=int, default=30,
-                        help='mapping quality must be greater than X (Default: 30)')
+    parser.add_argument('-m', '--mapping_score', type=int, default=0,
+                        help='mapping quality must be greater than X (Default: 0)')
     parser.add_argument('-t', '--tag', type=str, default="",
                         help='the tag to remove from fastq input (default: "")')
     parser.add_argument('-mm', '--mismatch', type=int, default=0,
