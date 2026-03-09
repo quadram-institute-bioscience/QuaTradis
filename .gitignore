@@ -9,3 +9,5 @@ dist/
 **/__pycache__/
 venv/
 test1/
+.DS_Store
+

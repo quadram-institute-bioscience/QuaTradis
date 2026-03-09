@@ -75,8 +75,8 @@ def create_plots_options(parser):
         "-m",
         "--mapping_score",
         type=int,
-        default=30,
-        help="mapping quality must be greater than X (Default: 30)",
+        default=0,
+        help="mapping quality must be greater than X (Default: 0)",
     )
     parser.add_argument(
         "-t",
